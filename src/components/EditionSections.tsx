@@ -10,7 +10,7 @@ import { Txt } from './Txt';
 import type { CalendarEvent, MarketQuote } from '@/data/types';
 import { formatMarketChange, formatMarketValue, marketA11yLabel } from '@/lib/format';
 import { useRadius, useTheme } from '@/theme/ThemeProvider';
-import { GUTTER, TAP, fonts, radii } from '@/theme/tokens';
+import { GUTTER, TAP, fonts, radii, withAlpha } from '@/theme/tokens';
 
 type HeadingProps = {
   label: string;
@@ -21,7 +21,10 @@ type HeadingProps = {
   imageUrl?: string | null;
 };
 
-/** Opens each section, in the theme's style: a centered rule, a large title, or a photo card with a giant word. */
+/**
+ * Opens each section, in the theme's style: a centered rule, a large title, a photo card with a
+ * giant word, a terminal prompt or a circuit trace.
+ */
 export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
   const { theme } = useTheme();
   const radius = useRadius();
@@ -53,7 +56,6 @@ export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
               </GlassCard>
             </View>
           )}
-          {/* The word runs off the bottom edge, like a magazine section opener. */}
           <Txt
             variant="mega"
             color="rgba(255, 255, 255, 0.92)"
@@ -68,18 +70,70 @@ export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
   }
 
   if (theme.layout.sections === 'rule') {
+    // Framed themes draw the rule double, like their cards.
+    const line =
+      theme.surface === 'framed'
+        ? [styles.doubleLine, { borderColor: theme.colors.hairline }]
+        : [styles.line, { backgroundColor: theme.colors.hairline }];
     return (
       <View style={styles.rule} accessible accessibilityRole="header" accessibilityLabel={a11y}>
         <View style={styles.ruleRow}>
-          <View style={[styles.line, { backgroundColor: theme.colors.hairline }]} />
+          <View style={line} />
           <Txt variant="displayM">{label}</Txt>
-          <View style={[styles.line, { backgroundColor: theme.colors.hairline }]} />
+          <View style={line} />
         </View>
         {countLabel && (
           <Txt variant="spaced" tone="tertiary" align="center">
             {countLabel}
           </Txt>
         )}
+      </View>
+    );
+  }
+
+  if (theme.layout.sections === 'prompt') {
+    // A terminal line: > also_happening_
+    const accent = theme.colors.accent;
+    return (
+      <View style={styles.titleRow} accessible accessibilityRole="header" accessibilityLabel={a11y}>
+        <Txt variant="displayL" style={styles.flexShrink} numberOfLines={1} adjustsFontSizeToFit>
+          <Txt variant="displayL" color={accent}>
+            {'> '}
+          </Txt>
+          {label.toLowerCase().replace(/ /g, '_')}
+          <Txt variant="displayL" color={accent}>
+            _
+          </Txt>
+        </Txt>
+        {countLabel && (
+          <Txt variant="caption" tone="tertiary">
+            {countLabel}
+          </Txt>
+        )}
+      </View>
+    );
+  }
+
+  if (theme.layout.sections === 'circuit') {
+    // The title over a trace: a bright lead, a dim line, and a hollow node at the end.
+    const accent = theme.colors.accent;
+    return (
+      <View style={styles.circuit} accessible accessibilityRole="header" accessibilityLabel={a11y}>
+        <View style={styles.circuitRow}>
+          <Txt variant="displayL" style={styles.flexShrink} numberOfLines={1} adjustsFontSizeToFit>
+            {label}
+          </Txt>
+          {countLabel && (
+            <Txt variant="kicker" color={accent}>
+              {countLabel}
+            </Txt>
+          )}
+        </View>
+        <View style={styles.trace}>
+          <View style={[styles.traceLead, { backgroundColor: accent }]} />
+          <View style={[styles.traceLine, { backgroundColor: withAlpha(accent, 0.4) }]} />
+          <View style={[styles.traceNode, { borderColor: accent }]} />
+        </View>
       </View>
     );
   }
@@ -200,9 +254,7 @@ export function EndOfEdition({
       />
       <View style={styles.links}>
         <Pressable onPress={onPrevious} accessibilityRole="link" style={styles.link}>
-          <Txt variant="label">
-            {isToday ? 'Read yesterday’s →' : 'Read the day before →'}
-          </Txt>
+          <Txt variant="label">{isToday ? 'Read yesterday’s →' : 'Read the day before →'}</Txt>
         </Pressable>
         {onBackToToday && (
           <Pressable onPress={onBackToToday} accessibilityRole="link" style={styles.link}>
@@ -223,10 +275,17 @@ const styles = StyleSheet.create({
   coverCard: { height: 176, overflow: 'hidden', borderWidth: 1, justifyContent: 'flex-end' },
   coverChip: { position: 'absolute', top: 14, left: 14 },
   chip: { paddingHorizontal: 12, height: 28, justifyContent: 'center' },
-  coverWord: { paddingHorizontal: 14, marginBottom: -14 },
+  coverWord: { paddingHorizontal: 16, paddingBottom: 8 },
   rule: { gap: 10, paddingHorizontal: GUTTER },
   ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   line: { flex: 1, height: 1 },
+  doubleLine: { flex: 1, height: 4, borderTopWidth: 1, borderBottomWidth: 1 },
+  circuit: { gap: 10, paddingHorizontal: GUTTER + 2 },
+  circuitRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  trace: { flexDirection: 'row', alignItems: 'center', height: 7 },
+  traceLead: { width: 44, height: 3 },
+  traceLine: { flex: 1, height: 1 },
+  traceNode: { width: 7, height: 7, borderWidth: 1.5 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'baseline',

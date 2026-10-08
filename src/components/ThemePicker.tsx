@@ -15,7 +15,7 @@ const TILE_H = 168;
 /** Horizontal padding of the Settings card this sits in. */
 const CARD_PAD = 16;
 
-/** A row of photo tiles, one per theme, plus the credit for the chosen photo. */
+/** A row of cover tiles, one per theme, plus the credit for the chosen cover. */
 export function ThemePicker() {
   const { theme, setThemeName } = useTheme();
   const { credit } = theme;
@@ -61,13 +61,14 @@ export function ThemePicker() {
                     <Check size={13} color={t.colors.inverseText} strokeWidth={3} />
                   </View>
                 )}
+                {/* Two-word names (Blade Runner) wrap at the space rather than shrinking to nothing. */}
                 <Text
-                  numberOfLines={1}
+                  numberOfLines={t.label.includes(' ') ? 2 : 1}
                   adjustsFontSizeToFit
                   style={[
                     styles.name,
                     t.type.displayL,
-                    // Wide capitals (Dune) need a smaller size to fit the tile.
+                    // Wide capitals (Dune, Tron) need a smaller size to fit the tile.
                     t.type.displayL?.textTransform === 'uppercase' ? styles.nameCaps : styles.nameSize,
                     { color: t.colors.text },
                   ]}>
@@ -83,12 +84,18 @@ export function ThemePicker() {
       <Txt variant="bodySm" tone="secondary">
         {theme.tagline}
       </Txt>
-      <Pressable onPress={() => openLink(credit.url)} accessibilityRole="link" hitSlop={6}>
+      {credit ? (
+        <Pressable onPress={() => openLink(credit.url)} accessibilityRole="link" hitSlop={6}>
+          <Txt variant="caption" tone="tertiary">
+            Photo: “{credit.title}” by {credit.author} · {credit.license}
+            {credit.adapted ? ' · cropped and recolored' : ''}
+          </Txt>
+        </Pressable>
+      ) : (
         <Txt variant="caption" tone="tertiary">
-          Photo: “{credit.title}” by {credit.author} · {credit.license}
-          {credit.adapted ? ' · cropped and recolored' : ''}
+          Cover: original artwork made for Brewsy
         </Txt>
-      </Pressable>
+      )}
     </View>
   );
 }

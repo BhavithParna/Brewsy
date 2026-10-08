@@ -24,11 +24,15 @@ sports, entertainment and crypto), explained simply, with as much depth as you w
   (at most 2 a day). **How this briefing was made** at the bottom shows what was scanned.
 - **Settings** — the gear on Today: theme, wake-up time, topics, breaking news, listening,
   sources, reminders, PDF export, past editions.
-- **Themes** — five complete looks, each with its own typefaces, shapes and layout:
-  **Dune** (sand, wide-set capitals, sharp corners, centered), **Space** (black, monospace
+- **Themes** — nine complete looks, each with its own typefaces, shapes and layout:
+  **Dune** (sand, thin wide-set capitals, sharp corners, centered), **Space** (black, monospace
   details, topic sections open on photo cards), **Atlantis** (deep-blue gradient, serif, round
-  frosted cards), **Highlands** (forest tiles, bold italics) and **Alpine** (white, Swiss red).
-  Defined in `src/theme/themes.ts`; cover photos and credits in `assets/themes/`.
+  frosted cards), **Highlands** (forest tiles, bold italics), **Alpine** (white, Swiss red),
+  **Matrix** (falling code, monospace, sections open on a `> prompt_`), **Tron** (the Grid,
+  cyan light lines, circuit-trace section titles), **Blade Runner** (amber haze, frosted panels,
+  neon pink) and **Budapest** (pastel pink, serif and spaced capitals, double-bordered cards).
+  Defined in `src/theme/themes.ts`; covers in `assets/themes/` (photo credits in Settings →
+  Theme; the Matrix, Tron and Blade Runner covers are original art).
 
 ## Run it
 

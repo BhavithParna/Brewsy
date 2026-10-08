@@ -24,7 +24,7 @@ type Props = ViewProps & {
   blurTarget?: RefObject<View | null>;
 };
 
-/** A panel in the current theme's style: opaque card, outlined card, or frosted glass. */
+/** A panel in the current theme's style: opaque card, outlined card, double-bordered card, or frosted glass. */
 export function GlassCard({
   radius = radii.md,
   intensity,
@@ -55,12 +55,17 @@ export function GlassCard({
   } else {
     const overlay = variant === 'overlay';
     fill = canBlur
-      ? overlay ? colors.glassOverlay : colors.glassFill
-      : overlay ? colors.glassOverlayFallback : colors.glassFillFallback;
+      ? overlay
+        ? colors.glassOverlay
+        : colors.glassFill
+      : overlay
+        ? colors.glassOverlayFallback
+        : colors.glassFillFallback;
     blur = canBlur;
   }
 
   const lift = variant === 'surface' && theme.surface === 'solid' && !theme.isDark ? shadows.paper : null;
+  const framed = variant === 'surface' && theme.surface === 'framed';
 
   return (
     <View {...rest} style={[styles.base, { borderRadius: r, borderColor: border }, lift, style]}>
@@ -75,12 +80,25 @@ export function GlassCard({
         />
       )}
       <View style={[StyleSheet.absoluteFill, styles.noTouch, { backgroundColor: fill, borderRadius: r }]} />
+      {framed && <View style={[styles.frame, { borderColor: border, borderRadius: Math.max(0, r - FRAME_INSET) }]} />}
       {children}
     </View>
   );
 }
 
+/** Gap between a framed card's outer and inner border. */
+const FRAME_INSET = 4;
+
 const styles = StyleSheet.create({
+  frame: {
+    position: 'absolute',
+    top: FRAME_INSET,
+    left: FRAME_INSET,
+    right: FRAME_INSET,
+    bottom: FRAME_INSET,
+    borderWidth: 1,
+    pointerEvents: 'none',
+  },
   base: {
     overflow: 'hidden',
     borderWidth: 1,

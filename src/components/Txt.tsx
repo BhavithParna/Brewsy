@@ -17,15 +17,15 @@ type Props = TextProps & {
 };
 
 // The default type; each theme swaps typefaces, sizes and case on top (themes.ts → type).
-// Line heights stay >= 1.15x the size so Android never clips accents or descenders.
+// Line heights stay >= 1.15x the size so Android never clips accents, descenders or tall display faces.
 const variants: Record<TxtVariant, TextStyle> = {
-  displayXL: { fontFamily: fonts.light, fontSize: 56, lineHeight: 64, letterSpacing: -1.8 },
-  displayL: { fontFamily: fonts.light, fontSize: 40, lineHeight: 46, letterSpacing: -1.2 },
+  displayXL: { fontFamily: fonts.light, fontSize: 56, lineHeight: 66, letterSpacing: -1.8 },
+  displayL: { fontFamily: fonts.light, fontSize: 40, lineHeight: 48, letterSpacing: -1.2 },
   headline: { fontFamily: fonts.semibold, fontSize: 22, lineHeight: 28, letterSpacing: -0.4 },
   displayM: { fontFamily: fonts.semibold, fontSize: 22, lineHeight: 28, letterSpacing: -0.5 },
-  displayS: { fontFamily: fonts.light, fontSize: 24, lineHeight: 28, letterSpacing: -0.6 },
-  stat: { fontFamily: fonts.light, fontSize: 48, lineHeight: 54, letterSpacing: -2 },
-  mega: { fontFamily: fonts.bold, fontSize: 84, lineHeight: 84, letterSpacing: -3 },
+  displayS: { fontFamily: fonts.light, fontSize: 24, lineHeight: 30, letterSpacing: -0.6 },
+  stat: { fontFamily: fonts.light, fontSize: 48, lineHeight: 58, letterSpacing: -2 },
+  mega: { fontFamily: fonts.bold, fontSize: 80, lineHeight: 94, letterSpacing: -3 },
   title: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22, letterSpacing: -0.2 },
   reading: { fontFamily: fonts.regular, fontSize: 17, lineHeight: 27, letterSpacing: -0.1 },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22 },

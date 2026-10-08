@@ -4,7 +4,16 @@ import { TOPIC_LABEL, type TopicKey } from '@/data/topics';
 
 export { TOPIC_LABEL, type TopicKey };
 
-export type ThemeName = 'dune' | 'space' | 'atlantis' | 'highlands' | 'alpine';
+export type ThemeName =
+  | 'dune'
+  | 'space'
+  | 'atlantis'
+  | 'highlands'
+  | 'alpine'
+  | 'matrix'
+  | 'tron'
+  | 'bladerunner'
+  | 'budapest';
 
 /** Text roles every screen uses; each theme restyles them (see Txt). */
 export type TxtVariant =
@@ -49,7 +58,8 @@ export type Theme = {
   blurIntensity: number;
   /** Photo at the top of Today and the Reading List. It fades into the background before any text. */
   cover: ImageSourcePropType;
-  credit: PhotoCredit;
+  /** null when the cover is original art made for Brewsy. */
+  credit: PhotoCredit | null;
   /** Behind everything below the cover: one color, or a slow top-to-bottom gradient. */
   background: [string, ...string[]];
   /** Per-role type: font family, size, tracking, case. Merged over the defaults in Txt. */
@@ -62,17 +72,19 @@ export type Theme = {
   };
   /**
    * How story cards are drawn. Text always sits on something calm:
-   * solid = opaque card · outline = opaque card with a crisp border · glass = frosted over a smooth gradient.
+   * solid = opaque card · outline = opaque card with a crisp border · glass = frosted over a smooth gradient ·
+   * framed = opaque card with a second, inset border (like a printed card).
    */
-  surface: 'solid' | 'outline' | 'glass';
+  surface: 'solid' | 'outline' | 'glass' | 'framed';
   layout: {
     /** Where the date sits on the cover. */
     heroAlign: 'left' | 'center';
     /**
      * How each topic opens: rule = "── WORLD ──" centered, cover = photo card with the
-     * topic as a giant word, title = the topic in large type.
+     * topic as a giant word, title = the topic in large type, prompt = a terminal line
+     * ("> world_"), circuit = the title over a lit trace line.
      */
-    sections: 'rule' | 'cover' | 'title';
+    sections: 'rule' | 'cover' | 'title' | 'prompt' | 'circuit';
     /** Buttons and chips use small spaced capitals. */
     capsButtons: boolean;
   };
@@ -115,8 +127,10 @@ export type Theme = {
 const BY_SA = (v: string) => `CC BY-SA ${v}`;
 
 // ─── Dune ─────────────────────────────────────────────────────────────────────
-// Sand-colored and light, wide-set capitals like the film's titles, sharp
+// Sand-colored and light, thin capitals set wide like the film's titles, sharp
 // architectural corners, everything centered. After the travel reference.
+// Centered capitals get a left pad equal to their tracking: letter-spacing adds space after
+// the last letter too, which would otherwise push the text off center.
 const dune: Theme = {
   name: 'dune',
   label: 'Dune',
@@ -134,16 +148,18 @@ const dune: Theme = {
   },
   background: ['#E9DAC2', '#E2CFB1'],
   type: {
-    displayXL: { fontFamily: 'Syncopate_700Bold', fontSize: 30, lineHeight: 38, letterSpacing: 4, textTransform: 'uppercase' },
-    displayL: { fontFamily: 'Syncopate_700Bold', fontSize: 20, lineHeight: 28, letterSpacing: 3, textTransform: 'uppercase' },
-    displayM: { fontFamily: 'Syncopate_700Bold', fontSize: 14, lineHeight: 20, letterSpacing: 2.4, textTransform: 'uppercase' },
-    displayS: { fontFamily: 'Syncopate_400Regular', fontSize: 15, lineHeight: 22, letterSpacing: 1 },
-    stat: { fontFamily: 'Syncopate_700Bold', fontSize: 34, lineHeight: 42, letterSpacing: 0 },
-    mega: { fontFamily: 'Syncopate_700Bold', fontSize: 52, lineHeight: 60, letterSpacing: 2, textTransform: 'uppercase' },
-    headline: { fontFamily: 'Inter_600SemiBold', fontSize: 21, lineHeight: 27, letterSpacing: -0.3 },
-    title: { fontFamily: 'Inter_600SemiBold' },
-    kicker: { fontFamily: 'Syncopate_700Bold', fontSize: 9, lineHeight: 13, letterSpacing: 2.2 },
-    spaced: { fontFamily: 'Syncopate_700Bold', fontSize: 10, lineHeight: 14, letterSpacing: 4 },
+    displayXL: { fontFamily: 'Jost_300Light', fontSize: 40, lineHeight: 52, letterSpacing: 9, paddingLeft: 9, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'Jost_400Regular', fontSize: 25, lineHeight: 34, letterSpacing: 5, textTransform: 'uppercase' },
+    displayM: { fontFamily: 'Jost_500Medium', fontSize: 16, lineHeight: 24, letterSpacing: 3.6, paddingLeft: 3.6, textTransform: 'uppercase' },
+    displayS: { fontFamily: 'Jost_400Regular', fontSize: 20, lineHeight: 26, letterSpacing: 0.4 },
+    stat: { fontFamily: 'Jost_300Light', fontSize: 48, lineHeight: 58, letterSpacing: -0.5 },
+    mega: { fontFamily: 'Jost_300Light', fontSize: 60, lineHeight: 74, letterSpacing: 8, textTransform: 'uppercase' },
+    headline: { fontFamily: 'Jost_500Medium', fontSize: 22, lineHeight: 28, letterSpacing: -0.1 },
+    title: { fontFamily: 'Jost_500Medium', fontSize: 17.5, lineHeight: 22 },
+    label: { fontFamily: 'Jost_500Medium', fontSize: 14.5, lineHeight: 18, letterSpacing: 0.3 },
+    caption: { fontFamily: 'Jost_400Regular', fontSize: 12.5, lineHeight: 16, letterSpacing: 0.3 },
+    kicker: { fontFamily: 'Jost_600SemiBold', fontSize: 11, lineHeight: 14, letterSpacing: 2.8 },
+    spaced: { fontFamily: 'Jost_500Medium', fontSize: 11.5, lineHeight: 16, letterSpacing: 5.5, paddingLeft: 5.5 },
   },
   shape: { scale: 0.15, control: 3 },
   surface: 'solid',
@@ -194,12 +210,12 @@ const space: Theme = {
   },
   background: ['#000000'],
   type: {
-    displayXL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 62, lineHeight: 70, letterSpacing: -2.4 },
-    displayL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 40, lineHeight: 46, letterSpacing: -1.4 },
+    displayXL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 62, lineHeight: 74, letterSpacing: -2.4 },
+    displayL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 40, lineHeight: 48, letterSpacing: -1.4 },
     displayM: { fontFamily: 'SpaceGrotesk_500Medium', fontSize: 24, lineHeight: 30, letterSpacing: -0.6 },
     displayS: { fontFamily: 'SpaceMono_400Regular', fontSize: 18, lineHeight: 24 },
-    stat: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 46, lineHeight: 52, letterSpacing: -2 },
-    mega: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 84, lineHeight: 84, letterSpacing: -3.5 },
+    stat: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 46, lineHeight: 56, letterSpacing: -2 },
+    mega: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 80, lineHeight: 94, letterSpacing: -3 },
     headline: { fontFamily: 'SpaceGrotesk_500Medium', fontSize: 23, lineHeight: 29, letterSpacing: -0.5 },
     title: { fontFamily: 'SpaceGrotesk_600SemiBold' },
     label: { fontFamily: 'SpaceGrotesk_500Medium' },
@@ -257,13 +273,13 @@ const atlantis: Theme = {
   background: ['#0A3850', '#06263B', '#041828', '#020D17'],
   // Cormorant's default numerals are old-style ("II" for 11), so numbers use lining figures.
   type: {
-    displayXL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 70, lineHeight: 78, letterSpacing: -1 },
-    displayL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 44, lineHeight: 50, letterSpacing: -0.6 },
-    displayM: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 30, lineHeight: 34, letterSpacing: -0.3 },
-    displayS: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 28, lineHeight: 30, fontVariant: ['lining-nums'] },
-    stat: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 56, lineHeight: 60, letterSpacing: -1, fontVariant: ['lining-nums'] },
-    mega: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 96, lineHeight: 96 },
-    headline: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.2, fontVariant: ['lining-nums'] },
+    displayXL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 70, lineHeight: 84, letterSpacing: -1, paddingRight: 8 },
+    displayL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 44, lineHeight: 54, letterSpacing: -0.6, paddingRight: 6 },
+    displayM: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 30, lineHeight: 37, letterSpacing: -0.3 },
+    displayS: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 28, lineHeight: 34, fontVariant: ['lining-nums'] },
+    stat: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 56, lineHeight: 66, letterSpacing: -1, fontVariant: ['lining-nums'] },
+    mega: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 96, lineHeight: 112, paddingRight: 10 },
+    headline: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 28, lineHeight: 34, letterSpacing: -0.2, fontVariant: ['lining-nums'] },
     kicker: { fontSize: 11, letterSpacing: 2.4 },
     spaced: { fontSize: 11, letterSpacing: 5 },
   },
@@ -316,12 +332,12 @@ const highlands: Theme = {
   },
   background: ['#141B16', '#0F1411'],
   type: {
-    displayXL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 60, lineHeight: 66, letterSpacing: -1.2 },
-    displayL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 38, lineHeight: 44, letterSpacing: -0.6 },
-    displayM: { fontFamily: 'Barlow_600SemiBold_Italic', fontSize: 26, lineHeight: 30, letterSpacing: -0.3 },
-    displayS: { fontFamily: 'Barlow_600SemiBold', fontSize: 24, lineHeight: 28 },
-    stat: { fontFamily: 'Barlow_600SemiBold', fontSize: 52, lineHeight: 56, letterSpacing: -1 },
-    mega: { fontFamily: 'Barlow_800ExtraBold_Italic', fontSize: 92, lineHeight: 92, letterSpacing: -2 },
+    displayXL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 60, lineHeight: 72, letterSpacing: -1.2, paddingRight: 6 },
+    displayL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 38, lineHeight: 46, letterSpacing: -0.6, paddingRight: 4 },
+    displayM: { fontFamily: 'Barlow_600SemiBold_Italic', fontSize: 26, lineHeight: 32, letterSpacing: -0.3, paddingRight: 3 },
+    displayS: { fontFamily: 'Barlow_600SemiBold', fontSize: 24, lineHeight: 30 },
+    stat: { fontFamily: 'Barlow_600SemiBold', fontSize: 52, lineHeight: 62, letterSpacing: -1 },
+    mega: { fontFamily: 'Barlow_800ExtraBold_Italic', fontSize: 88, lineHeight: 104, letterSpacing: -2, paddingRight: 10 },
     headline: { fontFamily: 'Barlow_600SemiBold', fontSize: 24, lineHeight: 29, letterSpacing: -0.1 },
     title: { fontFamily: 'Barlow_600SemiBold', fontSize: 18 },
     label: { fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
@@ -377,12 +393,12 @@ const alpine: Theme = {
   },
   background: ['#EEF0F2'],
   type: {
-    displayXL: { fontFamily: 'Inter_700Bold', fontSize: 54, lineHeight: 60, letterSpacing: -2.4 },
+    displayXL: { fontFamily: 'Inter_700Bold', fontSize: 54, lineHeight: 64, letterSpacing: -2.4 },
     displayL: { fontFamily: 'Inter_700Bold', fontSize: 34, lineHeight: 40, letterSpacing: -1.4 },
     displayM: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28, letterSpacing: -0.7 },
     displayS: { fontFamily: 'Inter_700Bold', fontSize: 20, lineHeight: 24, letterSpacing: -0.5 },
-    stat: { fontFamily: 'Inter_700Bold', fontSize: 46, lineHeight: 52, letterSpacing: -2.2 },
-    mega: { fontFamily: 'Inter_700Bold', fontSize: 84, lineHeight: 84, letterSpacing: -4 },
+    stat: { fontFamily: 'Inter_700Bold', fontSize: 46, lineHeight: 56, letterSpacing: -2.2 },
+    mega: { fontFamily: 'Inter_700Bold', fontSize: 80, lineHeight: 94, letterSpacing: -3.6 },
     headline: { fontFamily: 'Inter_700Bold', fontSize: 21, lineHeight: 27, letterSpacing: -0.6 },
     kicker: { fontFamily: 'Inter_700Bold', fontSize: 10.5, lineHeight: 14, letterSpacing: 1.3 },
     spaced: { fontFamily: 'Inter_600SemiBold', fontSize: 11, lineHeight: 14, letterSpacing: 3 },
@@ -416,9 +432,262 @@ const alpine: Theme = {
   },
 };
 
-export const themes: Record<ThemeName, Theme> = { dune, space, atlantis, highlands, alpine };
+// ─── Matrix ───────────────────────────────────────────────────────────────────
+// A terminal: black, phosphor green, monospace everything, square corners.
+// Sections open on a prompt ("> world_"). Reading text is pale green-white, not pure green.
+const matrix: Theme = {
+  name: 'matrix',
+  label: 'Matrix',
+  tagline: 'Falling code, terminal type',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 30,
+  cover: require('../../assets/themes/matrix.jpg'),
+  credit: null,
+  background: ['#000000'],
+  type: {
+    displayXL: { fontFamily: 'ShareTechMono_400Regular', fontSize: 46, lineHeight: 56, letterSpacing: 1, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'ShareTechMono_400Regular', fontSize: 30, lineHeight: 38, letterSpacing: 0.5 },
+    displayM: { fontFamily: 'ShareTechMono_400Regular', fontSize: 21, lineHeight: 28, letterSpacing: 0.4 },
+    displayS: { fontFamily: 'ShareTechMono_400Regular', fontSize: 20, lineHeight: 26 },
+    stat: { fontFamily: 'ShareTechMono_400Regular', fontSize: 46, lineHeight: 56, letterSpacing: -1 },
+    mega: { fontFamily: 'ShareTechMono_400Regular', fontSize: 72, lineHeight: 86 },
+    headline: { fontFamily: 'IBMPlexMono_500Medium', fontSize: 18.5, lineHeight: 26, letterSpacing: -0.3 },
+    title: { fontFamily: 'IBMPlexMono_500Medium', fontSize: 16, lineHeight: 22 },
+    reading: { fontFamily: 'IBMPlexMono_400Regular', fontSize: 15.5, lineHeight: 26, letterSpacing: -0.2 },
+    body: { fontFamily: 'IBMPlexMono_400Regular', fontSize: 14, lineHeight: 22, letterSpacing: -0.2 },
+    bodySm: { fontFamily: 'IBMPlexMono_400Regular', fontSize: 12.5, lineHeight: 19, letterSpacing: -0.1 },
+    label: { fontFamily: 'IBMPlexMono_500Medium', fontSize: 13.5, lineHeight: 18 },
+    caption: { fontFamily: 'IBMPlexMono_400Regular', fontSize: 11.5, lineHeight: 16 },
+    kicker: { fontFamily: 'ShareTechMono_400Regular', fontSize: 12, lineHeight: 15, letterSpacing: 1.6 },
+    spaced: { fontFamily: 'ShareTechMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 3.5 },
+  },
+  shape: { scale: 0.08, control: 2 },
+  surface: 'outline',
+  layout: { heroAlign: 'left', sections: 'prompt', capsButtons: true },
+  colors: {
+    bg: '#000000',
+    card: '#030A05',
+    cardBorder: 'rgba(60, 255, 120, 0.20)',
+    text: '#D6F5DD',
+    textSecondary: 'rgba(160, 235, 180, 0.80)',
+    textTertiary: 'rgba(120, 220, 150, 0.60)',
+    glassFill: 'rgba(4, 22, 10, 0.62)',
+    glassOverlay: 'rgba(0, 10, 4, 0.55)',
+    glassFillFallback: 'rgba(4, 18, 9, 0.95)',
+    glassOverlayFallback: 'rgba(0, 10, 4, 0.78)',
+    glassBorder: 'rgba(60, 255, 120, 0.24)',
+    onCover: '#D6F5DD',
+    sheet: '#020904',
+    hairline: 'rgba(60, 255, 120, 0.14)',
+    skeleton: 'rgba(60, 255, 120, 0.06)',
+    skeletonHighlight: 'rgba(60, 255, 120, 0.13)',
+    accent: '#3CFF7A',
+    accentInk: '#001A08',
+    up: '#3CFF7A',
+    down: '#FF6B5E',
+    inverseBg: '#3CFF7A',
+    inverseText: '#001A08',
+  },
+};
 
-export const THEME_ORDER: ThemeName[] = ['dune', 'space', 'atlantis', 'highlands', 'alpine'];
+// ─── Tron ─────────────────────────────────────────────────────────────────────
+// The Grid: black glass, cyan light lines, wide futurist capitals, clipped corners.
+// Sections open on a title over a lit circuit trace.
+const tron: Theme = {
+  name: 'tron',
+  label: 'Tron',
+  tagline: 'The Grid: black glass and light lines',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 30,
+  cover: require('../../assets/themes/tron.jpg'),
+  credit: null,
+  background: ['#03070D', '#010205'],
+  type: {
+    displayXL: { fontFamily: 'Orbitron_700Bold', fontSize: 38, lineHeight: 48, letterSpacing: 4, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'Orbitron_600SemiBold', fontSize: 22, lineHeight: 30, letterSpacing: 2.4, textTransform: 'uppercase' },
+    displayM: { fontFamily: 'Orbitron_600SemiBold', fontSize: 15, lineHeight: 22, letterSpacing: 1.8, textTransform: 'uppercase' },
+    displayS: { fontFamily: 'Orbitron_500Medium', fontSize: 18, lineHeight: 24, letterSpacing: 1 },
+    stat: { fontFamily: 'Orbitron_500Medium', fontSize: 40, lineHeight: 50 },
+    mega: { fontFamily: 'Orbitron_800ExtraBold', fontSize: 56, lineHeight: 70, letterSpacing: 4, textTransform: 'uppercase' },
+    headline: { fontFamily: 'Rajdhani_600SemiBold', fontSize: 23, lineHeight: 28, letterSpacing: 0.1 },
+    title: { fontFamily: 'Rajdhani_600SemiBold', fontSize: 18, lineHeight: 22 },
+    label: { fontFamily: 'Rajdhani_600SemiBold', fontSize: 15.5, lineHeight: 19, letterSpacing: 0.6 },
+    caption: { fontFamily: 'Rajdhani_500Medium', fontSize: 13.5, lineHeight: 17, letterSpacing: 0.3 },
+    kicker: { fontFamily: 'Rajdhani_700Bold', fontSize: 12.5, lineHeight: 15, letterSpacing: 2.4 },
+    spaced: { fontFamily: 'Orbitron_500Medium', fontSize: 10.5, lineHeight: 15, letterSpacing: 4 },
+  },
+  shape: { scale: 0.2, control: 4 },
+  surface: 'outline',
+  layout: { heroAlign: 'left', sections: 'circuit', capsButtons: true },
+  colors: {
+    bg: '#03070D',
+    card: '#050C15',
+    cardBorder: 'rgba(110, 230, 255, 0.30)',
+    text: '#E4FAFF',
+    textSecondary: 'rgba(214, 244, 252, 0.74)',
+    textTertiary: 'rgba(180, 230, 245, 0.56)',
+    glassFill: 'rgba(8, 24, 38, 0.60)',
+    glassOverlay: 'rgba(2, 8, 14, 0.50)',
+    glassFillFallback: 'rgba(8, 20, 32, 0.95)',
+    glassOverlayFallback: 'rgba(2, 8, 14, 0.75)',
+    glassBorder: 'rgba(110, 230, 255, 0.32)',
+    onCover: '#E4FAFF',
+    sheet: '#050B13',
+    hairline: 'rgba(110, 230, 255, 0.16)',
+    skeleton: 'rgba(110, 230, 255, 0.06)',
+    skeletonHighlight: 'rgba(110, 230, 255, 0.13)',
+    accent: '#6FE6FF',
+    accentInk: '#00141B',
+    up: '#6FE6FF',
+    down: '#FF8A3D',
+    inverseBg: '#6FE6FF',
+    inverseText: '#00141B',
+  },
+};
+
+// ─── Blade Runner ─────────────────────────────────────────────────────────────
+// Amber haze over a dark city: a warm smoky gradient, frosted panels, a squared-off
+// techno face, and one neon pink accent.
+const bladerunner: Theme = {
+  name: 'bladerunner',
+  label: 'Blade Runner',
+  tagline: 'Amber haze, neon in the rain',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 34,
+  cover: require('../../assets/themes/bladerunner.jpg'),
+  credit: null,
+  background: ['#2B1309', '#1A0B06', '#0D0604'],
+  type: {
+    displayXL: { fontFamily: 'Oxanium_300Light', fontSize: 58, lineHeight: 70, letterSpacing: -1 },
+    displayL: { fontFamily: 'Oxanium_400Regular', fontSize: 36, lineHeight: 44, letterSpacing: -0.6 },
+    displayM: { fontFamily: 'Oxanium_600SemiBold', fontSize: 22, lineHeight: 28, letterSpacing: -0.2 },
+    displayS: { fontFamily: 'Oxanium_500Medium', fontSize: 20, lineHeight: 26 },
+    stat: { fontFamily: 'Oxanium_300Light', fontSize: 50, lineHeight: 60, letterSpacing: -1.4 },
+    mega: { fontFamily: 'Oxanium_700Bold', fontSize: 80, lineHeight: 96, letterSpacing: -2 },
+    headline: { fontFamily: 'Oxanium_600SemiBold', fontSize: 21, lineHeight: 27, letterSpacing: -0.2 },
+    title: { fontFamily: 'Oxanium_600SemiBold', fontSize: 17, lineHeight: 22 },
+    label: { fontFamily: 'Oxanium_500Medium', fontSize: 14.5, lineHeight: 18 },
+    caption: { fontFamily: 'Oxanium_400Regular', fontSize: 12, lineHeight: 16 },
+    kicker: { fontFamily: 'Oxanium_600SemiBold', fontSize: 11, lineHeight: 14, letterSpacing: 2.4 },
+    spaced: { fontFamily: 'Oxanium_500Medium', fontSize: 11.5, lineHeight: 16, letterSpacing: 5 },
+  },
+  shape: { scale: 0.45, control: 6 },
+  surface: 'glass',
+  layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  colors: {
+    bg: '#1A0B06',
+    card: 'rgba(255, 170, 100, 0.08)',
+    cardBorder: 'rgba(255, 180, 120, 0.16)',
+    text: '#FCEBDD',
+    textSecondary: 'rgba(252, 235, 221, 0.74)',
+    textTertiary: 'rgba(252, 235, 221, 0.56)',
+    glassFill: 'rgba(255, 170, 100, 0.10)',
+    glassOverlay: 'rgba(30, 10, 4, 0.42)',
+    glassFillFallback: 'rgba(52, 24, 14, 0.95)',
+    glassOverlayFallback: 'rgba(30, 10, 4, 0.72)',
+    glassBorder: 'rgba(255, 180, 120, 0.18)',
+    onCover: '#FCEBDD',
+    sheet: '#211008',
+    hairline: 'rgba(255, 180, 120, 0.12)',
+    skeleton: 'rgba(255, 180, 120, 0.06)',
+    skeletonHighlight: 'rgba(255, 180, 120, 0.13)',
+    accent: '#FF4FA0',
+    accentInk: '#1C0410',
+    up: '#5FE0D2',
+    down: '#FF8A5C',
+    inverseBg: '#FCEBDD',
+    inverseText: '#1A0B06',
+  },
+};
+
+// ─── Budapest ─────────────────────────────────────────────────────────────────
+// A grand pastel hotel: pink and plum, an elegant serif with Futura-style capitals,
+// everything centered and symmetrical, cards with a printed double border.
+const budapest: Theme = {
+  name: 'budapest',
+  label: 'Budapest',
+  tagline: 'Pastel pink, perfect symmetry',
+  isDark: false,
+  blurTint: 'light',
+  blurIntensity: 40,
+  cover: require('../../assets/themes/budapest.jpg'),
+  credit: {
+    title: 'Building back façade, Avenida de Roma, Lisbon',
+    author: 'Jules Verne Times Two',
+    license: BY_SA('4.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:Building_back_fa%C3%A7ade,_Avenida_de_Roma,_Lisbon,_Portugal_julesvernex2.jpg',
+    adapted: true,
+  },
+  background: ['#F2D6D3', '#EDCBC8'],
+  type: {
+    displayXL: { fontFamily: 'PlayfairDisplay_500Medium_Italic', fontSize: 50, lineHeight: 64, letterSpacing: -0.5, paddingHorizontal: 4 },
+    displayL: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 30, lineHeight: 40, letterSpacing: -0.3 },
+    displayM: { fontFamily: 'Jost_600SemiBold', fontSize: 15, lineHeight: 22, letterSpacing: 3.6, paddingLeft: 3.6, textTransform: 'uppercase' },
+    displayS: { fontFamily: 'PlayfairDisplay_500Medium', fontSize: 22, lineHeight: 28, fontVariant: ['lining-nums'] },
+    stat: { fontFamily: 'PlayfairDisplay_500Medium', fontSize: 48, lineHeight: 60, fontVariant: ['lining-nums'] },
+    mega: { fontFamily: 'PlayfairDisplay_700Bold_Italic', fontSize: 80, lineHeight: 100, paddingRight: 8 },
+    headline: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 21, lineHeight: 28, letterSpacing: -0.1, fontVariant: ['lining-nums'] },
+    title: { fontFamily: 'Jost_500Medium', fontSize: 17, lineHeight: 22 },
+    label: { fontFamily: 'Jost_500Medium', fontSize: 14.5, lineHeight: 18, letterSpacing: 0.3 },
+    caption: { fontFamily: 'Jost_400Regular', fontSize: 12.5, lineHeight: 16, letterSpacing: 0.3 },
+    kicker: { fontFamily: 'Jost_600SemiBold', fontSize: 11, lineHeight: 14, letterSpacing: 2.8 },
+    spaced: { fontFamily: 'Jost_500Medium', fontSize: 12, lineHeight: 16, letterSpacing: 5.5, paddingLeft: 5.5 },
+  },
+  shape: { scale: 0.25, control: 3 },
+  surface: 'framed',
+  layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  colors: {
+    bg: '#F2D6D3',
+    card: '#FBEFEC',
+    cardBorder: 'rgba(92, 34, 66, 0.22)',
+    text: '#3A1730',
+    textSecondary: 'rgba(58, 23, 48, 0.74)',
+    textTertiary: 'rgba(58, 23, 48, 0.58)',
+    glassFill: 'rgba(251, 239, 236, 0.72)',
+    glassOverlay: 'rgba(251, 239, 236, 0.58)',
+    glassFillFallback: 'rgba(251, 239, 236, 0.94)',
+    glassOverlayFallback: 'rgba(251, 239, 236, 0.82)',
+    glassBorder: 'rgba(92, 34, 66, 0.18)',
+    onCover: '#3A1730',
+    sheet: '#F8E6E3',
+    hairline: 'rgba(92, 34, 66, 0.16)',
+    skeleton: 'rgba(92, 34, 66, 0.06)',
+    skeletonHighlight: 'rgba(92, 34, 66, 0.11)',
+    accent: '#6B2A5E',
+    accentInk: '#FBEFEC',
+    up: '#3E7A5A',
+    down: '#B5323F',
+    inverseBg: '#3A1730',
+    inverseText: '#FBEFEC',
+  },
+};
+
+export const themes: Record<ThemeName, Theme> = {
+  dune,
+  space,
+  atlantis,
+  highlands,
+  alpine,
+  matrix,
+  tron,
+  bladerunner,
+  budapest,
+};
+
+export const THEME_ORDER: ThemeName[] = [
+  'dune',
+  'space',
+  'atlantis',
+  'highlands',
+  'alpine',
+  'matrix',
+  'tron',
+  'bladerunner',
+  'budapest',
+];
 
 /** Theme names from before the current themes (saved in older settings). */
 const LEGACY: Record<string, ThemeName> = { dark: 'space', earth: 'highlands', light: 'alpine' };
