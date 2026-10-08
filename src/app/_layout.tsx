@@ -32,6 +32,7 @@ import { SheetHost } from '@/components/SheetHost';
 import { ToastHost } from '@/components/Toast';
 import { applyDevUrlFlags } from '@/dev/previewState';
 import { useAppSync } from '@/hooks/useAppSync';
+import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { configureNotifications } from '@/lib/notifications';
 import { deepDiveStore } from '@/state/deepDives';
 import { readingListStore } from '@/state/readingList';
@@ -106,6 +107,7 @@ function AppStack() {
   const { theme } = useTheme();
   const { onboarded } = useSettings();
   useAppSync();
+  useAppUpdates();
 
   const base = theme.isDark ? DarkTheme : DefaultTheme;
   // Navigation backgrounds match the app theme so transitions never flash white.
