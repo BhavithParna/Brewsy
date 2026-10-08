@@ -1,0 +1,762 @@
+{
+  "date": "2026-10-07",
+  "generatedAt": "2026-10-07T00:00:00Z",
+  "isSample": true,
+  "summary": [
+    "A global bond sell-off pushed the 10-year US Treasury yield to 5.35%, its highest level since 2002.",
+    "Drones sank two cargo ships in NATO members' economic zones for the first time, killing at least two sailors.",
+    "Hackers hijacked three country-code domains to obtain counterfeit security certificates for Google and other big services.",
+    "Paramount closed its $111 billion merger with Warner Bros. Discovery; the combined company is now called Skydance."
+  ],
+  "stories": [
+    {
+      "id": "bond-selloff-yields-2002-high",
+      "topic": "business",
+      "headline": "Bond sell-off pushes US yields to 2002 highs",
+      "dek": "The 10-year Treasury hit 5.35% as traders braced for a $39 billion auction.",
+      "whatHappened": "US Treasury yields climbed again on Wednesday. The benchmark 10-year note rose nearly 8 basis points to 5.35%, its highest level since 2002, and the 30-year bond reached 5.724%, also a 24-year high. The Financial Times reports French, Italian and UK government bonds also came under pressure.",
+      "whyItMatters": "Treasury yields are the baseline for borrowing costs, from mortgages and car loans to company debt. Today's auction tests whether investors will buy at these levels or demand an even bigger premium.",
+      "explainSimply": "Think of the US government as the world's biggest borrower. When lenders get nervous, they ask for more interest before they'll lend. That higher rate trickles down to everyone else's loans, like a price rise at the wholesale market showing up on every shop's shelf.",
+      "background": "Yields have been rising amid concerns about inflation, government debt levels and term risk, the extra return investors want for lending over long periods. This week the Treasury is selling a large batch of debt: $58 billion of 3-year notes on Tuesday, $39 billion of 10-year notes today and $22 billion of 30-year bonds on Thursday.\n\nThe pressure isn't only American. The FT reports volatile trading in French, Italian and UK government bonds, while France's central bank chief said ECB intervention wasn't needed to ease the rout. CNBC notes oil prices moved higher as yields rose.",
+      "keyPlayers": [
+        {
+          "name": "US Treasury",
+          "role": "Selling $39bn of 10-year notes today, the second of three auctions this week"
+        },
+        {
+          "name": "Bond investors",
+          "role": "Deciding whether today's yields are high enough to buy, or demanding more"
+        },
+        {
+          "name": "France, Italy and the UK",
+          "role": "Their government bonds also came under pressure"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Bond yield",
+          "definition": "The yearly return for lending to a government or company. When bond prices fall, yields rise."
+        },
+        {
+          "term": "Basis point",
+          "definition": "One hundredth of a percentage point, so 8 basis points is 0.08%."
+        },
+        {
+          "term": "Term risk",
+          "definition": "The extra return investors want for tying their money up for a long time."
+        }
+      ],
+      "whatToWatch": [
+        "Results of the 10-year auction, due at 1 p.m. ET today",
+        "Thursday's $22 billion sale of 30-year bonds",
+        "Whether European bond markets steady after this week's swings"
+      ],
+      "readTimeMinutes": 2,
+      "sources": [
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/07/treasury-yields-auction-fomc-minutes.html"
+        },
+        {
+          "name": "Financial Times",
+          "url": "https://www.ft.com/content/33c67aa0-bfdb-457b-84bb-960b4fed94b6"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/07/treasury-yields-auction-fomc-minutes.html",
+          "title": "10-year Treasury note yield hits highest level since 2002 as traders brace for key bond sale"
+        },
+        {
+          "name": "Financial Times",
+          "url": "https://www.ft.com/content/33c67aa0-bfdb-457b-84bb-960b4fed94b6",
+          "title": "Global bond sell-off resumes as 30-year Treasury yield hits highest since 2002"
+        },
+        {
+          "name": "Financial Times",
+          "url": "https://www.ft.com/content/d9ba8e1f-54f9-4739-9ce3-94e62d585e26",
+          "title": "French central bank chief says ECB intervention not needed to ease bond rout"
+        }
+      ],
+      "imageUrl": "https://image.cnbcfm.com/api/v1/image/108363665-1789568651170-gettyimages-2295586459-mms19512_dnx4op25.jpeg?v=1789568741&w=1920&h=1080"
+    },
+    {
+      "id": "drones-sink-ships-nato-waters",
+      "topic": "world",
+      "headline": "Drones sink cargo ships inside NATO waters",
+      "dek": "Two ships sank and a third burned in attacks Bulgaria called a blatant violation of international law.",
+      "whatHappened": "Drones sank two cargo ships and damaged a third in the exclusive economic zones of NATO member countries, the first time that has happened, killing at least two sailors. The Togo-flagged Alfa Watan sank and the Palau-flagged Able was set ablaze about 80 miles off Bulgaria on October 6, according to the Associated Press.",
+      "whyItMatters": "Strikes inside NATO members' economic zones mark a notable escalation in attacks on Black Sea shipping. Bulgarian Prime Minister Rumen Radev called it \"an unacceptable attack in Bulgaria's exclusive economic zone.\"",
+      "explainSimply": "An economic zone is like a country's front yard at sea: it doesn't own the water outright, but it has special rights there. These attacks are like a neighbour's fight spilling over the fence. It isn't your fight, but now it's happening on your property.",
+      "background": "Commercial shipping in the Black Sea has increasingly come under attack during Russia's invasion of Ukraine, and Russia has been accused of carrying out \"hybrid warfare\" incidents across Europe. Until now, those attacks had not sunk ships inside NATO members' economic zones.\n\nThe ships were hit by multiple sea and aerial drones. A Bulgarian ferry evacuated the Able's 18 crew members, and two severely injured sailors were flown to hospital in Varna. The fate of the Alfa Watan's crew was not immediately known.",
+      "keyPlayers": [
+        {
+          "name": "Bulgaria",
+          "role": "The Able was hit in its economic zone; PM Rumen Radev called the attack unacceptable"
+        },
+        {
+          "name": "European Union",
+          "role": "Described the attacks as \"unacceptable\""
+        },
+        {
+          "name": "Russia",
+          "role": "Its invasion of Ukraine is the backdrop to rising attacks on Black Sea shipping"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Exclusive economic zone",
+          "definition": "Sea area up to 200 nautical miles off a country's coast where it has special rights over resources."
+        },
+        {
+          "term": "Hybrid warfare",
+          "definition": "Hostile acts short of open war, such as sabotage, cyberattacks or disinformation."
+        }
+      ],
+      "whatToWatch": [
+        "How NATO and the EU respond to attacks inside members' waters",
+        "News on the Alfa Watan's crew",
+        "Whether Black Sea shipping routes change"
+      ],
+      "readTimeMinutes": 2,
+      "sources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/gadgets/2026/10/drone-strikes-likely-russian-sink-ships-in-nato-countries-economic-zones/"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/gadgets/2026/10/drone-strikes-likely-russian-sink-ships-in-nato-countries-economic-zones/",
+          "title": "Drones sink ships near NATO countries in \"unacceptable\" attacks, EU says"
+        }
+      ],
+      "imageUrl": "https://cdn.arstechnica.net/wp-content/uploads/2026/10/Drone-strikes-on-grain-cargo-ships-near-Odesa-1152x648.jpg"
+    },
+    {
+      "id": "counterfeit-tls-certificates-google",
+      "topic": "tech",
+      "headline": "Hackers forge security certificates for Google",
+      "dek": "Attackers hijacked three country domains to mint fake HTTPS credentials for major services.",
+      "whatHappened": "Attackers took over three country-code top-level domains (.gh, .sl and .as) and changed DNS records for selected domains inside them, Google said Tuesday. That let them obtain unauthorized TLS certificates for several Google domains and for other leading brands and widely used online services.",
+      "whyItMatters": "A counterfeit certificate can let an attacker impersonate a trusted website. This attack got in through weaknesses at small domain registries rather than at the big companies themselves.",
+      "explainSimply": "Imagine an ID office that checks who you are by mailing a code to your home address. The hackers hijacked the street's mail delivery, received the code, and walked out with a real ID card in someone else's name.",
+      "background": "TLS certificates are the cryptographic credentials behind the padlock in your browser. Each one binds a domain name such as google.com to a public key, while the matching private key stays with the site's operator, so visitors can check they're talking to the real site.\n\nCertificates are issued after automated checks that the requester controls the domain. By modifying the authoritative DNS records inside the hijacked domains, the attackers passed those checks.",
+      "keyPlayers": [
+        {
+          "name": "Google",
+          "role": "Disclosed the attack on Tuesday; several of its domains were targeted"
+        },
+        {
+          "name": "The attackers",
+          "role": "Hijacked the .gh, .sl and .as country-code domains"
+        },
+        {
+          "name": "Other large services",
+          "role": "Several leading global brands were also targeted"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "TLS certificate",
+          "definition": "A website's digital ID that lets your browser verify it and encrypt the connection."
+        },
+        {
+          "term": "Country-code domain",
+          "definition": "A domain ending tied to a country or territory, like .gh or .uk."
+        },
+        {
+          "term": "DNS",
+          "definition": "The internet's address book, mapping domain names to the servers behind them."
+        }
+      ],
+      "whatToWatch": [
+        "Which other brands and services were affected",
+        "How quickly the counterfeit certificates are revoked",
+        "Security changes at the compromised registries"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/security/2026/10/hackers-obtain-counterfeit-tls-certificates-for-google-and-other-large-services/"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/security/2026/10/hackers-obtain-counterfeit-tls-certificates-for-google-and-other-large-services/",
+          "title": "Hackers obtain counterfeit TLS certificates for Google and other large services"
+        }
+      ],
+      "imageUrl": "https://cdn.arstechnica.net/wp-content/uploads/2026/10/broken-https-tls-1152x648.jpg"
+    },
+    {
+      "id": "openai-chatgpt-eu-watermark",
+      "topic": "ai",
+      "headline": "ChatGPT text gets a hidden watermark in the EU",
+      "dek": "OpenAI turns it on by default in Europe to meet the AI Act. Elsewhere it stays off unless you switch it on.",
+      "whatHappened": "OpenAI will automatically watermark text generated with ChatGPT in the European Union. The feature will also be offered in other regions, but switched off by default. OpenAI's method, called textGrain, hides patterns in word choices that readers can't notice but a detector with the right key can.",
+      "whyItMatters": "Europe now requires AI-generated content to be detectably marked, but no watermark is fully reliable yet. Ars Technica says this one is likely easy to get around, like existing approaches.",
+      "explainSimply": "It's like a baker who always arranges the sprinkles in a secret pattern. You'd never notice, but someone with the pattern key can tell which cakes came from that bakery. Shuffle the sprinkles, though, and the signature disappears.",
+      "background": "The EU AI Act took effect in August and requires content produced by AI models to be marked in a way another tool can detect. Approaches already exist, including Google's SynthID and the C2PA project, but they are relatively easy for someone with basic know-how to get around.\n\nOpenAI's textGrain is proprietary, and the company has published a technical paper explaining how it works. Separately, Google on Tuesday opened its SynthID Detector site to everyone, letting anyone check whether an image, video or audio clip was made with AI.",
+      "keyPlayers": [
+        {
+          "name": "OpenAI",
+          "role": "Turning textGrain watermarks on by default for ChatGPT in the EU"
+        },
+        {
+          "name": "European Union",
+          "role": "Its AI Act requires AI-made content to be detectably marked"
+        },
+        {
+          "name": "Google",
+          "role": "Behind SynthID, and just opened its detector to the public"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "AI watermark",
+          "definition": "A hidden pattern in AI output that a detector with a key can recognise."
+        },
+        {
+          "term": "EU AI Act",
+          "definition": "The European law regulating AI systems, in effect since August."
+        },
+        {
+          "term": "C2PA",
+          "definition": "An industry standard for attaching origin information to media files."
+        }
+      ],
+      "whatToWatch": [
+        "Whether other AI companies switch on watermarks in the EU",
+        "How easily people find ways to strip textGrain",
+        "Whether OpenAI makes it the default elsewhere"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/ai/2026/10/openai-will-watermark-chatgpt-outputs-by-default-but-only-in-the-eu/"
+        },
+        {
+          "name": "TechCrunch",
+          "url": "https://techcrunch.com/2026/10/07/googles-new-synthid-website-can-identify-ai-generated-media/"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/ai/2026/10/openai-will-watermark-chatgpt-outputs-by-default-but-only-in-the-eu/",
+          "title": "OpenAI will watermark ChatGPT outputs by default, but only in the EU"
+        },
+        {
+          "name": "TechCrunch",
+          "url": "https://techcrunch.com/2026/10/07/googles-new-synthid-website-can-identify-ai-generated-media/",
+          "title": "Google's new SynthID website can identify AI-generated media"
+        }
+      ],
+      "imageUrl": "https://cdn.arstechnica.net/wp-content/uploads/2026/09/chatgpt-icon-1152x648-1789154124.jpg"
+    },
+    {
+      "id": "finland-halts-google-data-centres",
+      "topic": "tech",
+      "headline": "Finland halts work on two Google data centres",
+      "dek": "Regulators cite forest clearance, a month after Google's record €13bn pledge.",
+      "whatHappened": "Finland's Licensing and Supervision Agency (LVV) ordered Google to suspend building work at two planned data-centre sites, in Muhos and Kajaani, until environmental impact assessments are complete. It follows concerns over the clearance of more than 300 hectares of forest.",
+      "whyItMatters": "The sites are part of Google's record €13bn ($15bn) Finnish investment, its largest single investment in Europe. The pause shows environmental rules can slow the race to build AI infrastructure.",
+      "explainSimply": "It's like clearing your garden for an extension before the council has approved the plans. The council doesn't cancel the extension. It just tells you to put the shovel down until the paperwork is done.",
+      "background": "Google announced the €13bn investment in Finland less than a month ago. Finland has emerged as a key location for data centres during the AI boom.\n\nThe LVV issued its notice on Tuesday to Google subsidiary Tuike Finland Oy. The agency said work at one site was carried out without a mandatory environmental impact assessment. The suspension covers tree removal, excavation, quarrying, soil moving and road building.",
+      "keyPlayers": [
+        {
+          "name": "Google (Tuike Finland Oy)",
+          "role": "Building the sites; said it had \"fallen short of our own high standards\""
+        },
+        {
+          "name": "LVV",
+          "role": "The Finnish regulator that ordered the work to stop"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Environmental impact assessment",
+          "definition": "A formal study of how a project affects nature, required before some building work."
+        },
+        {
+          "term": "Data centre",
+          "definition": "A building full of servers that powers cloud services and AI."
+        }
+      ],
+      "whatToWatch": [
+        "23 October, the BBC-reported deadline for pausing works that would significantly alter the environment",
+        "When the environmental assessments are completed",
+        "Whether the pause affects Google's wider Finland plans"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/cvj6jkx6g1r0o"
+        },
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/07/google-finland-data-center-halt.html"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/cvj6jkx6g1r0o",
+          "title": "Finland orders halt to work on two Google data centres"
+        },
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/07/google-finland-data-center-halt.html",
+          "title": "Google ordered to halt work on two data centers in 'Texas of Europe'"
+        }
+      ],
+      "imageUrl": "https://ichef.bbci.co.uk/ace/standard/1200/cpsprodpb/8809/live/12b85c00-c1a6-11f1-8fa2-19a1e9b6288f.jpg"
+    },
+    {
+      "id": "paramount-warner-skydance-merger",
+      "topic": "business",
+      "headline": "Paramount and Warner close $111B merger as Skydance",
+      "dek": "Two of Hollywood's biggest studios, plus HBO Max, Paramount+, CBS and CNN, are now one company.",
+      "whatHappened": "Paramount Skydance completed its $111 billion merger with Warner Bros. Discovery after Supreme Court Justice Elena Kagan rejected a last-ditch effort to block it. The combined company, called Skydance and led by CEO David Ellison, brings together two major studios, Paramount+, HBO Max, CBS, CNN and sports brands including TNT Sports.",
+      "whyItMatters": "Fewer, bigger media companies now control more of what people watch. Ars Technica reports HBO Max, Paramount+ and Discovery+ will be unified into one service, which could lead to higher prices.",
+      "explainSimply": "Picture two big supermarket chains merging. You get one giant store with almost everything under one roof, but fewer rival stores nearby to keep prices in check.",
+      "background": "The new company takes the name of Skydance, a firm Paramount bought in a separate deal last year. David Ellison's long-anticipated deal to combine Paramount-Skydance with Warner Bros. Discovery faced months of public protests.\n\nCalifornia and 11 other states sued to stop it, and in July US District Judge Araceli Martínez-Olguín ruled the combination would likely reduce competition substantially and violate antitrust laws. The deal ultimately cleared its legal and regulatory challenges in the US and Europe.",
+      "keyPlayers": [
+        {
+          "name": "David Ellison",
+          "role": "CEO and chairman of the new Skydance"
+        },
+        {
+          "name": "Warner Bros. Discovery",
+          "role": "Owner of HBO Max, CNN and Warner Bros., now part of Skydance"
+        },
+        {
+          "name": "California and 11 other states",
+          "role": "Sued to block the merger"
+        },
+        {
+          "name": "Justice Elena Kagan",
+          "role": "Rejected the last-ditch effort to stop the deal"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Antitrust law",
+          "definition": "Rules meant to stop companies becoming so dominant that competition suffers."
+        },
+        {
+          "term": "Streaming bundle",
+          "definition": "Several streaming services offered together as one subscription."
+        }
+      ],
+      "whatToWatch": [
+        "How HBO Max, Paramount+ and Discovery+ are merged into one service",
+        "Pricing for the combined service",
+        "Changes at CBS and CNN under the new owner"
+      ],
+      "readTimeMinutes": 2,
+      "sources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/tech-policy/2026/10/paramount-completes-111b-warner-merger-creating-skydance-behemoth/"
+        },
+        {
+          "name": "NPR",
+          "url": "https://www.npr.org/2026/10/06/nx-s1-5988283/paramount-warner-bros-skydance-merger-david-ellison"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/tech-policy/2026/10/paramount-completes-111b-warner-merger-creating-skydance-behemoth/",
+          "title": "Paramount completes $111B Warner merger, creating \"Skydance\" behemoth"
+        },
+        {
+          "name": "NPR",
+          "url": "https://www.npr.org/2026/10/06/nx-s1-5988283/paramount-warner-bros-skydance-merger-david-ellison",
+          "title": "New Hollywood era begins with an epic mega merger between Paramount and Warner Bros."
+        },
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/gadgets/2026/10/hbo-max-paramount-and-discovery-will-unify-into-a-single-service/",
+          "title": "HBO Max, Paramount+, and Discovery+ \"will unify into a single service\""
+        }
+      ],
+      "imageUrl": "https://npr.brightspotcdn.com/dims3/default/strip/false/crop/5000x2813+0+0/resize/1400/quality/85/format/jpeg/?url=http%3A%2F%2Fnpr-brightspot.s3.amazonaws.com%2F17%2Ff6%2F40e1f7a24e7680e021cc2dd27746%2Fgettyimages-2271654832.jpg"
+    },
+    {
+      "id": "mistral-large-4-le-chonk",
+      "topic": "ai",
+      "headline": "Mistral unveils 'le Chonk', a trillion-parameter open model",
+      "dek": "France's AI champion says Mistral Large 4 ranks among the best open models in the world.",
+      "whatHappened": "Mistral unveiled Mistral Large 4 (ML4), nicknamed \"le Chonk\", on Tuesday. The French company says the 1-trillion-parameter model ranks among the best open models in the world and is particularly strong at cyber, coding, manufacturing, finance and multimodal tasks.",
+      "whyItMatters": "The most capable open AI models have so far been Chinese, and access to them has become a flashpoint in the US–China tech race. This is Europe's strongest bid yet to compete.",
+      "explainSimply": "An open model is like a recipe published in full, instead of a dish you can only order at one restaurant. Anyone can cook it, tweak it and serve it in their own kitchen, which is why it matters who publishes the best recipes.",
+      "background": "Western developers are racing to close the gap with Chinese companies in open-weight and open-source AI.\n\nMistral, long considered Europe's only answer to OpenAI and Anthropic, raised a €3 billion ($3.4 billion) Series D in September at a €21 billion valuation, cementing it as one of the best-funded AI startups in the region.",
+      "keyPlayers": [
+        {
+          "name": "Mistral",
+          "role": "French AI company behind Mistral Large 4"
+        },
+        {
+          "name": "Chinese AI developers",
+          "role": "Have produced the most capable open models so far"
+        },
+        {
+          "name": "OpenAI and Anthropic",
+          "role": "The US companies Mistral is most often compared with"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Open model",
+          "definition": "An AI model whose weights are published so anyone can run and modify it."
+        },
+        {
+          "term": "Parameters",
+          "definition": "The internal numbers a model learns in training; more usually means a bigger model."
+        },
+        {
+          "term": "Multimodal",
+          "definition": "Able to work with more than text, such as images."
+        }
+      ],
+      "whatToWatch": [
+        "Independent tests of how Mistral Large 4 compares with leading open models",
+        "Which companies adopt it for coding, finance and cyber work"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/06/mistral-ai-model-le-chonk.html"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/06/mistral-ai-model-le-chonk.html",
+          "title": "Mistral unveils new AI model it says rivals best open systems from China"
+        }
+      ],
+      "imageUrl": "https://image.cnbcfm.com/api/v1/image/108312961-1779950527402-gettyimages-2261818985-INDIA_AI_GOOGLE.jpeg?v=1779950533&w=1920&h=1080"
+    },
+    {
+      "id": "nobel-chemistry-2026-kagan-soai",
+      "topic": "world",
+      "headline": "Chemistry Nobel solves the mystery of life's mirror molecules",
+      "dek": "Henri B. Kagan and Kenso Soai explained how life ends up using just one 'hand' of a molecule.",
+      "whatHappened": "The 2026 Nobel Prize in Chemistry went to French scientist Henri B. Kagan and Japan's Kenso Soai for discovering non-linear effects and autocatalysis in asymmetric organic synthesis. Their work explains how life's preference for one mirror-image form of a molecule can emerge spontaneously.",
+      "whyItMatters": "The Nobel Committee called the reactions \"spectacular\" and said the discoveries have been decisive for chemists who design reactions to make pharmaceuticals.",
+      "explainSimply": "Your left and right hands are mirror images, but a left glove won't fit your right hand. Molecules work the same way, and life only ever wears one of the gloves. Kagan and Soai showed how a tiny head start for one hand can snowball until it takes over.",
+      "background": "Many molecules come in two forms that are mirror images of each other. Amino acids, the building blocks of proteins, are one example, yet living organisms on Earth only function with one of the two forms.\n\nWhy life favours one form, a property called homochirality, was a chemical mystery more than a century old. \"Henri Kagan and Kenso Soai have provided a solution,\" said Heiner Linke, chair of the Nobel Committee for Chemistry.",
+      "keyPlayers": [
+        {
+          "name": "Henri B. Kagan",
+          "role": "French chemist at Université Paris-Sud, born 1930"
+        },
+        {
+          "name": "Kenso Soai",
+          "role": "Japanese chemist at Tokyo University of Science, born 1950"
+        },
+        {
+          "name": "Nobel Committee for Chemistry",
+          "role": "Awarded the prize; chair Heiner Linke called the work spectacular"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Chirality",
+          "definition": "When a molecule can't be laid exactly over its mirror image, like left and right hands."
+        },
+        {
+          "term": "Homochirality",
+          "definition": "Life's use of only one of the two mirror-image forms."
+        },
+        {
+          "term": "Autocatalysis",
+          "definition": "A reaction whose product speeds up that same reaction."
+        }
+      ],
+      "whatToWatch": [
+        "How the work shapes the way medicines are made",
+        "The rest of this year's Nobel announcements, including economics"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/c6ly038jg0d4o"
+        },
+        {
+          "name": "NPR",
+          "url": "https://www.npr.org/2026/10/07/g-s1-146849/nobel-prize-chemistry"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/c6ly038jg0d4o",
+          "title": "Chemistry Nobel awarded for solving mystery of life's asymmetry"
+        },
+        {
+          "name": "NPR",
+          "url": "https://www.npr.org/2026/10/07/g-s1-146849/nobel-prize-chemistry",
+          "title": "Henri B. Kagan and Kenso Soai win Nobel Prize in chemistry"
+        }
+      ],
+      "imageUrl": "https://ichef.bbci.co.uk/ace/standard/1200/cpsprodpb/caf1/live/a5f2fc60-c23b-11f1-be2f-0fbd447d6e43.png"
+    },
+    {
+      "id": "spacex-40bn-nvidia-chips",
+      "topic": "ai",
+      "headline": "SpaceX looks to raise $40bn to buy Nvidia chips",
+      "dek": "A blockbuster debt deal shows how much money is pouring into AI hardware.",
+      "whatHappened": "SpaceX is looking to raise $40bn to buy Nvidia chips, according to the Financial Times, which describes it as a blockbuster debt deal.",
+      "whyItMatters": "The FT calls it the latest sign of the vast spending on chips and other infrastructure underpinning AI. The full story is behind the FT's paywall, so the deal's terms aren't included here.",
+      "explainSimply": "It's like taking out a huge loan not to buy a house, but to buy the bricks. Chips are the raw material every AI system is built from.",
+      "background": "It comes amid a wider rush of money into AI computing. TechCrunch reports Nvidia-backed Lambda is raising up to $4 billion at a $14.5 billion pre-money valuation ahead of a planned 2027 IPO, and CNBC reports China's DeepSeek is weighing upsizing its funding round to as much as $14.9 billion.",
+      "keyPlayers": [
+        {
+          "name": "SpaceX",
+          "role": "Seeking to raise $40bn in debt"
+        },
+        {
+          "name": "Nvidia",
+          "role": "Maker of the AI chips SpaceX wants to buy"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Debt raise",
+          "definition": "Borrowing money, for example through loans or bonds, rather than selling shares."
+        },
+        {
+          "term": "AI chips",
+          "definition": "Specialised processors, like Nvidia's GPUs, used to train and run AI models."
+        }
+      ],
+      "whatToWatch": [
+        "The deal's terms once reported in full",
+        "More big AI infrastructure fundraisings, like Lambda's"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "Financial Times",
+          "url": "https://www.ft.com/content/d3f5928d-f38c-4666-8f7a-8737f9c45f51"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Financial Times",
+          "url": "https://www.ft.com/content/d3f5928d-f38c-4666-8f7a-8737f9c45f51",
+          "title": "SpaceX looks to raise $40bn to buy Nvidia chips"
+        },
+        {
+          "name": "TechCrunch",
+          "url": "https://techcrunch.com/2026/10/06/ai-computing-startup-lambda-to-raise-4b-ahead-of-planned-ipo/",
+          "title": "AI computing startup Lambda to raise $4B ahead of planned IPO"
+        },
+        {
+          "name": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/06/deepseek-funding-round.html",
+          "title": "DeepSeek considers doubling latest funding round to up to $15 billion, sources say"
+        }
+      ],
+      "imageUrl": "https://images.ft.com/v3/image/raw/https%3A%2F%2Fd1e00ek4ebabms.cloudfront.net%2Fproduction%2Ff59443eb-3ccd-42df-80d7-21a09e251ae6.jpg?source=next-home-page&dpr=2&width=580&fit=scale-down"
+    },
+    {
+      "id": "kenya-first-ebola-case",
+      "topic": "world",
+      "headline": "Kenya quarantines contacts after its first Ebola case",
+      "dek": "The patient travelled from DR Congo through Uganda before dying in Nairobi.",
+      "whatHappened": "Ten people who came into contact with a man who died of Ebola in Kenya have been quarantined, and health officials are trying to trace 57 other contacts. The patient travelled from the Democratic Republic of Congo and died in hospital in Nairobi on Monday. It is Kenya's first-ever Ebola case.",
+      "whyItMatters": "The patient was sick for a month yet crossed several borders undetected, raising concerns about screening measures in the region.",
+      "explainSimply": "Contact tracing is like finding everyone who touched a wet-paint sign. You list every person the patient met, then watch them closely so any new case is caught before it spreads further.",
+      "background": "According to the head of the Africa Centres for Disease Control and Prevention, the patient passed through multiple cities in DR Congo, drove to Uganda and eventually flew to Kenya without his illness being detected.\n\nKenyan health officials have quarantined 10 contacts and are tracing 57 more.",
+      "keyPlayers": [
+        {
+          "name": "Kenyan health officials",
+          "role": "Quarantining 10 contacts and tracing 57 more"
+        },
+        {
+          "name": "Africa CDC",
+          "role": "Its chief raised concerns about how the case went undetected"
+        },
+        {
+          "name": "DR Congo and Uganda",
+          "role": "Countries the patient passed through"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Contact tracing",
+          "definition": "Finding and monitoring everyone an infected person was in contact with."
+        },
+        {
+          "term": "Quarantine",
+          "definition": "Keeping possibly exposed people apart to see whether they fall ill."
+        }
+      ],
+      "whatToWatch": [
+        "Whether any of the contacts test positive",
+        "Changes to screening at borders and airports"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/c6eq3x3v11d5o"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "BBC News",
+          "url": "https://www.bbc.co.uk/news/articles/c6eq3x3v11d5o",
+          "title": "Ten people linked to Kenya's first-ever Ebola case quarantined as screening concerns grow"
+        }
+      ],
+      "imageUrl": "https://ichef.bbci.co.uk/ace/standard/1200/cpsprodpb/3fff/live/a4989950-c237-11f1-be2f-0fbd447d6e43.jpg"
+    }
+  ],
+  "alsoHappening": [
+    {
+      "id": "weston-family-buys-boots",
+      "topic": "business",
+      "headline": "Canada's Weston family buys UK pharmacy chain Boots for $8.9 billion",
+      "whatHappened": "Canada's Weston family agreed to buy the UK pharmacy chain Boots in a deal worth $8.9 billion, Reuters reported.",
+      "whyItMatters": "",
+      "sources": [
+        {
+          "name": "Reuters",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNUG11N3dHZGxrZ1B6aTRhakp3TkRiZVFsUmtocWZwTkR6VVhQX1FPS19jR1c0aXRkSWZZUVhVbHoxUFJoZWlGbWdEWjlJT0pOMjVZZDJJRXlDSVUyaWR0dVdPTWp1bDJ4bzFhMTl4TmZEaGpjVXBKR0xHM0FvU29kVUFmZlNkZWRDQnZGNlFoSlIyZjhscXhmYWhSaXhPQ19hcExCNkVmYUs2bWQybm5sMlozWmk?oc=5",
+          "title": "Canada's Weston family buys UK pharmacy chain Boots for $8.9 billion"
+        }
+      ]
+    },
+    {
+      "id": "biohub-ai-biology-data",
+      "topic": "ai",
+      "headline": "US government and Google join Biohub’s $1.8 billion push for AI biology data",
+      "whatHappened": "The US government and Google are joining the Zuckerberg-backed Biohub in a $1.8 billion effort to gather biology data for AI, Reuters reported.",
+      "whyItMatters": "",
+      "sources": [
+        {
+          "name": "Reuters",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxOWTdsWTdFWVdPWUFDRjN1RGd6el9PR3NQNFN5blFINGVqVUNRcXMtaW5JcDQ0OV9IejBJa0stOHFnaG9Kd0Q3N3BObTEtQWFXYW9ad2JCS09oQV9iWlB6dU1RSktCSnExdWVUdnRXQmE3aTNCdm5LV01TTW9vbG9sRkctZFhoNm1wdGlqcGtRd3RhRFlzUWt1dElpV0NocGtvYlgyenBlUG5ZV0N6eHUzTXVYSDhzWWROWUhDNlJRYnhwc3Q0SVZzUjUxQUp0OFNkbmFrZEpiNDZweEdRbG9nLUgtZw?oc=5",
+          "title": "US government, Google join Zuckerberg-backed Biohub in $1.8 billion push for AI biology data"
+        }
+      ]
+    },
+    {
+      "id": "denmark-russia-sabotage",
+      "topic": "world",
+      "headline": "Denmark says Russia has carried out sabotage attacks on its defence firms",
+      "whatHappened": "Denmark said Russia has conducted sabotage attacks against Danish defence companies, according to Reuters.",
+      "whyItMatters": "",
+      "developing": true,
+      "sources": [
+        {
+          "name": "Reuters",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxONEdMa2pKZE5hbUt4S1RoWVlyTm5Zbkc3NlRtTlhmejR6WWdpc2dOZ00xV0RvNmZnckNCX1B2OW5XMDRlT0RnamV2WjJGTm5DZHNoR20wQjU2REMyTkxCYmlGdFpEempBTmszN210R2wyNWhJTnhqMHU1WjZCeERkOUhvME56TFhGdXR0QW9yY2J5cmFIMXpLY1RFdmZITUwtTHR5anpvRzc0aVNhZHpkUFpEMk5JbGZONVdtZjJIQWYxbGFYQzN5MmdVNm5CSnZDeTJfWjZn?oc=5",
+          "title": "Denmark says Russia has conducted sabotage attacks against its defense firms"
+        }
+      ]
+    },
+    {
+      "id": "nobel-physics-2026-halzen",
+      "topic": "world",
+      "headline": "Neutrino physicist Francis Halzen wins the 2026 Nobel Prize in Physics",
+      "whatHappened": "Francis Halzen of the University of Wisconsin-Madison, who led the development of the IceCube Neutrino Observatory, won the 2026 Nobel Prize in Physics.",
+      "whyItMatters": "",
+      "sources": [
+        {
+          "name": "Ars Technica",
+          "url": "https://arstechnica.com/science/2026/10/neutrino-physicist-wins-2026-nobel-physics-prize/",
+          "title": "Neutrino physicist wins 2026 Nobel Physics Prize"
+        }
+      ]
+    },
+    {
+      "id": "georgia-uranium-sale-arrest",
+      "topic": "world",
+      "headline": "Georgia arrests a man over an attempted $700,000 uranium sale",
+      "whatHappened": "Authorities in Georgia arrested a man over an attempted sale of uranium worth $700,000, Reuters reported.",
+      "whyItMatters": "",
+      "sources": [
+        {
+          "name": "Reuters",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPX25fMlA3U2pUVm9Ta1Z6WVJKZ0t1TjFsNXh1dGcwSElOV2U2dEFlSXNOR3hwY2MwTmdSRUtheFM1SjRGdGN0N1doM1d4WjBzRWRQSUUyeFA3THRrLVYzSlpmaHJYVG12UmJDd2JOUmZDV1pXYmJjMEUtaEVTYlFzODlDMUljWTVUSU9qOWlhSmVfZmN5UHEzTnZ6aWgwZ3Fn?oc=5",
+          "title": "Georgia arrests man over attempted $700,000 uranium sale"
+        }
+      ]
+    }
+  ],
+  "calendar": [
+    {
+      "time": "1:00 PM ET",
+      "title": "Results of the $39bn 10-year Treasury auction",
+      "topic": "business"
+    },
+    {
+      "time": "Thu",
+      "title": "Treasury sells $22bn of 30-year bonds",
+      "topic": "business"
+    },
+    {
+      "time": "Oct 23",
+      "title": "Deadline for Google to pause work at its Finnish data-centre sites",
+      "topic": "tech"
+    }
+  ],
+  "markets": [
+    {
+      "id": "spx",
+      "label": "S&P 500",
+      "value": 6912.4,
+      "change": 0.38,
+      "changeUnit": "percent",
+      "format": "index"
+    },
+    {
+      "id": "ndx",
+      "label": "Nasdaq",
+      "value": 23480.15,
+      "change": 0.52,
+      "changeUnit": "percent",
+      "format": "index"
+    },
+    {
+      "id": "btc",
+      "label": "Bitcoin",
+      "value": 83191,
+      "change": -3.46,
+      "changeUnit": "percent",
+      "format": "usd"
+    },
+    {
+      "id": "wti",
+      "label": "Oil (WTI)",
+      "value": 68.42,
+      "change": 0.91,
+      "changeUnit": "percent",
+      "format": "usd"
+    },
+    {
+      "id": "us10y",
+      "label": "10-yr yield",
+      "value": 5.35,
+      "change": 8,
+      "changeUnit": "bp",
+      "format": "percent"
+    }
+  ]
+}
