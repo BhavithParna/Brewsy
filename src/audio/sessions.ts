@@ -124,9 +124,12 @@ export function editionSessionId(date: string, mode: ListenMode) {
   return `edition:${date}:${mode}`;
 }
 
-/** The whole edition as a listening session. "Since this morning" stories go first. */
+/**
+ * The whole edition as a listening session. "Since this morning" stories go first, then the
+ * stories in Today's order: by topic (`topics` in the reader's order, focus topics first), then rank.
+ */
 export function editionSession(b: Briefing, mode: ListenMode, topics: Topic[]): Session {
-  const stories = b.stories.filter((s) => topics.includes(s.topic));
+  const stories = topics.flatMap((t) => b.stories.filter((s) => s.topic === t));
   const audio = b.audio?.[mode] ?? null;
   const chapters = [
     ...(b.sinceThisMorning ?? []).filter((s) => topics.includes(s.topic)).map((s) => updateChapter(s, b.date)),

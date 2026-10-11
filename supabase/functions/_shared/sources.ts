@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THE NEWS SOURCES. Edit this list to add or remove feeds.
 //
-// Brewsy casts a wide net (≈100 feeds across 13 topics), groups articles about
+// Brewsy casts a wide net (≈125 feeds across 14 topics), groups articles about
 // the same event, scores each group, and only then narrows down. Each source has:
 //
 // - `outlet`    What you see in the app (Settings → Sources toggles use it).
@@ -12,8 +12,8 @@
 //     'major'       Major newsrooms. Wire + major outlets are the "major outlets"
 //                   counted by the must-include rule (5+ of them → always included).
 //     'tech'        Tech and AI press, and the tech aggregators.
-//     'specialist'  Specialist press for one beat: cars, games, sport, film and
-//                   music, crypto, health, climate, science, politics.
+//     'specialist'  Specialist press for one beat: cars, games, sport, film, TV
+//                   and music, crypto, health, climate, science, politics.
 //     'official'    Primary sources: company newsrooms, AI lab blogs, the Fed,
 //                   SEC filings, the White House. Adds "impact" to a story.
 //     'safety-net'  Aggregators (Yahoo News). Each item is credited to its real
@@ -47,6 +47,13 @@
 // checking (Oct 2026): ESPN (serves a web page instead of RSS), Automotive News
 // (403), Bloomberg Green (404), the WHO feed and Carbon Brief (no new items for
 // days), Space.com and the NYT Sports feed (empty), Formula 1 (no dates).
+// Film, checked Oct 2026: Cineuropa (doesn't answer), Box Office Pro and Asian
+// Movie Pulse (403), Film Companion (empty feed), Empire (404), BFI, Letterboxd
+// Journal, RogerEbert.com, MUBI Notebook and Little White Lies (features and
+// reviews, rarely anything inside the 24-hour window), Collider and /Film (mostly
+// listicles), NDTV Movies and Hindustan Times' Bollywood feed (mostly celebrity
+// gossip). Film and entertainment feeds also skip gossip headlines (feeds.ts).
+// Indian Express Entertainment is kept for its Malayalam, Tamil and Telugu film news.
 //
 // Plain data only: the app imports this file too, so no Deno/npm imports here.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,7 +61,7 @@
 // Same names as `Topic` in types.ts (kept literal: the app imports this file too).
 export type TopicHint =
   | 'ai' | 'tech' | 'business' | 'world' | 'politics' | 'science' | 'health' | 'climate'
-  | 'autos' | 'gaming' | 'sports' | 'entertainment' | 'crypto' | 'mixed';
+  | 'autos' | 'gaming' | 'sports' | 'entertainment' | 'movies' | 'crypto' | 'mixed';
 export type SourceCategory = 'wire' | 'major' | 'tech' | 'specialist' | 'official' | 'safety-net';
 export type Trust = 'high' | 'medium' | 'low';
 
@@ -140,10 +147,13 @@ export const SOURCES: FeedSource[] = [
   // Sport
   { id: 'bbc-sport', outlet: 'BBC News', kind: 'rss', topicHint: 'sports', category: 'major', trust: 'high', url: bbc('sport') },
   { id: 'guardian-sport', outlet: 'The Guardian', kind: 'rss', topicHint: 'sports', category: 'major', trust: 'high', url: guardian('uk/sport') },
-  // Film, TV, music and the arts
+  // TV, music and the arts (their film coverage arrives through the movie feeds below too)
   { id: 'nyt-arts', outlet: 'New York Times', kind: 'rss', topicHint: 'entertainment', category: 'major', trust: 'high', url: nyt('Arts') },
   { id: 'bbc-entertainment', outlet: 'BBC News', kind: 'rss', topicHint: 'entertainment', category: 'major', trust: 'high', url: bbc('news/entertainment_and_arts') },
   { id: 'guardian-culture', outlet: 'The Guardian', kind: 'rss', topicHint: 'entertainment', category: 'major', trust: 'high', url: guardian('culture') },
+  // Film: Indian newsrooms' cinema desks (Bollywood and the regional film industries)
+  { id: 'hindu-movies', outlet: 'The Hindu', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://www.thehindu.com/entertainment/movies/feeder/default.rss' },
+  { id: 'indian-express-entertainment', outlet: 'The Indian Express', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://indianexpress.com/section/entertainment/feed/' },
 
   // ── Tech and AI ──
   { id: 'verge', outlet: 'The Verge', kind: 'rss', topicHint: 'tech', category: 'tech', trust: 'medium', url: 'https://www.theverge.com/rss/index.xml' },
@@ -191,11 +201,25 @@ export const SOURCES: FeedSource[] = [
   { id: 'sky-sports', outlet: 'Sky Sports', kind: 'rss', topicHint: 'sports', category: 'specialist', trust: 'medium', url: 'https://www.skysports.com/rss/12040' },
   { id: 'cbs-sports', outlet: 'CBS Sports', kind: 'rss', topicHint: 'sports', category: 'specialist', trust: 'medium', url: 'https://www.cbssports.com/rss/headlines/' },
   { id: 'motorsport', outlet: 'Motorsport.com', kind: 'rss', topicHint: 'sports', category: 'specialist', trust: 'medium', url: 'https://www.motorsport.com/rss/f1/news/' },
-  // Film, TV and music
+  // TV, music and the entertainment industry (the trades' film desks are under Film, below)
   { id: 'variety', outlet: 'Variety', kind: 'rss', topicHint: 'entertainment', category: 'specialist', trust: 'medium', url: 'https://variety.com/feed/' },
   { id: 'hollywood-reporter', outlet: 'The Hollywood Reporter', kind: 'rss', topicHint: 'entertainment', category: 'specialist', trust: 'medium', url: 'https://www.hollywoodreporter.com/feed/' },
   { id: 'deadline', outlet: 'Deadline', kind: 'rss', topicHint: 'entertainment', category: 'specialist', trust: 'medium', url: 'https://deadline.com/feed/' },
   { id: 'billboard', outlet: 'Billboard', kind: 'rss', topicHint: 'entertainment', category: 'specialist', trust: 'medium', url: 'https://www.billboard.com/feed/' },
+  // Film. Hollywood trades: releases, box office, casting, deals, festivals
+  { id: 'variety-film', outlet: 'Variety', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://variety.com/v/film/feed/' },
+  { id: 'deadline-film', outlet: 'Deadline', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://deadline.com/v/film/feed/' },
+  { id: 'hollywood-reporter-movies', outlet: 'The Hollywood Reporter', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.hollywoodreporter.com/c/movies/feed/' },
+  { id: 'indiewire', outlet: 'IndieWire', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.indiewire.com/feed/' },
+  // World cinema, festivals and independent film
+  { id: 'screen-daily', outlet: 'Screen Daily', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.screendaily.com/45202.rss' },
+  { id: 'the-playlist', outlet: 'The Playlist', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://theplaylist.net/feed/' },
+  { id: 'film-stage', outlet: 'The Film Stage', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://thefilmstage.com/feed/' },
+  { id: 'world-of-reel', outlet: 'World of Reel', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://www.worldofreel.com/blog?format=rss' },
+  // Indian cinema: Bollywood, the South Indian industries, box office
+  { id: 'bollywood-hungama', outlet: 'Bollywood Hungama', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.bollywoodhungama.com/feed/' },
+  { id: 'cinema-express', outlet: 'Cinema Express', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.cinemaexpress.com/stories.rss' },
+  { id: 'koimoi', outlet: 'Koimoi', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://www.koimoi.com/feed/' },
   // Crypto
   { id: 'coindesk', outlet: 'CoinDesk', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'medium', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
   { id: 'the-block', outlet: 'The Block', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'medium', url: 'https://www.theblock.co/rss.xml' },
@@ -348,6 +372,17 @@ export const OUTLET_ALIASES: Record<string, string> = {
   'hollywood reporter': 'The Hollywood Reporter',
   'deadline': 'Deadline',
   'billboard': 'Billboard',
+  'indiewire': 'IndieWire',
+  'screen daily': 'Screen Daily',
+  'screen international': 'Screen Daily',
+  'the playlist': 'The Playlist',
+  'the film stage': 'The Film Stage',
+  'world of reel': 'World of Reel',
+  'bollywood hungama': 'Bollywood Hungama',
+  'bollywoodhungama.com': 'Bollywood Hungama',
+  'cinema express': 'Cinema Express',
+  'koimoi': 'Koimoi',
+  'koimoi.com': 'Koimoi',
   'coindesk': 'CoinDesk',
   'the block': 'The Block',
   'decrypt': 'Decrypt',

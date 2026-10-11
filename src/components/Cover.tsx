@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { backgroundAt } from '@/theme/themes';
 import { withAlpha } from '@/theme/tokens';
 
 type Props = {
@@ -15,16 +16,23 @@ type Props = {
 /**
  * The theme's photo across the top of a screen. It scrolls with the page and
  * dissolves into the background color before any text, so nothing is read on top of a busy photo.
+ * Themes with a backdrop (Glass) draw nothing here: the wallpaper behind the page is the cover.
  */
 export function Cover({ height, children, style }: Props) {
   const { theme } = useTheme();
-  const base = theme.background[0];
+  const { height: screenH } = useWindowDimensions();
+  if (theme.backdrop) return <View style={[{ height }, style]}>{children}</View>;
+
+  const top = theme.background[0];
+  // The background behind the page is fixed to the screen, so a gradient theme (Atlantis) is a
+  // different color where the cover ends: fade into that color, so there's no seam at rest.
+  const base = backgroundAt(theme, height / Math.max(1, screenH)) ?? top;
   return (
     <View style={[{ height }, style]}>
       <View style={[StyleSheet.absoluteFill, styles.clip]} pointerEvents="none">
         <Image source={theme.cover} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} accessible={false} />
         {/* Keeps the status bar and the top buttons legible. */}
-        <LinearGradient colors={[withAlpha(base, 0.5), withAlpha(base, 0)]} style={styles.top} />
+        <LinearGradient colors={[withAlpha(top, 0.5), withAlpha(top, 0)]} style={styles.top} />
         <LinearGradient
           colors={[withAlpha(base, 0), withAlpha(base, 0.82), base]}
           locations={[0, 0.55, 1]}

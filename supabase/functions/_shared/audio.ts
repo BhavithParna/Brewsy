@@ -15,7 +15,7 @@ import { joinMp3, type Mp3Audio, parseMp3 } from './mp3.ts';
 import { mapLimit } from './pipeline.ts';
 import { SCRIPT_SYSTEM, scriptPrompt, scriptSchema, type ScriptStory } from './prompts.ts';
 import { slugify, wordCount } from './text.ts';
-import { type AudioChapter, type AudioEdition, type Briefing, type BriefingAudio, type ListenMode, TOPICS } from './types.ts';
+import { type AudioChapter, type AudioEdition, type Briefing, type BriefingAudio, type ListenMode, type Topic, TOPICS } from './types.ts';
 import { type ScriptDraft, validateScript } from './validate.ts';
 
 export type AudioDeps = {
@@ -73,9 +73,13 @@ export function sanitizeScript(text: string): string {
     .trim();
 }
 
-/** The same order Today shows stories in: by topic, then rank. */
-export function storiesInListenOrder(b: Briefing): Briefing['stories'] {
-  return TOPICS.flatMap((t) => b.stories.filter((s) => s.topic === t));
+/**
+ * The same order Today shows stories in: by topic, then rank. `order` puts the
+ * reader's "more of this" topics first (prefs.ts topicOrder), as Today does.
+ */
+export function storiesInListenOrder(b: Briefing, order: Topic[] = TOPICS): Briefing['stories'] {
+  const topics = [...order, ...TOPICS.filter((t) => !order.includes(t))];
+  return topics.flatMap((t) => b.stories.filter((s) => s.topic === t));
 }
 
 function firstSentence(s: string): string {
@@ -83,18 +87,18 @@ function firstSentence(s: string): string {
 }
 
 /** If the script call fails, a plain spoken version made from the edition text. */
-export function fallbackScript(mode: ListenMode, b: Briefing): ScriptDraft {
+export function fallbackScript(mode: ListenMode, b: Briefing, order: Topic[] = TOPICS): ScriptDraft {
   return {
     summary: b.summary.join(' '),
-    stories: storiesInListenOrder(b).map((s, i) => ({
+    stories: storiesInListenOrder(b, order).map((s, i) => ({
       storyId: s.id,
       text: `${i === 0 ? 'First' : 'Next'}: ${s.headline}. ${mode === 'quick' ? firstSentence(s.whatHappened) : `${s.whatHappened} Why it matters: ${s.whyItMatters}`}`,
     })),
   };
 }
 
-async function writeScript(mode: ListenMode, b: Briefing, deps: AudioDeps): Promise<{ script: ScriptDraft; ai: boolean }> {
-  const stories = storiesInListenOrder(b);
+async function writeScript(mode: ListenMode, b: Briefing, deps: AudioDeps, order: Topic[]): Promise<{ script: ScriptDraft; ai: boolean }> {
+  const stories = storiesInListenOrder(b, order);
   const input: ScriptStory[] = stories.map((s) => ({
     id: s.id, topic: s.topic, headline: s.headline, dek: s.dek, whatHappened: s.whatHappened, whyItMatters: s.whyItMatters, developing: s.developing,
   }));
@@ -118,7 +122,7 @@ async function writeScript(mode: ListenMode, b: Briefing, deps: AudioDeps): Prom
       if (e instanceof LlmError && !e.retryable && e.status === null) break; // no key: use the fallback
     }
   }
-  return { script: fallbackScript(mode, b), ai: false };
+  return { script: fallbackScript(mode, b, order), ai: false };
 }
 
 /** Chapters with scripts, before any audio. */
@@ -144,12 +148,17 @@ function textOnly(mode: ListenMode, chapters: AudioChapter[]): AudioEdition {
 }
 
 /** Builds both versions. Never throws for TTS problems: a version without audio is still useful. */
-export async function buildAudio(b: Briefing, deps: AudioDeps, opts: { stamp?: number } = {}): Promise<{ audio: BriefingAudio; stats: AudioStats }> {
+export async function buildAudio(
+  b: Briefing,
+  deps: AudioDeps,
+  /** `order`: topics in running order, the reader's "more of this" topics first (default: the usual order). */
+  opts: { stamp?: number; order?: Topic[] } = {},
+): Promise<{ audio: BriefingAudio; stats: AudioStats }> {
   const started = Date.now();
   const stamp = opts.stamp ?? Date.now();
   const modes: ListenMode[] = ['quick', 'full'];
 
-  const scripts = await Promise.all(modes.map((m) => writeScript(m, b, deps)));
+  const scripts = await Promise.all(modes.map((m) => writeScript(m, b, deps, opts.order ?? TOPICS)));
   const chapters = Object.fromEntries(modes.map((m, i) => [m, chaptersFor(b, scripts[i].script)])) as Record<ListenMode, AudioChapter[]>;
   const ttsErrors: string[] = [];
   const editions = {} as Record<ListenMode, AudioEdition>;

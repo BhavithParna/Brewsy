@@ -2,8 +2,8 @@ import { assert, assertEquals } from 'jsr:@std/assert@1';
 
 import { extractArticle } from '../_shared/articles.ts';
 import {
-  breakingFlag, cleanImageUrl, feedHealth, fetchAllFeeds, type FeedStatus, isHeadlineOnly, isJunk, itemCategory, parseAnthropicNews, parseFeedXml,
-  parseNewsSitemap, parseSec8k, trimHugeFeed,
+  breakingFlag, cleanImageUrl, feedHealth, fetchAllFeeds, type FeedStatus, isGossip, isHeadlineOnly, isJunk, itemCategory, narrowerHint, parseAnthropicNews,
+  parseFeedXml, parseNewsSitemap, parseSec8k, trimHugeFeed,
 } from '../_shared/feeds.ts';
 import { type FeedSource, isMajorOutlet, normalizeOutlet, SOURCE_GROUPS, SOURCES } from '../_shared/sources.ts';
 
@@ -92,6 +92,11 @@ Deno.test('junk + image cleanup', () => {
   assert(isJunk('The Download: weight-loss drugs and batteries'));
   assert(isJunk('S&P 500 record, ICE’s economic chill and more in Morning Squawk'));
   assert(!isJunk('Finland orders halt to work on two Google data centres'));
+  // Shopping roundups are junk; a deal in the news is not (headlines from 11 Oct 2026 feeds).
+  for (const t of ['38 Best Last-Minute Prime Day Deals You Can Still Shop Today (2026)', 'Lowe’s Promo Codes and Deals: Up to $300 Off Appliances',
+    'Extended Fall Green Deals: EVs, power stations, electric tools', 'Deal of the day: noise-cancelling headphones']) assert(isJunk(t), t);
+  for (const t of ['Trump Strikes Deal With Putin for Russian Diesel', 'China agrees to ‘halve’ hybrid car exports to EU in landmark deal',
+    'Emmy Awards Move to Prime Video in Six-Year Deal With Amazon', 'Biotech IPOs Charge Ahead as Tech Deals Stall']) assert(!isJunk(t), t);
   assertEquals(cleanImageUrl('http://insecure/x.jpg'), null);
   assertEquals(cleanImageUrl('https://x.com/static/logo.png'), null);
   assertEquals(cleanImageUrl('/img/a.jpg', 'https://site.com/news/1'), 'https://site.com/img/a.jpg');
@@ -212,6 +217,41 @@ Deno.test('fetchAllFeeds: retries a failed feed once; SEC skipped (not failed) w
   } finally {
     globalThis.fetch = original;
   }
+});
+
+Deno.test('one article in two feeds of an outlet: kept once, with the narrower topic hint (Variety Film over Variety)', async () => {
+  const original = globalThis.fetch;
+  const body = (extra: string) => `<rss><channel><item><title>Studio dates its space epic for next summer</title><link>https://variety.example/epic</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate>${extra}</item></channel></rss>`;
+  globalThis.fetch = ((input: string | URL | Request) =>
+    Promise.resolve(new Response(String(input).includes('film') ? body('') : body('<content:encoded>Longer text from the main feed.</content:encoded>')))) as typeof fetch;
+  try {
+    const { items } = await fetchAllFeeds([
+      src({ id: 'variety', outlet: 'Variety', topicHint: 'entertainment', category: 'specialist', trust: 'medium', url: 'https://variety.example/feed' }),
+      src({ id: 'variety-film', outlet: 'Variety', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://variety.example/film/feed' }),
+    ], NOW, 24, { secContact: null, retryDelayMs: 1 });
+    assertEquals(items.length, 1);
+    assertEquals(items[0].topicHint, 'movies');
+  } finally {
+    globalThis.fetch = original;
+  }
+  assertEquals(narrowerHint('mixed', 'world'), 'world');
+  assertEquals(narrowerHint('movies', 'entertainment'), 'movies');
+  assertEquals(narrowerHint('tech', 'ai'), 'tech', 'otherwise the richer copy keeps its own hint');
+});
+
+Deno.test('gossip from film and entertainment desks is dropped; film news and other beats are not', () => {
+  assert(isGossip('Pregnant Kiara Advani lounges on the beach, clicks family photos', 'movies'));
+  assert(isGossip('Nushrratt Bharuccha shares first post since Bali accident', 'movies'));
+  assert(isGossip('Star stuns in a sheer gown at the gala', 'entertainment'));
+  assert(!isGossip('Ramayana makers announce worldwide release of Part 1 on November 5', 'movies'));
+  assert(!isGossip('Drishyam 3 box office collection day 9: crosses ₹150 crore', 'movies'));
+  assert(!isGossip('Studio shares first trailer for its animated musical', 'movies'));
+  assert(!isGossip('Pregnant women should get the RSV vaccine, panel says', 'health'), 'only film and entertainment feeds');
+  const xml = `<rss><channel>
+    <item><title>Pregnant star lounges on the beach</title><link>https://film.example/1</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate></item>
+    <item><title>Telugu period drama crosses 300 crore worldwide</title><link>https://film.example/2</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate></item>
+  </channel></rss>`;
+  assertEquals(parseFeedXml(xml, src({ topicHint: 'movies', category: 'specialist' }), NOW).map((it) => it.title), ['Telugu period drama crosses 300 crore worldwide']);
 });
 
 Deno.test('feedHealth ignores skipped feeds', () => {

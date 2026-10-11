@@ -99,6 +99,8 @@ export type DevicePayload = {
   timezone: string;
   wake_time: string;
   topics: string[];
+  /** Followed topics the reader wants more of (at most 4; a subset of `topics`). Left out for older backends. */
+  focus_topics?: string[];
   disabled_sources: string[];
   morning_push: boolean;
   /** 'off' | 'major': breaking-news pushes (at most 2 a day). */

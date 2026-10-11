@@ -17,6 +17,7 @@ import {
 import { setSelectedEdition } from '@/state/editionNav';
 import { activeCount, readingListStore, useReadingList } from '@/state/readingList';
 import { settingsStore, useSettings } from '@/state/settings';
+import { focusStory } from '@/state/storyFocus';
 
 /**
  * Background jobs that follow the app's state:
@@ -50,6 +51,7 @@ export function useAppSync() {
     settings.onboarded,
     settings.wakeTime,
     settings.topics,
+    settings.focusTopics,
     settings.disabledOutlets,
     settings.morningPush,
     settings.breakingPush,
@@ -57,6 +59,9 @@ export function useAppSync() {
 
   useEffect(() => {
     if (!settingsStore.get().onboarded) return;
+    // The web preview isn't a reader's device: the server follows the most recently saved device,
+    // so a preview session would otherwise replace the phone's wake time, topics and timezone.
+    if (Platform.OS === 'web' && __DEV__) return;
     const timer = setTimeout(async () => {
       try {
         const current = settingsStore.get();
@@ -84,7 +89,9 @@ export function useAppSync() {
       } else if (data?.kind === 'alert') {
         router.navigate('/');
       } else if (data?.kind === 'breaking') {
-        setSelectedEdition(null);
+        // Open the story itself on Today (it sits under Since this morning).
+        if (data.storyId) focusStory(data.date || todayKey(), data.storyId);
+        else setSelectedEdition(null);
         router.navigate('/');
       } else if (data) {
         const date = 'date' in data ? data.date : undefined;

@@ -1,31 +1,33 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FileDown } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BrewsyMark } from './BrewsyMark';
 import { GlassCard } from './GlassCard';
+import { CUSTOM_HEADINGS, type HeadingProps } from './headings';
 import { Pill } from './Pill';
 import { Txt } from './Txt';
 import type { CalendarEvent, MarketQuote } from '@/data/types';
 import { formatMarketChange, formatMarketValue, marketA11yLabel } from '@/lib/format';
+import { noteReadingDay, streakDays, useReads } from '@/state/reads';
 import { useRadius, useTheme } from '@/theme/ThemeProvider';
 import { GUTTER, TAP, fonts, radii, withAlpha } from '@/theme/tokens';
 
-type HeadingProps = {
-  label: string;
-  count?: number;
-  /** Topic sections can open on a photo card (Space); other sections never do. */
-  cover?: boolean;
-  /** Photo for the cover card: the lead story's image when it has one. */
-  imageUrl?: string | null;
-};
-
 /**
  * Opens each section, in the theme's style: a centered rule, a large title, a photo card with a
- * giant word, a terminal prompt or a circuit trace.
+ * giant word, a terminal prompt or a circuit trace. Themes in packs can draw their own
+ * (components/headings). Topic sections pass `cover` (they can open on a photo card) and `index`.
  */
-export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
+export function TopicHeading(props: HeadingProps) {
+  const { theme } = useTheme();
+  const Custom = CUSTOM_HEADINGS[theme.name];
+  if (Custom) return <Custom {...props} />;
+  return <BuiltInHeading {...props} />;
+}
+
+function BuiltInHeading({ label, count, cover, imageUrl }: HeadingProps) {
   const { theme } = useTheme();
   const radius = useRadius();
   const countLabel = count != null ? `${count} ${count === 1 ? 'story' : 'stories'}` : null;
@@ -106,7 +108,7 @@ export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
           </Txt>
         </Txt>
         {countLabel && (
-          <Txt variant="caption" tone="tertiary">
+          <Txt variant="caption" tone="tertiary" style={styles.noShrink}>
             {countLabel}
           </Txt>
         )}
@@ -124,7 +126,7 @@ export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
             {label}
           </Txt>
           {countLabel && (
-            <Txt variant="kicker" color={accent}>
+            <Txt variant="kicker" color={accent} style={styles.noShrink}>
               {countLabel}
             </Txt>
           )}
@@ -144,7 +146,10 @@ export function TopicHeading({ label, count, cover, imageUrl }: HeadingProps) {
         {label}
       </Txt>
       {countLabel && (
-        <Txt variant="label" color={theme.name === 'alpine' ? theme.colors.accent : theme.colors.textTertiary}>
+        <Txt
+          variant="label"
+          color={theme.name === 'alpine' ? theme.colors.accent : theme.colors.textTertiary}
+          style={styles.noShrink}>
           {countLabel}
         </Txt>
       )}
@@ -221,6 +226,9 @@ type EndProps = {
   exporting: boolean;
   onPrevious: () => void;
   onBackToToday?: () => void;
+  /** The edition's date and the stories shown in it, for "3 of 12 stories opened". */
+  editionDate?: string;
+  storyIds?: string[];
 };
 
 /** The clear finish line of the edition. */
@@ -232,6 +240,8 @@ export function EndOfEdition({
   exporting,
   onPrevious,
   onBackToToday,
+  editionDate,
+  storyIds,
 }: EndProps) {
   const { theme } = useTheme();
   return (
@@ -243,6 +253,7 @@ export function EndOfEdition({
       <Txt variant="body" tone="secondary" align="center">
         {isToday ? `See you tomorrow at ${wakeLabel}.` : `You've read the ${dateLabel} edition.`}
       </Txt>
+      <ReadingTally isToday={isToday} editionDate={editionDate} storyIds={storyIds} />
       <Pill
         label={exporting ? 'Making PDF…' : 'Export as PDF'}
         size="md"
@@ -268,10 +279,69 @@ export function EndOfEdition({
   );
 }
 
+/**
+ * A quiet tally under the sign-off: how many stories were opened, and how many days in a row the
+ * edition has been read (from two days on). Nothing at all when there's nothing to say.
+ */
+function ReadingTally({
+  isToday,
+  editionDate,
+  storyIds,
+}: {
+  isToday: boolean;
+  editionDate?: string;
+  storyIds?: string[];
+}) {
+  const { theme } = useTheme();
+  const reads = useReads();
+
+  useEffect(() => {
+    if (isToday) noteReadingDay();
+  }, [isToday]);
+
+  const openedIds = editionDate ? (reads.byEdition[editionDate] ?? []) : [];
+  const total = storyIds?.length ?? 0;
+  const opened = storyIds ? storyIds.filter((id) => openedIds.includes(id)).length : 0;
+  const streak = isToday ? streakDays(reads.days) : 0;
+  const showOpened = opened > 0 && total > 0;
+  const showStreak = streak >= 2;
+  if (!showOpened && !showStreak) return null;
+
+  return (
+    <GlassCard radius={radii.lg} style={styles.tally}>
+      {showOpened && (
+        <View
+          style={styles.tallyCell}
+          accessible
+          accessibilityLabel={`You opened ${opened} of ${total} stories`}>
+          <Txt variant="displayS" align="center">
+            {opened === total && total > 1 ? `All ${total}` : `${opened} of ${total}`}
+          </Txt>
+          <Txt variant="caption" tone="tertiary" align="center">
+            {total === 1 ? 'story opened' : 'stories opened'}
+          </Txt>
+        </View>
+      )}
+      {showOpened && showStreak && <View style={[styles.tallyRule, { backgroundColor: theme.colors.hairline }]} />}
+      {showStreak && (
+        <View style={styles.tallyCell} accessible accessibilityLabel={`${streak} days in a row`}>
+          <Txt variant="displayS" align="center">
+            {`${streak} days`}
+          </Txt>
+          <Txt variant="caption" tone="tertiary" align="center">
+            in a row
+          </Txt>
+        </View>
+      )}
+    </GlassCard>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pad: { paddingHorizontal: GUTTER },
   flexShrink: { flexShrink: 1 },
+  noShrink: { flexShrink: 0 },
   coverCard: { height: 176, overflow: 'hidden', borderWidth: 1, justifyContent: 'flex-end' },
   coverChip: { position: 'absolute', top: 14, left: 14 },
   chip: { paddingHorizontal: 12, height: 28, justifyContent: 'center' },
@@ -301,6 +371,9 @@ const styles = StyleSheet.create({
   radarRow: { flexDirection: 'row', gap: 14, alignItems: 'baseline', paddingVertical: 14 },
   time: { width: 72 },
   end: { alignItems: 'center', gap: 14, paddingHorizontal: GUTTER + 12, paddingTop: 12 },
+  tally: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 8, paddingVertical: 14 },
+  tallyCell: { minWidth: 128, gap: 2, paddingHorizontal: 22 },
+  tallyRule: { width: 1, alignSelf: 'stretch' },
   exportPill: { marginTop: 6 },
   links: { flexDirection: 'row', gap: 22, alignItems: 'center' },
   link: { minHeight: TAP, justifyContent: 'center' },

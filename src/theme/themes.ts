@@ -1,5 +1,9 @@
+import { useFonts, type FontSource } from 'expo-font';
 import type { ImageSourcePropType, TextStyle } from 'react-native';
 
+import { filmFonts, filmThemes } from './packs/films';
+import { glassFonts, glassThemes } from './packs/glass';
+import { horrorFonts, horrorThemes } from './packs/horror';
 import { TOPIC_LABEL, type TopicKey } from '@/data/topics';
 
 export { TOPIC_LABEL, type TopicKey };
@@ -13,7 +17,28 @@ export type ThemeName =
   | 'matrix'
   | 'tron'
   | 'bladerunner'
-  | 'budapest';
+  | 'budapest'
+  // Glass (Apple-style frosted glass; light and dark variants, see packs/glass.ts)
+  | 'glass'
+  // Films (packs/films.ts)
+  | 'starwars'
+  | 'hogwarts'
+  | 'lalaland'
+  | 'ghibli'
+  // Horror (packs/horror.ts)
+  | 'overlook'
+  | 'nosferatu'
+  | 'thering'
+  | 'midsommar';
+
+/** Where a theme sits in the picker. */
+export type ThemeGroup = 'classic' | 'films' | 'horror';
+
+export const THEME_GROUPS: { id: ThemeGroup; label: string }[] = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'films', label: 'Films' },
+  { id: 'horror', label: 'Horror' },
+];
 
 /** Text roles every screen uses; each theme restyles them (see Txt). */
 export type TxtVariant =
@@ -44,6 +69,9 @@ export type PhotoCredit = {
   adapted: boolean;
 };
 
+/** The border colors of a liquid-glass pane, by edge. */
+export type GlassRim = { top: string; side: string; bottom: string };
+
 /**
  * A theme is a whole look, not just colors: its own typefaces, corner shapes,
  * card style, header layout and section style.
@@ -51,6 +79,7 @@ export type PhotoCredit = {
 export type Theme = {
   name: ThemeName;
   label: string;
+  group: ThemeGroup;
   /** One line under the name in the theme picker. */
   tagline: string;
   isDark: boolean;
@@ -62,6 +91,27 @@ export type Theme = {
   credit: PhotoCredit | null;
   /** Behind everything below the cover: one color, or a slow top-to-bottom gradient. */
   background: [string, ...string[]];
+  /**
+   * Optional image fixed behind every screen, over `background` (the Glass wallpaper).
+   * With a backdrop, the cover adds nothing of its own: the top of Today is the wallpaper itself.
+   */
+  backdrop?: ImageSourcePropType;
+  /**
+   * Liquid-glass finish (Glass): panels and controls catch light along their top edge and sit on a
+   * soft shadow. Themes without it draw plain one-color borders.
+   */
+  liquid?: {
+    /** Edge colors of cards: brightest on top, where the light catches. */
+    cardRim: GlassRim;
+    /** Edge colors of buttons and chips. They may sit on a card, so their lower edges can be darker. */
+    controlRim: GlassRim;
+    /** Card fill where real blur sits behind it (iOS, web). `colors.card` is the fill without blur (Android). */
+    cardOverBlur: string;
+    /** Soft lift under cards (a boxShadow value). */
+    cardShadow: string;
+    /** Smaller lift under buttons and chips (a boxShadow value). */
+    controlShadow: string;
+  };
   /** Per-role type: font family, size, tracking, case. Merged over the defaults in Txt. */
   type: Partial<Record<TxtVariant, TextStyle>>;
   shape: {
@@ -134,6 +184,7 @@ const BY_SA = (v: string) => `CC BY-SA ${v}`;
 const dune: Theme = {
   name: 'dune',
   label: 'Dune',
+  group: 'films',
   tagline: 'Sand, spice and wide-set capitals',
   isDark: false,
   blurTint: 'light',
@@ -196,6 +247,7 @@ const dune: Theme = {
 const space: Theme = {
   name: 'space',
   label: 'Space',
+  group: 'classic',
   tagline: 'Black sky, mission-control type',
   isDark: true,
   blurTint: 'dark',
@@ -258,6 +310,7 @@ const space: Theme = {
 const atlantis: Theme = {
   name: 'atlantis',
   label: 'Atlantis',
+  group: 'classic',
   tagline: 'Deep water, old-world serif',
   isDark: true,
   blurTint: 'dark',
@@ -318,6 +371,7 @@ const atlantis: Theme = {
 const highlands: Theme = {
   name: 'highlands',
   label: 'Highlands',
+  group: 'classic',
   tagline: 'Moss, stone and bold italics',
   isDark: true,
   blurTint: 'dark',
@@ -379,6 +433,7 @@ const highlands: Theme = {
 const alpine: Theme = {
   name: 'alpine',
   label: 'Alpine',
+  group: 'classic',
   tagline: 'Snow-white, Swiss red',
   isDark: false,
   blurTint: 'light',
@@ -438,6 +493,7 @@ const alpine: Theme = {
 const matrix: Theme = {
   name: 'matrix',
   label: 'Matrix',
+  group: 'films',
   tagline: 'Falling code, terminal type',
   isDark: true,
   blurTint: 'dark',
@@ -497,6 +553,7 @@ const matrix: Theme = {
 const tron: Theme = {
   name: 'tron',
   label: 'Tron',
+  group: 'films',
   tagline: 'The Grid: black glass and light lines',
   isDark: true,
   blurTint: 'dark',
@@ -553,6 +610,7 @@ const tron: Theme = {
 const bladerunner: Theme = {
   name: 'bladerunner',
   label: 'Blade Runner',
+  group: 'films',
   tagline: 'Amber haze, neon in the rain',
   isDark: true,
   blurTint: 'dark',
@@ -609,6 +667,7 @@ const bladerunner: Theme = {
 const budapest: Theme = {
   name: 'budapest',
   label: 'Budapest',
+  group: 'films',
   tagline: 'Pastel pink, perfect symmetry',
   isDark: false,
   blurTint: 'light',
@@ -665,29 +724,52 @@ const budapest: Theme = {
   },
 };
 
-export const themes: Record<ThemeName, Theme> = {
-  dune,
+const ORDERED: Theme[] = [
+  ...glassThemes,
   space,
   atlantis,
   highlands,
   alpine,
+  dune,
   matrix,
   tron,
   bladerunner,
   budapest,
-};
-
-export const THEME_ORDER: ThemeName[] = [
-  'dune',
-  'space',
-  'atlantis',
-  'highlands',
-  'alpine',
-  'matrix',
-  'tron',
-  'bladerunner',
-  'budapest',
+  ...filmThemes,
+  ...horrorThemes,
 ];
+
+export const themes = Object.fromEntries(ORDERED.map((t) => [t.name, t])) as Record<ThemeName, Theme>;
+
+/** Picker order: Classic, then Films, then Horror. */
+export const THEME_ORDER: ThemeName[] = THEME_GROUPS.flatMap((g) =>
+  ORDERED.filter((t) => t.group === g.id).map((t) => t.name),
+);
+
+/**
+ * Typefaces the theme packs use (about 9 MB). Startup waits only for the current theme's pack
+ * (fontsForTheme); app/_layout.tsx loads the rest in the background once the app is up.
+ */
+export const packFonts: Record<string, FontSource> = { ...glassFonts, ...filmFonts, ...horrorFonts };
+
+const PACKS: [Theme[], Record<string, FontSource>][] = [
+  [glassThemes, glassFonts],
+  [filmThemes, filmFonts],
+  [horrorThemes, horrorFonts],
+];
+
+/** The typefaces a theme needs beyond the classic ones (empty for the classic themes). */
+export function fontsForTheme(name: ThemeName): Record<string, FontSource> {
+  return PACKS.find(([list]) => list.some((t) => t.name === name))?.[1] ?? {};
+}
+
+/**
+ * For screens that preview every theme in its own type (the theme picker): loads all the packs'
+ * typefaces if they aren't yet, and re-renders once they are.
+ */
+export function usePackFonts() {
+  useFonts(packFonts);
+}
 
 /** Theme names from before the current themes (saved in older settings). */
 const LEGACY: Record<string, ThemeName> = { dark: 'space', earth: 'highlands', light: 'alpine' };
@@ -695,6 +777,22 @@ const LEGACY: Record<string, ThemeName> = { dark: 'space', earth: 'highlands', l
 export function resolveThemeName(name: string | null | undefined): ThemeName {
   if (name && name in themes) return name as ThemeName;
   return (name && LEGACY[name]) || 'dune';
+}
+
+/**
+ * The theme's background color at a height on the screen (0 = top, 1 = bottom), where the background
+ * is a gradient fixed to the screen. Null when its colors aren't plain '#RRGGBB'.
+ */
+export function backgroundAt(theme: Theme, at: number): string | null {
+  const stops = theme.background;
+  if (!stops.every((c) => /^#[0-9a-f]{6}$/i.test(c))) return null;
+  if (stops.length === 1) return stops[0];
+  const pos = Math.min(1, Math.max(0, at)) * (stops.length - 1);
+  const i = Math.min(stops.length - 2, Math.floor(pos));
+  const f = pos - i;
+  const channel = (c: string, k: number) => parseInt(c.slice(1 + k * 2, 3 + k * 2), 16);
+  const mixed = [0, 1, 2].map((k) => Math.round(channel(stops[i], k) * (1 - f) + channel(stops[i + 1], k) * f));
+  return `#${mixed.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /** A default radius (from tokens.radii) in this theme's shape language. */

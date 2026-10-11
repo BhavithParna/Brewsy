@@ -7,6 +7,11 @@ export type Prefs = {
   /** 'HH:MM', 24-hour, local time. */
   wakeTime: string;
   topics: Topic[];
+  /**
+   * Followed topics the reader wants more of ("More of this" in the app): more stories and
+   * "Also happening" lines on them, and they come first. Always a subset of `topics`.
+   */
+  focusTopics: Topic[];
   /** Outlet names (see sources.ts) to skip. */
   disabledSources: string[];
   morningPush: boolean;
@@ -18,6 +23,7 @@ export const DEFAULT_PREFS: Prefs = {
   timezone: 'Asia/Kolkata',
   wakeTime: '05:30',
   topics: [...TOPICS],
+  focusTopics: [],
   disabledSources: [],
   morningPush: true,
   breakingPush: 'major',
@@ -30,6 +36,8 @@ export type DeviceRow = {
   timezone: string | null;
   wake_time: string | null;
   topics: string[] | null;
+  /** Added in migration 20261011000000; missing on rows read before it. */
+  focus_topics?: string[] | null;
   disabled_sources: string[] | null;
   morning_push: boolean | null;
   breaking_push?: string | null;
@@ -46,18 +54,37 @@ function validTimezone(tz: string | null | undefined): tz is string {
   }
 }
 
+/** At most this many "more of this" topics count (the app allows 4; the database 6). */
+export const MAX_FOCUS_TOPICS = 4;
+
+const isTopic = (t: string): t is Topic => (TOPICS as string[]).includes(t);
+
 /** Turns the most recently updated device row into safe prefs (defaults fill gaps). */
 export function normalizePrefs(row: DeviceRow | null | undefined): Prefs {
-  if (!row) return { ...DEFAULT_PREFS, topics: [...DEFAULT_PREFS.topics] };
-  const topics = (row.topics ?? []).filter((t): t is Topic => (TOPICS as string[]).includes(t));
+  if (!row) return { ...DEFAULT_PREFS, topics: [...DEFAULT_PREFS.topics], focusTopics: [] };
+  const followed = (row.topics ?? []).filter(isTopic);
+  const topics = followed.length ? followed : [...TOPICS];
+  // Only topics the reader also follows, in the usual topic order, no repeats.
+  const focusTopics = TOPICS.filter((t) => (row.focus_topics ?? []).includes(t) && topics.includes(t)).slice(0, MAX_FOCUS_TOPICS);
   return {
     timezone: validTimezone(row.timezone) ? row.timezone : DEFAULT_PREFS.timezone,
     wakeTime: row.wake_time && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.wake_time) ? row.wake_time : DEFAULT_PREFS.wakeTime,
-    topics: topics.length ? topics : [...TOPICS],
+    topics,
+    focusTopics,
     disabledSources: row.disabled_sources ?? [],
     morningPush: row.morning_push ?? true,
     breakingPush: row.breaking_push === 'off' ? 'off' : 'major',
   };
+}
+
+/**
+ * Every topic, most wanted first: the "more of this" topics, then the other followed ones,
+ * then the rest. Today shows the reader's topics in this order too (the app's curation.ts).
+ */
+export function topicOrder(prefs: Pick<Prefs, 'topics' | 'focusTopics'>): Topic[] {
+  const focus = TOPICS.filter((t) => prefs.focusTopics.includes(t));
+  const followed = TOPICS.filter((t) => prefs.topics.includes(t) && !focus.includes(t));
+  return [...focus, ...followed, ...TOPICS.filter((t) => !focus.includes(t) && !followed.includes(t))];
 }
 
 /** Local calendar date (YYYY-MM-DD) and minutes since local midnight. */

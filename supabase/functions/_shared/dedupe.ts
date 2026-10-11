@@ -61,6 +61,8 @@ export type ClusterOptions = {
   minShared?: number;
   maxClusters?: number;
   now?: Date;
+  /** Topic hints the reader wants more of: the cap keeps three times their usual share. */
+  focus?: TopicHint[];
 };
 
 /** Clusters kept for the AI to choose from (the rest are low-scoring singletons). */
@@ -69,7 +71,7 @@ export const MAX_CLUSTERS = 280;
 /** Every topic hint a source can carry, so each beat keeps some candidates. */
 const ALL_HINTS: TopicHint[] = [
   'ai', 'tech', 'business', 'world', 'politics', 'science', 'health', 'climate',
-  'autos', 'gaming', 'sports', 'entertainment', 'crypto', 'mixed',
+  'autos', 'gaming', 'sports', 'entertainment', 'movies', 'crypto', 'mixed',
 ];
 
 export function clusterItems(items: FeedItem[], opts: ClusterOptions = {}): Cluster[] {
@@ -128,7 +130,7 @@ export function clusterAll(items: FeedItem[], opts: ClusterOptions = {}): { clus
   });
 
   clusters.sort((a, b) => b.score - a.score);
-  const picked = diversify(clusters, maxClusters);
+  const picked = diversify(clusters, maxClusters, opts.focus ?? []);
   picked.forEach((c, i) => (c.id = `c${i + 1}`));
   return { clusters: picked, total: clusters.length };
 }
@@ -266,14 +268,15 @@ function averageLinkage(n: number, pairScore: (i: number, j: number) => number, 
 /**
  * Keeps the best clusters while making sure every topic hint gets a fair share:
  * a small beat (games, cricket) has fewer outlets, so it would otherwise lose
- * every slot to the general news.
+ * every slot to the general news. "More of this" topics get three times the share.
  */
-function diversify(clusters: Cluster[], max: number): Cluster[] {
+function diversify(clusters: Cluster[], max: number, focus: TopicHint[] = []): Cluster[] {
   if (clusters.length <= max) return clusters;
-  const perHint = Math.floor(max / (ALL_HINTS.length * 2));
+  const perHint = Math.max(1, Math.floor(max / (ALL_HINTS.length * 2)));
   const chosen = new Set<Cluster>();
   for (const hint of ALL_HINTS) {
-    clusters.filter((c) => c.topicHints.includes(hint)).slice(0, perHint).forEach((c) => chosen.add(c));
+    const share = focus.includes(hint) ? perHint * 3 : perHint;
+    clusters.filter((c) => c.topicHints.includes(hint)).slice(0, share).forEach((c) => chosen.add(c));
   }
   for (const c of clusters) {
     if (chosen.size >= max) break;

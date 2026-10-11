@@ -38,6 +38,7 @@ type SaveTarget = { story: Story; editionDate: string };
 type SheetsApi = {
   openSave: (target: SaveTarget) => void;
   openSettings: () => void;
+  closeSettings: () => void;
   openPastEditions: () => void;
   /** Quick or Full? */
   openListen: (briefing: Briefing) => void;
@@ -81,6 +82,7 @@ export function SheetHost({ children }: { children: ReactNode }) {
       setSaveOpen(true);
     },
     openSettings: () => setSettingsOpen(true),
+    closeSettings: () => setSettingsOpen(false),
     openPastEditions: openPast,
     openListen: (b) => {
       setListenTarget(b);

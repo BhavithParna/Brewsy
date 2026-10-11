@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { useEffect, type Ref } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
@@ -8,12 +9,14 @@ import { LearnMore } from './LearnMore';
 import { NowPlayingBars } from './listen/NowPlayingBars';
 import { StoryPlayButton } from './listen/StoryPlayButton';
 import { Pill } from './Pill';
+import { ShareButton } from './ShareButton';
 import { SourceLinks } from './SourceLinks';
 import { StoryImage } from './StoryImage';
 import { Txt } from './Txt';
 import { usePlayer, usePlayingKey } from '@/audio/store';
 import type { Story } from '@/data/types';
 import { storyKey } from '@/state/readingList';
+import { markRead, useIsRead } from '@/state/reads';
 import { useRadius, useTheme } from '@/theme/ThemeProvider';
 import { TOPIC_LABEL } from '@/theme/themes';
 import { TAP, capsLabel, radii, withAlpha } from '@/theme/tokens';
@@ -32,6 +35,9 @@ type Props = {
   onPlay?: () => void;
   /** Added since your last visit. */
   isNew?: boolean;
+  /** For the first-run tour: play, share and save, and the Learn more button. */
+  actionsRef?: Ref<View>;
+  moreRef?: Ref<View>;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -54,6 +60,8 @@ export function StoryView({
   onLayout,
   onPlay,
   isNew,
+  actionsRef,
+  moreRef,
   style,
 }: Props) {
   const { theme } = useTheme();
@@ -61,6 +69,12 @@ export function StoryView({
   const key = storyKey(editionDate, story.id);
   const nowPlaying = usePlayingKey() === key;
   const playing = usePlayer((s) => s.playing);
+  const read = useIsRead(editionDate, story.id);
+
+  // Hearing a story read aloud counts as reading it.
+  useEffect(() => {
+    if (nowPlaying && playing) markRead(editionDate, story.id);
+  }, [nowPlaying, playing, editionDate, story.id]);
 
   return (
     <Animated.View layout={storyLayout} onLayout={onLayout} style={style}>
@@ -82,14 +96,26 @@ export function StoryView({
                   {playing ? 'Now playing' : 'Paused'}
                 </Txt>
               </View>
+            ) : read && !expanded ? (
+              // Opened before: a quiet mark in place of the reading time.
+              <View
+                style={styles.readMark}
+                accessible
+                accessibilityLabel={story.addedAt ? `${timeLabel(story.addedAt)}, read` : 'Read'}>
+                <Check size={12} strokeWidth={2.4} color={theme.colors.textTertiary} />
+                <Txt variant="caption" tone="tertiary">
+                  {story.addedAt ? timeLabel(story.addedAt) : 'Read'}
+                </Txt>
+              </View>
             ) : (
               <Txt variant="caption" tone="tertiary">
                 {story.addedAt ? timeLabel(story.addedAt) : `${story.readTimeMinutes} min read`}
               </Txt>
             )}
           </View>
-          <View style={styles.metaRight}>
+          <View ref={actionsRef} style={styles.metaRight}>
             {onPlay && <StoryPlayButton playKey={key} label={story.headline} onPlay={onPlay} />}
+            <ShareButton story={story} editionDate={editionDate} />
             <BookmarkButton story={story} editionDate={editionDate} />
           </View>
         </View>
@@ -114,6 +140,7 @@ export function StoryView({
         <StoryBody story={story} />
 
         <Pressable
+          ref={moreRef}
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
@@ -167,10 +194,11 @@ export function StoryBody({ story }: { story: Story }) {
 
 const styles = StyleSheet.create({
   story: { gap: 16, padding: 20 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
   metaRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nowPlaying: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  readMark: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   badges: { flexDirection: 'row', gap: 8, marginTop: -4 },
   image: { height: 188, overflow: 'hidden', marginHorizontal: -6 },
   section: { gap: 8 },

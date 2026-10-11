@@ -1,10 +1,13 @@
-import { Check, ChevronDown, ChevronRight, ChevronUp, FileDown, History, Volume2 } from 'lucide-react-native';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Check, ChevronDown, ChevronUp, FileDown, History, Volume2 } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { SOURCE_GROUPS } from '../../supabase/functions/_shared/sources';
-import { GlassCard } from './GlassCard';
 import { Pill } from './Pill';
+import { HelpSettings } from './settings/HelpSettings';
+import { ReadingSettings } from './settings/ReadingSettings';
+import { Divider, Group, LinkRow, ToggleRow, settingsStyles } from './settings/SettingsParts';
+import { TopicSettings } from './settings/TopicSettings';
 import { Sheet } from './Sheet';
 import { toast } from './Toast';
 import { ThemePicker } from './ThemePicker';
@@ -15,7 +18,6 @@ import { playerStore } from '@/audio/store';
 import { deviceVoices, previewVoice, type DeviceVoice } from '@/audio/voice';
 import { backendConfigured } from '@/data/api';
 import { fetchAndCacheEdition, readCachedEdition, todayKey } from '@/data/editions';
-import { TOPICS, type Topic } from '@/data/types';
 import { rememberPushToken } from '@/lib/device';
 import { formatWakeTime } from '@/lib/format';
 import {
@@ -28,8 +30,7 @@ import { exportEditionPdf } from '@/lib/pdf';
 import { useReadingList } from '@/state/readingList';
 import { updateSettings, useSettings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TOPIC_LABEL } from '@/theme/themes';
-import { GUTTER, TAP, radii } from '@/theme/tokens';
+import { GUTTER } from '@/theme/tokens';
 
 type Props = { visible: boolean; onClose: () => void; onOpenPastEditions: () => void };
 
@@ -63,15 +64,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
     if (Object.values(patch).some(Boolean)) await requestNotificationPermission();
   };
 
-  const toggleTopic = (t: Topic) => {
-    const on = settings.topics.includes(t);
-    if (on && settings.topics.length === 1) {
-      toast.show('Keep at least one topic');
-      return;
-    }
-    updateSettings({ topics: on ? settings.topics.filter((x) => x !== t) : TOPICS.filter((x) => x === t || settings.topics.includes(x)) });
-  };
-
   const [openSources, setOpenSources] = useState<string | null>(null);
   const toggleOutlet = (outlet: string, on: boolean) => {
     updateSettings({
@@ -95,17 +87,15 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
     }
   };
 
-  const switchColors = {
-    trackColor: { false: theme.colors.glassBorder, true: theme.colors.accent },
-    thumbColor: '#FFFFFF',
-    ios_backgroundColor: theme.colors.glassBorder,
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Group title="Theme">
         <ThemePicker />
       </Group>
+
+      <TopicSettings />
+
+      <ReadingSettings />
 
       <Group title="Morning edition">
         <View style={styles.rowStack}>
@@ -132,7 +122,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
           }
           value={settings.morningPush}
           onChange={toggleMorningPush}
-          switchColors={switchColors}
         />
       </Group>
 
@@ -176,8 +165,8 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
           <View style={styles.pills}>
             {(
               [
-                { id: 'quick', label: 'Quick listen · ~3 min' },
-                { id: 'full', label: 'Full briefing · ~10 min' },
+                { id: 'quick', label: 'Quick listen · about 3 min' },
+                { id: 'full', label: 'Full briefing · about 10 min' },
               ] as const
             ).map((o) => (
               <Pill
@@ -204,7 +193,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
           subtitle="When something is saved for tonight."
           value={settings.remindTonight}
           onChange={(v) => toggleReminder({ remindTonight: v })}
-          switchColors={switchColors}
         />
         <Divider />
         <ToggleRow
@@ -212,7 +200,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
           subtitle="When something is saved for the weekend."
           value={settings.remindWeekend}
           onChange={(v) => toggleReminder({ remindWeekend: v })}
-          switchColors={switchColors}
         />
         {Platform.OS !== 'web' && (
           <>
@@ -227,25 +214,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
             />
           </>
         )}
-      </Group>
-
-      <Group title="Topics" footer="Turned-off topics are left out of your edition.">
-        <View style={[styles.pills, styles.padded]}>
-          {TOPICS.map((t) => {
-            const on = settings.topics.includes(t);
-            return (
-              <Pill
-                key={t}
-                label={TOPIC_LABEL[t]}
-                size="md"
-                color={theme.colors.inverseBg}
-                variant={on ? 'solid' : 'outline'}
-                selected={on}
-                onPress={() => toggleTopic(t)}
-              />
-            );
-          })}
-        </View>
       </Group>
 
       <Group
@@ -284,7 +252,6 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
                       title={outlet}
                       value={!settings.disabledOutlets.includes(outlet)}
                       onChange={(value) => toggleOutlet(outlet, value)}
-                      switchColors={switchColors}
                     />
                   </View>
                 ))}
@@ -307,30 +274,14 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
         />
       </Group>
 
+      <HelpSettings />
+
       <Txt variant="caption" tone="tertiary" align="center" style={styles.about}>
         {backendConfigured
           ? 'Connected to your Brewsy backend'
           : 'Showing the sample edition · set up the backend with docs/BACKEND_SETUP.md'}
       </Txt>
     </ScrollView>
-  );
-}
-
-function Group({ title, footer, children }: { title: string; footer?: string; children: ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Txt variant="kicker" tone="tertiary" style={styles.groupTitle} accessibilityRole="header">
-        {title}
-      </Txt>
-      <GlassCard radius={radii.lg} style={styles.card}>
-        {children}
-      </GlassCard>
-      {footer && (
-        <Txt variant="caption" tone="tertiary" style={styles.footer}>
-          {footer}
-        </Txt>
-      )}
-    </View>
   );
 }
 
@@ -408,82 +359,9 @@ function PhoneVoiceRows() {
   });
 }
 
-function Divider() {
-  const { theme } = useTheme();
-  return <View style={[styles.divider, { backgroundColor: theme.colors.hairline }]} />;
-}
-
-function ToggleRow({
-  title,
-  subtitle,
-  value,
-  onChange,
-  switchColors,
-}: {
-  title: string;
-  subtitle?: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-  switchColors: object;
-}) {
-  return (
-    <View style={styles.row}>
-      <View style={styles.flex}>
-        <Txt variant="label">{title}</Txt>
-        {subtitle && (
-          <Txt variant="bodySm" tone="tertiary">
-            {subtitle}
-          </Txt>
-        )}
-      </View>
-      <Switch value={value} onValueChange={onChange} accessibilityLabel={title} {...switchColors} />
-    </View>
-  );
-}
-
-function LinkRow({
-  title,
-  subtitle,
-  icon,
-  onPress,
-}: {
-  title: string;
-  subtitle?: string;
-  icon?: ReactNode;
-  onPress?: () => void;
-}) {
-  const { theme } = useTheme();
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.row}>
-      {icon && <View>{icon}</View>}
-      <View style={styles.flex}>
-        <Txt variant="label">{title}</Txt>
-        {subtitle && (
-          <Txt variant="bodySm" tone="tertiary">
-            {subtitle}
-          </Txt>
-        )}
-      </View>
-      <View>
-        <ChevronRight size={18} color={theme.colors.textTertiary} />
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  ...settingsStyles,
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 24, gap: 26 },
-  group: { gap: 10 },
-  groupTitle: { paddingLeft: 6 },
-  card: { paddingHorizontal: 16 },
-  footer: { paddingHorizontal: 6 },
   voiceNote: { paddingVertical: 18 },
-  row: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
-  rowStack: { paddingVertical: 14, gap: 14 },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  padded: { paddingVertical: 16, minHeight: TAP },
-  divider: { height: 1 },
   about: { marginTop: 4, letterSpacing: 0.6 },
 });

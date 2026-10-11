@@ -10,10 +10,11 @@ import { askAboutStory, backendConfigured, fetchDeepDive } from '@/data/api';
 import type { AskAnswer, DeepDive, Story } from '@/data/types';
 import { paragraphs } from '@/lib/format';
 import { useStore } from '@/lib/persisted';
+import { noFocusRing } from '@/lib/webStyles';
 import { cacheDeepDive, deepDiveStore } from '@/state/deepDives';
 import { attachDeepDive, storyKey, useReadingList } from '@/state/readingList';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TAP, fonts, radii, withAlpha } from '@/theme/tokens';
+import { TAP, capsLabel, fonts, withAlpha } from '@/theme/tokens';
 
 const NOT_CONNECTED =
   'Go deeper needs the Brewsy backend. Follow docs/BACKEND_SETUP.md to switch it on.';
@@ -70,9 +71,12 @@ export function GoDeeper({ story, editionDate }: { story: Story; editionDate: st
             accessibilityRole="button"
             accessibilityLabel="Go deeper"
             accessibilityHint="Writes a longer explainer from this story's sources">
-            <View style={[styles.ctaButton, { borderColor: theme.colors.glassBorder }]}>
+            <View
+              style={[styles.ctaButton, { borderColor: theme.colors.glassBorder, borderRadius: theme.shape.control }]}>
               <Layers size={17} color={theme.colors.text} strokeWidth={1.7} />
-              <Txt variant="label">Go deeper</Txt>
+              <Txt variant="label" style={theme.layout.capsButtons && capsLabel}>
+                Go deeper
+              </Txt>
             </View>
           </PressableScale>
           <Txt variant="caption" tone="tertiary" align="center">
@@ -215,7 +219,15 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
         </Animated.View>
       ))}
 
-      <View style={[styles.askBar, { borderColor: theme.colors.glassBorder, backgroundColor: theme.colors.hairline }]}>
+      <View
+        style={[
+          styles.askBar,
+          {
+            borderColor: theme.colors.glassBorder,
+            backgroundColor: theme.colors.hairline,
+            borderRadius: theme.shape.control,
+          },
+        ]}>
         <TextInput
           value={question}
           onChangeText={setQuestion}
@@ -226,7 +238,11 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
           onSubmitEditing={submit}
           editable={!busy}
           accessibilityLabel="Ask a question about this story"
-          style={[styles.askInput, { color: theme.colors.text }]}
+          style={[
+            styles.askInput,
+            noFocusRing,
+            { color: theme.colors.text, fontFamily: theme.type.body?.fontFamily ?? fonts.regular },
+          ]}
         />
         <Pressable
           onPress={submit}
@@ -236,7 +252,11 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
           hitSlop={6}
           style={[
             styles.send,
-            { backgroundColor: question.trim() ? theme.colors.inverseBg : 'transparent' },
+            {
+              backgroundColor: question.trim() ? theme.colors.inverseBg : 'transparent',
+              // Round in round themes; the theme's own corner elsewhere.
+              borderRadius: Math.min(theme.shape.control, 20),
+            },
           ]}>
           {busy ? (
             <ActivityIndicator size="small" color={theme.colors.textSecondary} />
@@ -260,7 +280,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 50,
-    borderRadius: radii.pill,
     borderWidth: 1,
   },
   dive: { gap: 16 },
@@ -278,10 +297,9 @@ const styles = StyleSheet.create({
     paddingLeft: 18,
     paddingRight: 5,
     minHeight: 50,
-    borderRadius: radii.pill,
     borderWidth: 1,
   },
   // position: relative keeps the field above the glass layers on web.
-  askInput: { position: 'relative', flex: 1, fontFamily: fonts.regular, fontSize: 15, minHeight: TAP },
-  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  askInput: { position: 'relative', flex: 1, minWidth: 0, fontSize: 15, minHeight: TAP },
+  send: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 });

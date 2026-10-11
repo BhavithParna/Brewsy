@@ -42,6 +42,8 @@ export function Pill({
   const { theme } = useTheme();
   const accent = color ?? theme.colors.accent;
   const caps = theme.layout.capsButtons;
+  // Small chips are set like the theme's small labels: spaced capitals, unless it keeps those in sentence case (Glass).
+  const smallCaps = theme.type.kicker?.textTransform !== 'none';
   const height = size === 'sm' ? 26 : 36;
   const padH = size === 'sm' ? 10 : 16;
 
@@ -60,7 +62,7 @@ export function Pill({
         variant={size === 'sm' ? 'caption' : 'label'}
         color={textColor}
         numberOfLines={1}
-        style={size === 'sm' ? styles.smText : caps ? capsLabel : undefined}>
+        style={size === 'sm' ? (smallCaps ? styles.smText : undefined) : caps ? capsLabel : undefined}>
         {label}
       </Txt>
     </View>

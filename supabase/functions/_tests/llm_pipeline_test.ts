@@ -11,6 +11,7 @@ import { DEFAULT_PREFS } from '../_shared/prefs.ts';
 import { EDITOR_SYSTEM, PICK_SYSTEM, SCRIPT_SYSTEM } from '../_shared/prompts.ts';
 import { breakingPush, editionPush, sendExpoPush } from '../_shared/push.ts';
 import type { GenerateJsonOptions } from '../_shared/llm.ts';
+import type { Topic } from '../_shared/types.ts';
 import { goodStory, item, NOW, sampleItems } from './fixtures.ts';
 
 const gemini = (text: string) =>
@@ -327,13 +328,46 @@ Deno.test('pipeline: topics the AI left out get one story each (2+ outlets) and 
     }, seen, () => [...sampleItems(), ...beats()]),
   });
   const pick = seen.find((o) => kindOf(o) === 'pick')!;
-  assert(pick.prompt.includes('gaming, sports, entertainment, crypto'), 'the AI is offered all 13 topics');
+  assert(pick.prompt.includes('gaming, sports, entertainment, movies, crypto'), 'the AI is offered all 14 topics');
   assert(/IGN, Polygon · hint gaming/.test(pick.prompt), 'the gaming story reaches the AI');
   assertEquals(stats.topicFills, 1, 'gaming (two outlets) gets a full story; the one-outlet cricket story does not');
   const gaming = briefing.stories.filter((s) => s.allSources.some((x) => x.url.includes('ign.example')));
   assertEquals(gaming.length, 1);
   assert(briefing.alsoHappening!.some((a) => a.topic === 'sports' && a.headline.includes('six wickets')), 'cricket still gets a line');
   assertEquals(stats.byTopic.sports, { stories: 0, also: 1 });
+});
+
+Deno.test('pipeline: "more of this" topics get a bigger target, more candidates, 2+ stories and more "also" lines', async () => {
+  const seen: GenerateJsonOptions[] = [];
+  const film = (k: number, a: string, b: string, words: string): FeedItem[] => [a, b].map((outlet, i) =>
+    item({ outlet, topicHint: 'movies', title: `${words} ${i ? 'report' : ''}`.trim(), summary: `${words}, the studio said on Wednesday.`, link: `https://film.example/${k}/${i}` }));
+  const films = (): FeedItem[] => [
+    ...film(1, 'Variety', 'Deadline', 'Harborlight dates its space epic sequel for next summer'),
+    ...film(2, 'Bollywood Hungama', 'Cinema Express', 'Telugu period drama crosses three hundred crore worldwide'),
+    ...film(3, 'IndieWire', 'Screen Daily', 'Coastline festival names its competition lineup of premieres'),
+  ];
+  const prefs = { ...DEFAULT_PREFS, topics: ['world', 'tech', 'movies'] as Topic[], focusTopics: ['movies'] as Topic[] };
+  const { briefing, stats } = await buildEdition({
+    prefs, now: NOW, date: '2026-10-07', deadlineMs: Date.now() + 120_000,
+    deps: deps({
+      // The AI ignores the film news; the code still gives the focus topic two stories.
+      pick: (o) => {
+        const ids = [...o.prompt.matchAll(/^\[(c\d+)\].*hint (?:tech|world|business|mixed)/gm)].map((m) => m[1]).slice(0, 5);
+        return { picks: ids.map((id) => ({ clusterId: id, topic: 'world' })) };
+      },
+      stories: (o, ids) => ({
+        stories: ids.map((id) => goodStory(id, o.prompt.match(new RegExp(`clusterIds: ${id}\\b[^·]*· suggested topic: (\\w+)`))?.[1] === 'movies' ? 'movies' : 'world')),
+      }),
+    }, seen, () => [...sampleItems(), ...films()]),
+  });
+  const pick = seen.find((o) => kindOf(o) === 'pick')!;
+  assert(pick.prompt.includes('The reader asked for more of movies') && pick.prompt.includes('Choose about 14 stories'));
+  const editor = seen.find((o) => kindOf(o) === 'editor')!;
+  assert(editor.prompt.includes('up to 4 items for each topic the reader asked for more of (movies)'));
+  assertEquals(stats.target, 14);
+  assertEquals(stats.focusTopics, ['movies']);
+  assertEquals(briefing.stories.filter((s) => s.topic === 'movies').length, 2, 'FOCUS_MIN_STORIES full stories');
+  assert(briefing.alsoHappening!.some((a) => a.topic === 'movies'), 'and the third film story still gets a line');
 });
 
 /** Five major outlets on one event: the must-include rule. */

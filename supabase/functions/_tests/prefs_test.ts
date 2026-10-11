@@ -1,6 +1,6 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 
-import { type BriefingRow, decideTick, DEFAULT_PREFS, editionMinutes, localParts, normalizePrefs, type Prefs } from '../_shared/prefs.ts';
+import { type BriefingRow, decideTick, DEFAULT_PREFS, editionMinutes, localParts, normalizePrefs, type Prefs, topicOrder } from '../_shared/prefs.ts';
 import { TOPICS } from '../_shared/types.ts';
 
 const IST: Prefs = { ...DEFAULT_PREFS, timezone: 'Asia/Kolkata', wakeTime: '05:30' };
@@ -75,6 +75,23 @@ Deno.test('normalizePrefs fills gaps and rejects junk', () => {
   assertEquals(p.disabledSources, ['Wired']);
   assertEquals(p.morningPush, true);
   assertEquals(normalizePrefs(null).topics, TOPICS);
+});
+
+Deno.test('focus topics: only followed ones count, in topic order, at most 4; old rows have none', () => {
+  const base = { device_id: 'x', push_token: null, platform: null, timezone: 'Asia/Kolkata', wake_time: '05:30', disabled_sources: null, morning_push: true, updated_at: '' };
+  const p = normalizePrefs({ ...base, topics: ['ai', 'movies', 'sports', 'tech', 'crypto', 'world'], focus_topics: ['movies', 'horoscopes', 'climate', 'ai', 'movies', 'sports', 'tech', 'crypto'] });
+  assertEquals(p.topics, ['ai', 'movies', 'sports', 'tech', 'crypto', 'world']);
+  assertEquals(p.focusTopics, ['ai', 'tech', 'sports', 'movies'], 'climate is not followed; horoscopes is not a topic; the fifth is dropped');
+  assertEquals(normalizePrefs({ ...base, topics: ['ai'] }).focusTopics, [], 'rows from before the focus_topics column');
+  assertEquals(normalizePrefs({ ...base, topics: ['ai'], focus_topics: null }).focusTopics, []);
+  assertEquals(normalizePrefs(null).focusTopics, []);
+});
+
+Deno.test('topicOrder: "more of this" first, then the other followed topics, then the rest', () => {
+  const order = topicOrder({ topics: ['ai', 'business', 'movies'], focusTopics: ['movies'] });
+  assertEquals(order.slice(0, 4), ['movies', 'ai', 'business', 'tech']);
+  assertEquals(order.length, TOPICS.length);
+  assertEquals(topicOrder(DEFAULT_PREFS), TOPICS);
 });
 
 Deno.test('editionMinutes matches the app formula', () => {

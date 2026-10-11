@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { CalendarDays, Settings as SettingsIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   Platform,
   Pressable,
@@ -10,22 +10,28 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import { Gesture, GestureDetector, type NativeGesture } from 'react-native-gesture-handler';
+import Animated, {
+  FadeIn,
+  useAnimatedReaction,
+  useReducedMotion,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { listenToEdition, prefetchEditionAudio } from '@/audio/listen';
 import { AlsoHappening } from '@/components/AlsoHappening';
-import { BrewsyMark } from '@/components/BrewsyMark';
+import { CoverBar } from '@/components/CoverBar';
 import { DaySwitcher } from '@/components/DaySwitcher';
 import { Cover } from '@/components/Cover';
 import { EditionHeader } from '@/components/EditionHeader';
 import { EndOfEdition, MarketsTable, RadarList, TopicHeading } from '@/components/EditionSections';
 import { EditionTiles } from '@/components/EditionTiles';
-import { GlassIconButton } from '@/components/GlassIconButton';
 import { coverageLine } from '@/components/HowMadeSheet';
+import { BAR_HEIGHT, JumpBar, SectionsSheet } from '@/components/JumpBar';
+import { navTargets } from '@/components/navTargets';
 import { Pill } from '@/components/Pill';
-import { ReadingProgress } from '@/components/ReadingProgress';
 import { useSheets } from '@/components/SheetHost';
 import { EditionSkeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -34,17 +40,28 @@ import { StoryView, storyLayout } from '@/components/StoryView';
 import { SummaryCard } from '@/components/SummaryCard';
 import { useTabBarClearance } from '@/components/TabBar';
 import { toast } from '@/components/Toast';
+import { TopicRail, type NavSection } from '@/components/TopicRail';
+import { tourTargets } from '@/components/tour/targets';
+import { TodayTour } from '@/components/tour/Tour';
 import { Txt } from '@/components/Txt';
 import { shiftDate, todayKey } from '@/data/editions';
-import { TOPICS, type Briefing, type Story } from '@/data/types';
+import type { Briefing, Story, Topic } from '@/data/types';
 import { cyclePreviewState, usePreviewState } from '@/dev/previewState';
 import { useEdition } from '@/hooks/useEdition';
-import { showTabBar, useScrollChrome } from '@/hooks/useScrollChrome';
+import {
+  showTabBar,
+  usePinned,
+  useScrollChrome,
+  useSectionSpy,
+  type SectionSpy,
+} from '@/hooks/useScrollChrome';
+import { curateEdition, type CuratedEdition } from '@/lib/curation';
 import { formatShortDate, formatWakeTime } from '@/lib/format';
 import { exportEditionPdf } from '@/lib/pdf';
 import { setSelectedEdition, useSelectedEdition } from '@/state/editionNav';
 import { isNew } from '@/state/seen';
 import { useSettings } from '@/state/settings';
+import { clearStoryFocus, useStoryFocus } from '@/state/storyFocus';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TOPIC_LABEL } from '@/theme/themes';
 import { GUTTER, TAP } from '@/theme/tokens';
@@ -52,40 +69,92 @@ import { GUTTER, TAP } from '@/theme/tokens';
 /** Max comfortable reading width on big screens. */
 const MAX_WIDTH = 680;
 
+// Coach marks measure these (see navTargets).
+const { days: daysTarget, rail: railTarget } = navTargets;
+
 export default function TodayScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const clearance = useTabBarClearance();
+  const reduceMotion = useReducedMotion();
   const { openSettings, openPastEditions } = useSheets();
   const preview = usePreviewState();
   const today = todayKey();
   const date = useSelectedEdition() ?? today;
   const { state, refreshing, refresh, retry } = useEdition(date);
   const center = theme.layout.heroAlign === 'center';
-  const { onScroll, progress, scrollY } = useScrollChrome();
+  const chrome = useScrollChrome();
+  const { onScroll, progress, scrollY } = chrome;
   const coverHeight = Math.max(440, Math.round(height * 0.6));
   const scrollRef = useRef<Animated.ScrollView>(null);
-  const settings = useSettings();
-  // Where the edition starts inside the scroll content (for scroll-to-story).
+  const { wakeTime, topics, focusTopics, mutedWords } = useSettings();
+  const [sectionsOpen, setSectionsOpen] = useState(false);
+
+  const briefing = state.status === 'ready' ? state.briefing : null;
+  const curated = useMemo(
+    () => (briefing ? curateEdition(briefing, { topics, focusTopics, mutedWords }) : null),
+    [briefing, topics, focusTopics, mutedWords],
+  );
+  const sections = useMemo(() => (briefing && curated ? navSections(briefing, curated) : []), [briefing, curated]);
+  const sectionIds = useMemo(() => sections.map((s) => s.id), [sections]);
+
+  // Where a section or story lands when we scroll to it: just under the pinned bar.
+  const topClear = insets.top + BAR_HEIGHT + 12;
+  const spy = useSectionSpy(chrome, { ids: sectionIds, lineTop: topClear + 12, lineBottom: clearance });
+
+  // Where the edition starts inside the scroll content, and where the rail sits inside the edition.
   const editionOffset = useRef(0);
+  const railY = useRef(0);
+  // The jump bar pins once the rail in the page reaches the status bar, so it seems to stick there.
+  const pinAt = useSharedValue(0);
+  const pinned = usePinned(scrollY, pinAt);
+  const placePin = () => {
+    pinAt.set(railY.current > 0 ? editionOffset.current + railY.current - insets.top : 0);
+  };
+  const setPinned = (on: boolean) => spy.store.set({ pinned: on });
+  useAnimatedReaction(
+    () => pinned.get() > 0.5,
+    (on, prev) => {
+      if (on !== prev) scheduleOnRN(setPinned, on);
+    },
+  );
 
   // A different day starts at the top.
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     showTabBar();
-  }, [date]);
+    spy.reset();
+    railY.current = 0;
+    pinAt.set(0);
+  }, [date, spy, pinAt]);
 
   const goTo = (d: string) => {
     if (d > today || d === date) return;
     setSelectedEdition(d === today ? null : d);
   };
 
+  const scrollToY = (y: number) =>
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - topClear), animated: !reduceMotion });
+
+  const jumpTo = (id: string) => {
+    const top = spy.topOf(id);
+    if (top == null) return;
+    spy.hold(id);
+    scrollToY(top);
+  };
+
+  const openSearch = () => router.push('/search');
+
+  // The day swipe waits while the jump rail scrolls sideways.
+  const railGesture = useMemo(() => Gesture.Native(), []);
+
   // Swipe right for the previous day, left to come back toward today.
   const swipe = Gesture.Pan()
     .runOnJS(true)
     .activeOffsetX([-30, 30])
     .failOffsetY([-14, 14])
+    .requireExternalGestureToFail(railGesture)
     .onEnd((e) => {
       const older = e.translationX > 70 || e.velocityX > 800;
       const newer = e.translationX < -70 || e.velocityX < -800;
@@ -114,31 +183,18 @@ export default function TodayScreen() {
             />
           }>
           <Cover height={coverHeight}>
-            <View style={[styles.topRow, { paddingTop: insets.top + 6 }]}>
-              {center && <TopButton kind="calendar" onPress={openPastEditions} />}
-              <Pressable
-                onLongPress={cyclePreviewState}
-                delayLongPress={600}
-                style={styles.brand}
-                accessibilityRole="header"
-                accessibilityLabel="Brewsy">
-                <BrewsyMark size={22} color={theme.colors.onCover} />
-                <Txt variant="spaced" color={theme.colors.onCover}>
-                  Brewsy
-                </Txt>
-              </Pressable>
-              {center ? (
-                <TopButton kind="settings" onPress={openSettings} />
-              ) : (
-                <View style={styles.topActions}>
-                  <TopButton kind="calendar" onPress={openPastEditions} />
-                  <TopButton kind="settings" onPress={openSettings} />
-                </View>
-              )}
-            </View>
+            <CoverBar
+              onSearch={openSearch}
+              onSettings={openSettings}
+              onBrandLongPress={cyclePreviewState}
+              settingsRef={navTargets.settings}
+              searchRef={navTargets.search}
+            />
 
             <View style={[styles.pad, center && styles.center]}>
-              <DaySwitcher date={date} onChange={goTo} />
+              <View ref={daysTarget} style={styles.days}>
+                <DaySwitcher date={date} onChange={goTo} onOlder={openPastEditions} />
+              </View>
             </View>
 
             {__DEV__ && preview !== 'live' && (
@@ -155,79 +211,240 @@ export default function TodayScreen() {
           <Animated.View
             key={date}
             entering={FadeIn.duration(260)}
-            onLayout={(e) => (editionOffset.current = e.nativeEvent.layout.y)}>
-            {state.status === 'ready' ? (
+            onLayout={(e) => {
+              editionOffset.current = e.nativeEvent.layout.y;
+              spy.setBase(e.nativeEvent.layout.y);
+              placePin();
+            }}>
+            {briefing && curated ? (
               <Edition
-                briefing={state.briefing}
-                offline={state.offline}
+                briefing={briefing}
+                curated={curated}
+                sections={sections}
+                offline={state.status === 'ready' && state.offline}
+                refreshing={refreshing}
+                onRefresh={refresh}
                 isToday={date === today}
                 scrollRef={scrollRef}
                 offsetRef={editionOffset}
+                topClear={topClear}
+                spy={spy}
+                railGesture={railGesture}
+                onRailLayout={(y) => {
+                  railY.current = y;
+                  placePin();
+                }}
+                onJump={jumpTo}
+                onOpenSections={() => setSectionsOpen(true)}
                 onPrevious={() => goTo(shiftDate(date, -1))}
                 onBackToToday={date !== today ? () => goTo(today) : undefined}
               />
             ) : (
               <View style={styles.stateWrap}>
-                <View style={styles.stateBody}>
-                  {state.status === 'loading' && <EditionSkeleton />}
-                  {state.status === 'empty' && (
-                    <EmptyState
-                      wakeTime={formatWakeTime(settings.wakeTime)}
-                      isToday={date === today}
-                      dateLabel={formatShortDate(date)}
-                    />
-                  )}
-                  {state.status === 'error' && <ErrorState message={state.message} onRetry={retry} />}
-                </View>
+                {state.status === 'loading' && <EditionSkeleton />}
+                {state.status === 'empty' && (
+                  <EmptyState
+                    wakeTime={formatWakeTime(wakeTime)}
+                    isToday={date === today}
+                    dateLabel={formatShortDate(date)}
+                  />
+                )}
+                {state.status === 'error' && <ErrorState message={state.message} onRetry={retry} />}
               </View>
             )}
           </Animated.View>
         </Animated.ScrollView>
       </GestureDetector>
-      <StatusShade scrollY={scrollY} solidAt={coverHeight - insets.top - 60} />
-      <ReadingProgress progress={progress} />
+      <StatusShade scrollY={scrollY} solidAt={coverHeight - insets.top - 60} handOff={pinned} />
+      {sections.length > 0 && (
+        <JumpBar
+          shown={pinned}
+          progress={progress}
+          sections={sections}
+          store={spy.store}
+          onSelect={jumpTo}
+          onOpenAll={() => setSectionsOpen(true)}
+          onSearch={openSearch}
+          onSettings={openSettings}
+          barRef={navTargets.pinnedBar}
+          settingsRef={navTargets.pinnedSettings}
+        />
+      )}
+      <SectionsSheet
+        visible={sectionsOpen}
+        onClose={() => setSectionsOpen(false)}
+        sections={sections}
+        store={spy.store}
+        onSelect={jumpTo}
+        onOlder={openPastEditions}
+      />
+      {/* First run: a short tour of Today, once there's an edition to show it on. */}
+      <TodayTour
+        ready={!!curated && sections.length > 0 && preview === 'live'}
+        hasStory={!!curated && (curated.updates.length > 0 || curated.groups.some((g) => g.stories.length > 0))}
+        scrollRef={scrollRef}
+        scrollY={scrollY}
+        isPinned={() => spy.store.get().pinned}
+      />
     </View>
   );
 }
 
+/** The stops on the jump bar, in page order. */
+function navSections(briefing: Briefing, curated: CuratedEdition): NavSection[] {
+  const out: NavSection[] = [];
+  if (curated.updates.length) {
+    out.push({ id: 'updates', label: 'Since this morning', short: 'Latest', detail: `${curated.updates.length} new` });
+  }
+  if (curated.summary.length) out.push({ id: 'summary', label: 'Summary', detail: 'The 60-second version' });
+  for (const g of curated.groups) {
+    const parts = [
+      g.stories.length ? storiesLabel(g.stories.length) : null,
+      g.quick.length ? `${g.quick.length} in brief` : null,
+    ];
+    out.push({
+      id: topicSection(g.topic),
+      label: TOPIC_LABEL[g.topic],
+      detail: parts.filter(Boolean).join(' · '),
+      focus: g.focus,
+    });
+  }
+  if (briefing.calendar.length) {
+    const n = briefing.calendar.length;
+    out.push({ id: 'radar', label: 'On the radar', detail: `${n} ${n === 1 ? 'event' : 'events'}` });
+  }
+  if (briefing.markets.length) out.push({ id: 'markets', label: 'Markets' });
+  return out;
+}
+
+const topicSection = (topic: Topic) => `topic:${topic}`;
+const storiesLabel = (n: number) => `${n} ${n === 1 ? 'story' : 'stories'}`;
+
 type EditionProps = {
   briefing: Briefing;
+  curated: CuratedEdition;
+  sections: NavSection[];
   offline: boolean;
+  /** Pull-to-refresh is running (a requested story may be on its way). */
+  refreshing: boolean;
+  onRefresh: () => void;
   isToday: boolean;
   scrollRef: RefObject<Animated.ScrollView | null>;
   offsetRef: RefObject<number>;
+  /** Screen space covered at the top (status bar + pinned bar) when scrolling something into view. */
+  topClear: number;
+  spy: SectionSpy;
+  railGesture: NativeGesture;
+  /** Where the jump rail sits inside the edition. */
+  onRailLayout: (y: number) => void;
+  onJump: (id: string) => void;
+  onOpenSections: () => void;
   onPrevious: () => void;
   onBackToToday?: () => void;
 };
 
-/** The whole edition as one column: header, 60-second card, stories by topic, markets, the end. */
-function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious, onBackToToday }: EditionProps) {
-  const insets = useSafeAreaInsets();
+/**
+ * The whole edition as one column: the jump rail, the tiles, Since this morning, the 60-second
+ * card, then the reader's topics (focus topics first), each with its stories and quick hits,
+ * then On the radar, Markets and the end.
+ */
+function Edition({
+  briefing,
+  curated,
+  sections,
+  offline,
+  refreshing,
+  onRefresh,
+  isToday,
+  scrollRef,
+  offsetRef,
+  topClear,
+  spy,
+  railGesture,
+  onRailLayout,
+  onJump,
+  onOpenSections,
+  onPrevious,
+  onBackToToday,
+}: EditionProps) {
+  const { theme } = useTheme();
   const reduceMotion = useReducedMotion();
   const settings = useSettings();
-  const { openHowMade } = useSheets();
+  const { openHowMade, openSettings } = useSheets();
+  const focus = useStoryFocus();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [quickOpenId, setQuickOpenId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  // Where the first topic section sits inside the edition (for the Stories tile).
-  const firstSectionY = useRef(0);
 
-  // Which story to scroll to once it has opened.
+  // Which story (or quick hit) to scroll to once it has opened.
   const pendingScroll = useRef<string | null>(null);
+  const pendingQuick = useRef<string | null>(null);
+  // Where stories and quick-hit cards sit inside the edition.
+  const storyY = useRef(new Map<string, number>());
+  const quickY = useRef(new Map<Topic, number>());
 
-  const groups = TOPICS.filter((t) => settings.topics.includes(t))
-    .map((topic) => ({ topic, stories: briefing.stories.filter((s) => s.topic === topic) }))
-    .filter((g) => g.stories.length > 0);
+  const { groups, updates, hidden } = curated;
   const visible = groups.flatMap((g) => g.stories);
+  // Every story on the page once (a story can show both under Since this morning and in its topic).
+  const storyIds = [...new Set([...updates, ...visible].map((s) => s.id))];
   const leadIds = new Set(briefing.stories.slice(0, 2).map((s) => s.id));
-  const minutes = readingMinutes(briefing.summary, visible);
-  const updates = (briefing.sinceThisMorning ?? []).filter((s) => settings.topics.includes(s.topic));
-  const also = (briefing.alsoHappening ?? []).filter((a) => settings.topics.includes(a.topic));
+  // The tour points at the first story on the page (a story can show both under Since this morning and in its topic).
+  const tourStory = updates[0] ?? visible[0];
+  const isTourStory = (story: Story, update = false) => story === tourStory && update === updates.length > 0;
+  const minutes = readingMinutes(curated.summary, visible);
   const audioUrl = isToday ? briefing.audio?.[settings.listenMode]?.url : null;
+  const centerKicker = theme.layout.heroAlign === 'center' || theme.layout.sections === 'rule';
 
   // Today's audio downloads in the background, so it plays instantly and offline.
   useEffect(() => {
     if (audioUrl) prefetchEditionAudio(briefing);
   }, [audioUrl, briefing]);
+
+  const scrollTo = (y: number) =>
+    scrollRef.current?.scrollTo({ y: Math.max(0, offsetRef.current + y - topClear), animated: !reduceMotion });
+
+  // Search and notification taps ask for a story: open it here and bring it into view.
+  // A story that broke after this copy was loaded isn't here yet, so look once more after a refresh.
+  const refetchedFor = useRef<number | null>(null);
+  const openFocused = (id: string, seq: number) => {
+    const isStory = updates.some((s) => s.id === id) || groups.some((g) => g.stories.some((s) => s.id === id));
+    const isQuick = groups.some((g) => g.quick.some((q) => q.id === id));
+    const inEdition =
+      briefing.stories.some((s) => s.id === id) ||
+      !!briefing.sinceThisMorning?.some((s) => s.id === id) ||
+      !!briefing.alsoHappening?.some((a) => a.id === id);
+    if (!isStory && !isQuick && !inEdition && refetchedFor.current !== seq) {
+      // Keep the request: the effect below runs again once the refresh is done.
+      refetchedFor.current = seq;
+      onRefresh();
+      return;
+    }
+    clearStoryFocus();
+    if (isStory) {
+      const y = storyY.current.get(id);
+      if (expandedId === id && y != null) {
+        scrollTo(y);
+      } else {
+        pendingScroll.current = id;
+        setExpandedId(id);
+      }
+    } else if (isQuick) {
+      pendingQuick.current = id;
+      setQuickOpenId(id);
+    } else if (inEdition) {
+      toast.show('That story is in a topic you’ve turned off, or it mentions a word you’ve hidden.');
+    } else {
+      toast.show('Couldn’t find that story in this edition.');
+    }
+  };
+  useEffect(() => {
+    if (!focus || focus.date !== briefing.date || refreshing) return;
+    // A frame later, so a freshly loaded edition has laid out first.
+    const frame = requestAnimationFrame(() => openFocused(focus.storyId, focus.seq));
+    return () => cancelAnimationFrame(frame);
+    // Once per request (and once more after a refresh); everything else is read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus, briefing.date, refreshing]);
 
   const toggle = (id: string) => {
     if (expandedId === id) {
@@ -238,17 +455,19 @@ function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious,
     }
   };
 
-  // After a story opens, bring its headline to the top of the screen.
+  // After a story opens, bring its headline up under the bar.
   const onStoryLayout = (id: string) => (e: LayoutChangeEvent) => {
+    const y = e.nativeEvent.layout.y;
+    storyY.current.set(id, y);
     if (pendingScroll.current !== id) return;
     pendingScroll.current = null;
-    const y = offsetRef.current + e.nativeEvent.layout.y - insets.top - 18;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y), animated: !reduceMotion });
+    scrollTo(y);
   };
 
-  const readFirst = () => {
-    const y = offsetRef.current + firstSectionY.current - insets.top - 24;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y), animated: !reduceMotion });
+  const onQuickRowLayout = (topic: Topic) => (id: string, y: number) => {
+    if (pendingQuick.current !== id) return;
+    pendingQuick.current = null;
+    scrollTo((quickY.current.get(topic) ?? 0) + y);
   };
 
   const exportPdf = async () => {
@@ -262,10 +481,45 @@ function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious,
     }
   };
 
+  const renderStory = (story: Story, i: number, opts: { update?: boolean } = {}) => (
+    <StoryView
+      key={opts.update ? `u-${story.id}` : story.id}
+      story={story}
+      editionDate={briefing.date}
+      isNew={opts.update ? isNew(story.addedAt) : undefined}
+      showImage={!opts.update && leadIds.has(story.id)}
+      showTopic={opts.update}
+      expanded={expandedId === story.id}
+      onToggle={() => toggle(story.id)}
+      onLayout={onStoryLayout(story.id)}
+      onPlay={() => listenToEdition(briefing, { storyId: story.id })}
+      actionsRef={isTourStory(story, opts.update) ? tourTargets.storyActions : undefined}
+      moreRef={isTourStory(story, opts.update) ? tourTargets.storyMore : undefined}
+      style={[styles.pad, i > 0 && styles.storyGap]}
+    />
+  );
+
   return (
     <View style={styles.edition}>
+      <View ref={railTarget} onLayout={(e) => onRailLayout(e.nativeEvent.layout.y)}>
+        <TopicRail
+          place="inline"
+          sections={sections}
+          store={spy.store}
+          onSelect={onJump}
+          onOpenAll={onOpenSections}
+          gesture={railGesture}
+        />
+      </View>
+
       <Animated.View layout={storyLayout} style={styles.headerBlock}>
-        <EditionTiles briefing={briefing} storyCount={visible.length} readMinutes={minutes} onRead={readFirst} />
+        <EditionTiles
+          briefing={briefing}
+          storyCount={visible.length}
+          readMinutes={minutes}
+          onRead={() => groups[0] && onJump(topicSection(groups[0].topic))}
+          listenRef={tourTargets.listen}
+        />
         {(briefing.isSample || offline) && (
           <View style={[styles.pad, styles.badges]}>
             {briefing.isSample && <Pill label="Sample edition" variant="outline" />}
@@ -275,80 +529,98 @@ function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious,
       </Animated.View>
 
       {updates.length > 0 && [
-        <Animated.View key="h-updates" layout={storyLayout} style={styles.updatesHeading}>
+        <Animated.View key="h-updates" layout={storyLayout} style={styles.updatesHeading} onLayout={spy.track('updates')}>
           <TopicHeading label="Since this morning" count={updates.length} />
         </Animated.View>,
-        ...updates.map((story, i) => (
-          <StoryView
-            key={`u-${story.id}`}
-            story={story}
-            editionDate={briefing.date}
-            isNew={isNew(story.addedAt)}
-            expanded={expandedId === story.id}
-            onToggle={() => toggle(story.id)}
-            onLayout={onStoryLayout(story.id)}
-            onPlay={() => listenToEdition(briefing, { storyId: story.id })}
-            style={[styles.pad, i > 0 && styles.storyGap]}
-          />
-        )),
+        ...updates.map((story, i) => renderStory(story, i, { update: true })),
         <View key="updates-gap" style={styles.updatesGap} />,
       ]}
 
-      <Animated.View layout={storyLayout} style={styles.pad}>
-        <SummaryCard takeaways={briefing.summary} />
-      </Animated.View>
-
-      {groups.map(({ topic, stories }, gi) => [
-        <Animated.View
-          key={`h-${topic}`}
-          layout={storyLayout}
-          style={styles.topicHeading}
-          onLayout={gi === 0 ? (e) => (firstSectionY.current = e.nativeEvent.layout.y) : undefined}>
-          <TopicHeading
-            label={TOPIC_LABEL[topic]}
-            count={stories.length}
-            cover
-            imageUrl={stories.find((st) => st.imageUrl)?.imageUrl}
-          />
-        </Animated.View>,
-        ...stories.map((story: Story, i) => (
-          <StoryView
-            key={story.id}
-            story={story}
-            editionDate={briefing.date}
-            showImage={leadIds.has(story.id)}
-            showTopic={false}
-            expanded={expandedId === story.id}
-            onToggle={() => toggle(story.id)}
-            onLayout={onStoryLayout(story.id)}
-            onPlay={() => listenToEdition(briefing, { storyId: story.id })}
-            style={[styles.pad, i > 0 && styles.storyGap]}
-          />
-        )),
-      ])}
-
-      {also.length > 0 && (
-        <Animated.View layout={storyLayout} style={styles.section}>
-          <TopicHeading label="Also happening" count={also.length} />
-          <AlsoHappening items={also} editionDate={briefing.date} />
+      {curated.summary.length > 0 && (
+        <Animated.View layout={storyLayout} style={styles.pad} onLayout={spy.track('summary')}>
+          <SummaryCard takeaways={curated.summary} />
         </Animated.View>
       )}
 
-      {visible.length === 0 && (
-        <Txt variant="body" tone="secondary" align="center" style={styles.pad}>
+      {groups.map((g, gi) => {
+        const label = TOPIC_LABEL[g.topic];
+        return [
+          <Animated.View
+            key={`h-${g.topic}`}
+            layout={storyLayout}
+            style={styles.topicHeading}
+            onLayout={spy.track(topicSection(g.topic))}>
+            {g.focus && (
+              <Txt
+                variant="kicker"
+                color={theme.colors.accent}
+                align={centerKicker ? 'center' : 'left'}
+                style={styles.focusKicker}
+                accessibilityLabel={`${label} is one of your focus topics`}>
+                Your focus
+              </Txt>
+            )}
+            <TopicHeading
+              label={label}
+              count={g.stories.length + g.quick.length}
+              cover
+              imageUrl={g.stories.find((st) => st.imageUrl)?.imageUrl}
+              index={gi + 1}
+            />
+          </Animated.View>,
+          ...g.stories.map((story, i) => renderStory(story, i)),
+          g.quick.length > 0 && (
+            <Animated.View
+              key={`q-${g.topic}`}
+              layout={storyLayout}
+              style={g.stories.length > 0 && styles.quickGap}
+              onLayout={(e) => quickY.current.set(g.topic, e.nativeEvent.layout.y)}>
+              <AlsoHappening
+                items={g.quick}
+                editionDate={briefing.date}
+                title={g.stories.length > 0 ? `More in ${label}` : 'In brief'}
+                showTopic={false}
+                openId={quickOpenId}
+                onToggle={(id) => setQuickOpenId((cur) => (cur === id ? null : id))}
+                onRowLayout={onQuickRowLayout(g.topic)}
+              />
+            </Animated.View>
+          ),
+        ];
+      })}
+
+      {groups.length === 0 && (
+        <Txt variant="body" tone="secondary" align="center" style={[styles.pad, styles.noStories]}>
           No stories in your chosen topics today. You can change topics in Settings.
         </Txt>
       )}
 
+      {hidden > 0 && (
+        <Animated.View layout={storyLayout}>
+          <Pressable
+            onPress={openSettings}
+            accessibilityRole="button"
+            accessibilityLabel={`${storiesLabel(hidden)} left out because of your hidden words. Edit hidden words`}
+            style={styles.hiddenLine}>
+            <Txt variant="caption" tone="tertiary" align="center">
+              {storiesLabel(hidden)} left out by your hidden words ·{' '}
+              <Txt variant="caption" tone="secondary" style={styles.underline}>
+                Edit
+              </Txt>
+            </Txt>
+          </Pressable>
+        </Animated.View>
+      )}
+
       {briefing.calendar.length > 0 && (
-        <Animated.View layout={storyLayout} style={styles.section}>
+        <Animated.View layout={storyLayout} style={styles.section} onLayout={spy.track('radar')}>
           <TopicHeading label="On the radar" />
           <RadarList events={briefing.calendar} />
         </Animated.View>
       )}
 
       {briefing.markets.length > 0 && (
-        <Animated.View layout={storyLayout} style={styles.section}>
+        <Animated.View layout={storyLayout} style={styles.section} onLayout={spy.track('markets')}>
           <TopicHeading label="Markets" />
           <MarketsTable quotes={briefing.markets} isSample={briefing.isSample} />
         </Animated.View>
@@ -363,6 +635,8 @@ function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious,
           exporting={exporting}
           onPrevious={onPrevious}
           onBackToToday={onBackToToday}
+          editionDate={briefing.date}
+          storyIds={storyIds}
         />
         <Pressable
           onPress={() => openHowMade(briefing)}
@@ -372,26 +646,12 @@ function Edition({ briefing, offline, isToday, scrollRef, offsetRef, onPrevious,
           <Txt variant="caption" tone="secondary" align="center">
             {briefing.coverage ? coverageLine(briefing.coverage) : 'How this briefing was made'}
           </Txt>
-          <Txt variant="caption" align="center" style={styles.howMadeLink}>
+          <Txt variant="caption" align="center" style={styles.underline}>
             How this briefing was made →
           </Txt>
         </Pressable>
       </Animated.View>
     </View>
-  );
-}
-
-/** Calendar / settings button on the cover. */
-function TopButton({ kind, onPress }: { kind: 'calendar' | 'settings'; onPress: () => void }) {
-  const { theme } = useTheme();
-  const Icon = kind === 'calendar' ? CalendarDays : SettingsIcon;
-  return (
-    <GlassIconButton
-      variant="overlay"
-      icon={<Icon size={18} color={theme.colors.onCover} strokeWidth={1.7} />}
-      onPress={onPress}
-      accessibilityLabel={kind === 'calendar' ? 'Older editions' : 'Settings'}
-    />
   );
 }
 
@@ -408,29 +668,24 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   center: { alignItems: 'center' },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: GUTTER,
-    paddingBottom: 14,
-  },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: TAP },
-  topActions: { flexDirection: 'row', gap: 10 },
+  days: { alignSelf: 'flex-start' },
   previewPill: { marginTop: 10, flexDirection: 'row' },
   coverFoot: { position: 'absolute', left: 0, right: 0, bottom: 18 },
   stateWrap: { paddingTop: 8 },
-  stateBody: {},
-  edition: { paddingTop: 8 },
-  headerBlock: { gap: 14, marginBottom: 14 },
+  edition: { paddingTop: 2 },
+  headerBlock: { gap: 14, marginTop: 6, marginBottom: 14 },
   badges: { flexDirection: 'row', gap: 8 },
   pad: { paddingHorizontal: GUTTER },
   topicHeading: { marginTop: 40, marginBottom: 16 },
+  focusKicker: { paddingHorizontal: GUTTER + 2, marginBottom: 10 },
   storyGap: { marginTop: 14 },
+  quickGap: { marginTop: 14 },
   section: { marginTop: 40, gap: 16 },
   endBlock: { marginTop: 64 },
   updatesHeading: { marginBottom: 16 },
   updatesGap: { height: 40 },
+  noStories: { marginTop: 32 },
+  hiddenLine: { marginTop: 28, minHeight: TAP, justifyContent: 'center', paddingHorizontal: GUTTER + 12 },
   howMade: { marginTop: 28, gap: 6, paddingHorizontal: GUTTER + 12, paddingVertical: 10, minHeight: TAP },
-  howMadeLink: { textDecorationLine: 'underline' },
+  underline: { textDecorationLine: 'underline' },
 });

@@ -112,8 +112,10 @@ const BRIEFING: Briefing = {
   markets: [],
 };
 
-Deno.test('listen order follows the topics, like Today', () => {
+Deno.test('listen order follows the topics, like Today; "more of this" topics go first', () => {
   assertEquals(storiesInListenOrder(BRIEFING).map((s) => s.id), ['a1', 't1', 'b1', 'w1']);
+  assertEquals(storiesInListenOrder(BRIEFING, ['world', 'business']).map((s) => s.id), ['w1', 'b1', 'a1', 't1']);
+  assertEquals(fallbackScript('quick', BRIEFING, ['world']).stories[0].storyId, 'w1');
 });
 
 Deno.test('chapters: intro (greeting + 60-second version), one per story, wrap-up; estimated times add up', () => {

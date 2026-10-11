@@ -16,6 +16,7 @@ export const TOPIC_LABEL: Record<TopicKey, string> = {
   gaming: 'Gaming',
   sports: 'Sports',
   entertainment: 'Entertainment',
+  movies: 'Movies',
   crypto: 'Crypto',
   markets: 'Markets',
 };
@@ -33,7 +34,8 @@ export const TOPIC_BLURB: Record<Topic, string> = {
   autos: 'Carmakers, EVs, self-driving and car launches',
   gaming: 'Games, consoles, studios and esports',
   sports: 'Cricket, football, F1, tennis and more',
-  entertainment: 'Film, TV, music and streaming',
+  entertainment: 'TV, music, streaming and celebrities',
+  movies: 'Hollywood, Bollywood, world and indie cinema, box office',
   crypto: 'Bitcoin, tokens, exchanges and regulation',
 };
 

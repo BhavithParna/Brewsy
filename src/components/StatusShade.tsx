@@ -11,18 +11,22 @@ type Props = {
   scrollY: SharedValue<number>;
   /** Fully solid once the page has scrolled this far (usually just past the cover). */
   solidAt: number;
+  /** A pinned bar's visibility (0–1): while it shows, it covers the status bar itself. */
+  handOff?: SharedValue<number>;
 };
 
 /**
  * A strip of background color behind the phone's status bar (clock, battery), so text
- * never scrolls underneath them. Invisible over the cover photo, solid once you scroll past it.
+ * never scrolls underneath them. Invisible over the cover photo, solid once you scroll past it,
+ * and out of the way while a pinned bar has taken over.
  */
-export function StatusShade({ scrollY, solidAt }: Props) {
+export function StatusShade({ scrollY, solidAt, handOff }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const base = theme.background[0];
   const fade = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.get(), [solidAt * 0.55, solidAt], [0, 1], 'clamp'),
+    opacity:
+      interpolate(scrollY.get(), [solidAt * 0.55, solidAt], [0, 1], 'clamp') * (1 - (handOff ? handOff.get() : 0)),
   }));
 
   return (

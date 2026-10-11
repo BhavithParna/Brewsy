@@ -17,7 +17,8 @@ const TOPIC_GUIDE = `Topics (choose the single best fit for each story):
 - autos: carmakers, electric vehicles, self-driving cars, car launches, sales and recalls (races and race results are sports)
 - gaming: video games, consoles, game studios and publishers, esports
 - sports: matches, results, tournaments, transfers and players: cricket, football, Formula 1, tennis, the Olympics and more
-- entertainment: film, TV, streaming, music, books and the arts, awards, the entertainment industry (no celebrity gossip)
+- entertainment: TV and streaming series, music, celebrities, books and the arts, the TV and music industry (no gossip); films go under movies
+- movies: films from Hollywood, Bollywood and the other Indian film industries (Tamil, Telugu, Malayalam, Kannada and more), world and independent cinema: releases, box office, trailers, casting, festivals, film awards, notable reviews
 - crypto: bitcoin and other cryptocurrencies, exchanges, blockchain companies, crypto regulation`;
 
 const FACT_RULES = `Ground rules (most important):
@@ -60,6 +61,11 @@ export function pickSchema(topics: Topic[]): JsonSchema {
   };
 }
 
+/** "ai", "ai and movies", "ai, tech and movies". */
+function listOf(topics: Topic[]): string {
+  return topics.length < 2 ? topics.join('') : `${topics.slice(0, -1).join(', ')} and ${topics[topics.length - 1]}`;
+}
+
 /** How a candidate is shown to the editor. */
 export type ScoredCandidate = { cluster: Cluster; score: ClusterScore };
 
@@ -71,10 +77,22 @@ function candidateLine({ cluster: c, score: s }: ScoredCandidate, now: Date): st
   return `[${c.id}] score ${s.score} · ${s.breadth} outlets (${s.majorOutlets} major)${flags ? ` · ${flags}` : ''} · ${outlets} · hint ${c.topicHints.join('/')} · ${age}h ago · ${c.title}${teaser}`;
 }
 
-export function pickPrompt(candidates: ScoredCandidate[], topics: Topic[], date: string, now: Date, target: number, followed: Topic[] = topics): string {
+export function pickPrompt(
+  candidates: ScoredCandidate[],
+  topics: Topic[],
+  date: string,
+  now: Date,
+  target: number,
+  followed: Topic[] = topics,
+  /** Followed topics the reader asked for more of. */
+  more: Topic[] = [],
+): string {
   const must = candidates.filter((c) => c.score.mustInclude).map((c) => c.cluster.id);
-  const focus = followed.length && followed.length < topics.length
-    ? `\nThe reader follows ${followed.join(', ')} and sees only those topics until they switch others on, so give each of them depth: 2–4 stories where the news supports it.`
+  const follows = followed.length && followed.length < topics.length
+    ? `\nThe reader follows ${listOf(followed)} and sees only those topics until they switch others on, so give each of them depth: 2–4 stories where the news supports it.`
+    : '';
+  const wantsMore = more.length
+    ? `\nThe reader asked for more of ${listOf(more)}. Give each of these real depth: 4–6 stories where the news supports it, including its notable smaller news (launches, deals, releases, results), never filler or junk. On a quiet day fewer is fine.`
     : '';
   return `Edition date: ${date}. Topics to include: ${topics.join(', ')}.
 
@@ -86,8 +104,8 @@ ${must.length ? `These are MUST candidates (covered by 5+ major outlets or flagg
 ` : ''}
 Choose about ${target} stories in total (at least 5 if the news is thin; MUST candidates don't count against the limit).
 Prefer: hard news with real consequences; stories covered by many outlets; brand-new developments over small updates to ongoing stories; major company, policy, economy, AI and science news.
-Skip: shopping deals, product promotions, reviews, opinion columns, listicles, rumours, celebrity gossip, horoscopes, match previews, and local crime unless it is nationally significant.
-Coverage: readers follow different topics, so give every listed topic that has real news today its single most important story. The big general topics (world, politics, business, tech, AI) get more. Gaming, sports, entertainment, autos and crypto get one story each unless something genuinely major happened there. If a topic has no real news, leave it out.${focus}
+Skip: shopping deals, product promotions, reviews (except how critics received a major film), opinion columns, listicles, rumours, celebrity gossip, horoscopes, match previews, and local crime unless it is nationally significant.
+Coverage: readers follow different topics, so give every listed topic that has real news today its single most important story. The big general topics (world, politics, business, tech, AI) get more. Gaming, sports, entertainment, movies, autos and crypto get one story each unless something genuinely major happened there. If a topic has no real news, leave it out.${follows}${wantsMore}
 If two candidates are the same event, pick one and put the other in alsoClusterIds.
 Rank by importance: the first pick is the top story.
 
@@ -150,7 +168,36 @@ export function editorSchema(topics: Topic[]): JsonSchema {
   };
 }
 
-export function editorPrompt(selected: ScoredCandidate[], rest: ScoredCandidate[], date: string, now: Date): string {
+/** "Also happening" lines asked for per topic: ones the reader wants more of, and the other followed ones. */
+export const ALSO_LINES_MORE = 4;
+export const ALSO_LINES_FOLLOWED = 2;
+
+/** How the editor should spread the "Also happening" list over the topics. */
+function alsoSpread(topics: Topic[], followed: Topic[], more: Topic[]): string {
+  const glance = followed.includes('movies')
+    ? '\nMovies works well at a glance: box office, release dates, trailers, casting, festival line-ups and awards, from Hollywood, Indian and world cinema.'
+    : '';
+  if (!more.length && followed.length >= topics.length) {
+    return `Readers follow different topics, so spread the list: where there is real news, give every topic at least one item (including science, health, climate, autos, gaming, sports, entertainment, movies and crypto) before giving any topic a third.${glance}`;
+  }
+  const others = followed.filter((t) => !more.includes(t));
+  const steps = [
+    more.length ? `up to ${ALSO_LINES_MORE} items for each topic the reader asked for more of (${more.join(', ')})` : '',
+    others.length ? `${ALSO_LINES_FOLLOWED} items for each other topic they follow (${others.join(', ')})` : '',
+    'then one item for each remaining topic with real news',
+  ].filter(Boolean);
+  return `The reader sees only the topics they follow, so spend the list on those first. Where there is real news, fill it in this order: ${steps.join('; ')}.${glance}`;
+}
+
+export function editorPrompt(
+  selected: ScoredCandidate[],
+  rest: ScoredCandidate[],
+  date: string,
+  now: Date,
+  reader: { topics?: Topic[]; followed?: Topic[]; more?: Topic[] } = {},
+): string {
+  const topics = reader.topics ?? [];
+  const followed = reader.followed ?? topics;
   return `Edition date: ${date}.
 
 ALREADY IN TODAY'S EDITION (full stories):
@@ -168,11 +215,11 @@ Check these categories explicitly:
 - Elections, major political decisions, wars and conflicts, natural disasters, major deaths
 - Big security breaches and outages
 - Major science or health news (a big discovery, an outbreak, a drug approval)
-- The biggest sports results (a final, a world record) and the biggest entertainment news
+- The biggest sports results (a final, a world record) and the biggest entertainment and film news
 Put those in "additions" (at most 4). Don't add anything that is the same event as a story already in the edition. It's fine to add nothing.
 
 2) "Also happening": from the remaining NOT SELECTED candidates, choose up to 15 noteworthy items that didn't get a full story, most important first, and write each as one line plus a short "learn more" text.
-Readers follow different topics, so spread the list: where there is real news, give every topic at least one item (including science, health, climate, autos, gaming, sports, entertainment and crypto) before giving any topic a third.
+${alsoSpread(topics, followed, reader.more ?? [])}
 Skip duplicates of the edition, junk (shopping deals, promotions, reviews, opinion, listicles, gossip, rumours) and anything trivial. Merge candidates about the same event into one item (list all their ids).`;
 }
 

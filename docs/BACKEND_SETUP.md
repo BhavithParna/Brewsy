@@ -4,8 +4,8 @@ This puts Brewsy's "newsroom" online so a fresh edition, with an audio version, 
 
 ```
 every 10 min   Supabase timer (pg_cron) ──► daily-briefing function: does the next thing that's due
-                 ~30 min before wake   EDITION  reads ~47 sources (~700 articles), groups them into stories,
-                                                scores importance, Claude picks + writes ~10–16 stories,
+                 ~30 min before wake   EDITION  reads ~125 feeds (~1,000 articles), groups them into stories,
+                                                scores importance, Claude picks + writes ~12–18 stories,
                                                 a second "editor" pass checks for misses, "Also happening"
                  right after           AUDIO    radio scripts (Quick ≈ 3 min, Full ≈ 10 min) → voice → MP3s
                  at wake time          PUSH     "Your Brewsy edition is ready" (with a Listen now button)
@@ -123,7 +123,7 @@ npx supabase link --project-ref YOUR-PROJECT-REF
 npx supabase db push
 ```
 
-It lists the migrations (`brewsy_schema`, `brewsy_cron`, `brewsy_listen_coverage`) and asks you to confirm. Type `Y`.
+It lists the migrations (`brewsy_schema`, `brewsy_cron`, `brewsy_listen_coverage`, `brewsy_topics_focus`) and asks you to confirm. Type `Y`.
 This creates the tables with their security rules, a public `audio` storage bucket for the MP3s,
 the run log (`pipeline_runs`) and `alerts` tables, turns on `pg_cron` and `pg_net`, and schedules a job
 called `brewsy-tick` every 10 minutes. The job does nothing until step 9.
@@ -251,8 +251,14 @@ heavy job, and each job runs in its own function call (each gets the full time l
 
 **Changing the wake time, topics, sources or breaking pushes:** do it in the app's Settings. The app saves
 them to the `devices` table, and the server uses the device whose settings changed most recently. Topics
-are the exception: the edition always covers all 13, and the app shows each reader the ones they follow
-(so switching a topic on shows today's stories for it straight away).
+are the exception: the edition always covers all 14, and the app shows each reader the ones they follow
+(so switching a topic on shows today's stories for it straight away). The followed topics still shape the
+edition: they get 2–4 stories each, and the ones starred as **More of this** (up to 4, `devices.focus_topics`)
+get more, see below.
+
+> If you set Brewsy up before October 11, run `npx supabase db push` once more. The first schema only accepted
+> 4 topics, so the app's settings saves (wake time, push token, topics) were being refused once a reader
+> followed a newer topic. The `brewsy_topics_focus` migration fixes that and adds `focus_topics`.
 
 ## How Brewsy decides what's important
 
@@ -268,10 +274,26 @@ Everything is in `supabase/functions/_shared/scoring.ts` (numbers you can tune a
   "breaking" by a wire service → **always** in the edition, whatever the story limit. The AI is told,
   and the code puts back any it leaves out.
 - **Every topic gets covered:** about 12 stories are picked by importance (the topics the reader follows
-  get 2–4 each, the big general topics several), then each other topic with real news today (2+ outlets, not a deal or a review) gets its
-  best story, up to 18 full stories in all. That's 6 batches of 3, written at the same time: with the
-  pick, editor and summary calls, 9 AI calls, what two Gemini free-tier models allow in a minute.
-  The AI is shown the best ~160 candidates plus the best 4 of every topic, so small beats always reach it.
+  get 2–4 each, the big general topics several), then each topic with real news today (2+ outlets, not a deal
+  or a review) gets its best story, the reader's own topics first, up to 18 full stories in all. That's 6 batches
+  of 3, written at the same time: with the pick, editor and summary calls, 9 AI calls, what two Gemini free-tier
+  models allow in a minute. The AI is shown the best ~160 candidates plus the best 4 of every topic, so small
+  beats always reach it.
+- **More of this (focus topics):** a topic the reader starred gets real depth. Grouping keeps three times its
+  usual share of stories, the AI sees its best 10 candidates instead of 4 and is asked for 4–6 stories on it
+  where the news supports it; the story target grows
+  by 2 per starred topic (12 → at most 16), and a starred topic with real news always ends up with at least 2 full
+  stories. The 18-story cap stays, so it's still 6 writing batches and 9 AI calls: starring topics changes *which*
+  stories are written, not how many calls an edition makes. In "Also happening" the editor fills up to 4 lines per
+  starred topic and 2 per other followed topic before the rest (at least 2 headline lines if the editor gives a
+  starred topic fewer). The daytime check may add one starred-topic story per check that broke after the edition
+  and 4+ outlets already cover; it never sends a push. The audio briefing plays starred topics first, like Today.
+- **Movies** has its own film desks: the Hollywood trades (Variety, Deadline, The Hollywood Reporter, IndieWire),
+  world and independent film (Screen Daily, The Playlist, The Film Stage, World of Reel) and Indian cinema
+  (Bollywood Hungama, Cinema Express for South Indian film, Koimoi for box office, and the cinema desks of The Hindu
+  and The Indian Express). TV, music and celebrities stay under Entertainment. Film and entertainment feeds skip
+  celebrity-gossip headlines (holiday photos, outfits, "shares first post"; `GOSSIP_PATTERNS` in `feeds.ts`), and
+  every feed skips shopping roundups (`JUNK_PATTERNS`); a plain "deal" in a headline is news and is kept.
 - **Daily AI budget:** the Gemini free tier also caps each model at **20 requests a day** (40 with the
   fallback model). An edition uses 9 (11 if the editor adds stories), its audio 2, and the daytime
   "Since this morning" checks up to 8, which leaves about 20 for Go deeper and Ask. Every forced re-run
@@ -279,10 +301,10 @@ Everything is in `supabase/functions/_shared/scoring.ts` (numbers you can tune a
 - **Editor's checklist:** a second AI pass looks at everything that wasn't picked, category by
   category (markets, central banks, economic data, earnings, AI launches, AI policy, deals, politics,
   conflict, disasters, notable deaths, security, science and health, sport, culture). It can add up to
-  4 stories and writes the "Also happening" list (up to 15 one-liners, at least one per topic where
-  there's news; Gemini rejects the schema at 30). A topic left with nothing at all gets its best
-  headline there. If the editor call fails, the list falls back to headlines, at most two per topic, and
-  the reason is logged in `pipeline_runs.stats.editorError`.
+  4 stories and writes the "Also happening" list (up to 15 one-liners, the reader's topics first, at least one
+  per topic where there's news; Gemini rejects the schema at 30). A topic left with nothing at all gets its best
+  headline there. If the editor call fails, the list falls back to headlines (starred topics first, up to 4 each,
+  then at most two per topic), and the reason is logged in `pipeline_runs.stats.editorError`.
 - Every fact comes from the articles; source links come from the feeds, never from the AI. Stories still
   unfolding are labelled **Developing**. The app's "How this briefing was made" uses the `coverage` numbers
   saved with each edition.
@@ -303,11 +325,13 @@ The list lives in `supabase/functions/_shared/sources.ts`, grouped by category. 
   Supabase: they refuse cloud servers (HTTP 503), so don't add them.
 - `category`: `'wire' | 'major' | 'tech' | 'specialist' | 'official' | 'safety-net'`. Wires and majors count
   toward the must-include rule; `specialist` is the press for one beat (Electrek, IGN, ESPNcricinfo,
-  Variety, CoinDesk, STAT…).
+  Variety, Bollywood Hungama, CoinDesk, STAT…). A newsroom's own section feed keeps the newsroom's category
+  (The Hindu's cinema desk is still `major`).
 - `trust`: `'high' | 'medium' | 'low'`.
-- `topicHint`: one of the 13 topics (`'ai'`, `'tech'`, `'business'`, `'world'`, `'politics'`, `'science'`,
-  `'health'`, `'climate'`, `'autos'`, `'gaming'`, `'sports'`, `'entertainment'`, `'crypto'`) or `'mixed'`.
-  It's a nudge (the AI decides per story), and it keeps each beat's best candidates in front of the AI.
+- `topicHint`: one of the 14 topics (`'ai'`, `'tech'`, `'business'`, `'world'`, `'politics'`, `'science'`,
+  `'health'`, `'climate'`, `'autos'`, `'gaming'`, `'sports'`, `'entertainment'`, `'movies'`, `'crypto'`) or `'mixed'`.
+  It's a nudge (the AI decides per story), and it keeps each beat's best candidates in front of the AI. When the
+  same article comes through two feeds of one outlet (Variety and Variety Film), the narrower hint wins.
 
 After editing:
 
@@ -336,8 +360,12 @@ Every edition, audio, update and push run writes one row to `pipeline_runs`. In 
 select created_at, date, stage, ok, ms, feeds_ok, feeds_total, feeds_failed, error
 from pipeline_runs order by created_at desc limit 20;
 
--- Details of the last edition (stories, must-includes, editor additions, model…)
+-- Details of the last edition (stories, must-includes, editor additions, starred topics, target, per-topic counts, model…)
 select stats from pipeline_runs where stage = 'edition' order by created_at desc limit 1;
+
+-- What the server reads as the reader's settings (the most recently updated device)
+select updated_at, topics, focus_topics, wake_time, timezone, morning_push, breaking_push
+from devices order by updated_at desc limit 1;
 
 -- Alerts sent
 select * from alerts order by created_at desc limit 10;
@@ -393,6 +421,7 @@ Needs a development build on a real phone (lock-screen controls don't exist in a
 | SEC filings never show up | Set `SEC_CONTACT_EMAIL` (step 4) and re-run step 7. The health check lists it under `skipped` until then. |
 | No edition in the morning | SQL Editor: `select * from cron.job_run_details order by start_time desc limit 5;` (did the timer run?) and `select status_code, content, error_msg from net._http_response order by created desc limit 5;` (what did the function say?). An empty `private.config` means the timer is skipping. Redo step 9. |
 | App still shows the sample edition | Check the two `.env` lines in the project root, then `npx expo start -c`. |
+| Wake time, topics or starred topics changed in the app but the server ignores them | The `devices` row isn't updating. Run `npx supabase db push` (the `brewsy_topics_focus` migration lets the table accept all 14 topics and `focus_topics`), then change any setting in the app to send it again. Check with the `devices` query under "Checking how the runs went". |
 | "Go deeper" / "Ask" say "Story not found" | The app is showing the built-in sample. These only work on real editions. |
 | "That's the daily limit of 100 questions" | The Ask cap resets on a rolling 24 hours. |
 | `functions deploy` complains about Docker | Add `--use-api` (step 8). |
@@ -421,7 +450,7 @@ What the app calls (all over HTTPS to `EXPO_PUBLIC_SUPABASE_URL`, header `apikey
 | --- | --- |
 | An edition | `GET /rest/v1/briefings?select=data,audio,updates&date=eq.YYYY-MM-DD&status=eq.ready` → the app shows `{...data, audio, sinceThisMorning: updates}` |
 | Edition dates | `GET /rest/v1/briefings?select=date&status=eq.ready&order=date.desc&limit=30` |
-| Save settings | `POST /rest/v1/devices?on_conflict=device_id` + headers `x-device-id: <device_id>`, `Prefer: resolution=merge-duplicates,return=minimal`, `Content-Type: application/json` |
+| Save settings | `POST /rest/v1/devices?on_conflict=device_id` + headers `x-device-id: <device_id>`, `Prefer: resolution=merge-duplicates,return=minimal`, `Content-Type: application/json`; body `{device_id, push_token, platform, timezone, wake_time, topics, focus_topics, disabled_sources, morning_push, breaking_push}` |
 | Go deeper | `POST /functions/v1/go-deeper` `{"date","storyId"}` → `{"deepDive","cached"}` (works for main, "Also happening" and update stories) |
 | Ask | `POST /functions/v1/ask` `{"date","storyId","question"}` → `{"answer","answeredFromSources"}` |
 | Audio files | Public URLs in `audio.quick/full.url` and each chapter's `url` (`/storage/v1/object/public/audio/<date>/<mode>-<stamp>/…`) |
@@ -438,7 +467,7 @@ parsing), `dedupe.ts` (grouping), `scoring.ts` (importance), `pipeline.ts` (the 
 (daytime checks), `audio.ts` + `audio-config.ts` + `tts.ts` + `mp3.ts` + `storage.ts` (audio),
 `llm.ts` (Claude/Gemini), `prompts.ts`, `validate.ts`, `prefs.ts` (the tick schedule), `store.ts`, `push.ts`.
 
-Run the backend tests (96 tests, no keys needed):
+Run the backend tests (107 tests, no keys needed):
 
 ```bash
 npx --yes deno@latest test -A --node-modules-dir=none --no-lock supabase/functions/_tests/

@@ -1,10 +1,13 @@
-// The 13 topics: every beat has sources, reaches the AI, and ends up in the edition somewhere.
+// The 14 topics: every beat has sources, reaches the AI, and ends up in the edition somewhere.
+// "More of this" (focus) topics get more of everything.
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
 
 import { type Cluster, clusterAll } from '../_shared/dedupe.ts';
-import { type Candidates, candidateSlate, countByTopic, fillTopics, topUpAlso } from '../_shared/pipeline.ts';
-import { editorSchema, pickPrompt, pickSchema, scriptPrompt } from '../_shared/prompts.ts';
+import {
+  type Candidates, candidateSlate, countByTopic, fallbackAlso, fillTopics, FOCUS_TOPIC_CANDIDATES, storyTarget, topUpAlso,
+} from '../_shared/pipeline.ts';
+import { editorPrompt, editorSchema, PICK_SYSTEM, pickPrompt, pickSchema, scriptPrompt } from '../_shared/prompts.ts';
 import { rankClusters } from '../_shared/scoring.ts';
 import { isMajorOutlet, outletInfo, SOURCES, type TopicHint } from '../_shared/sources.ts';
 import { TOPICS, type Topic } from '../_shared/types.ts';
@@ -103,16 +106,24 @@ Deno.test('clusterAll: the cap keeps a share of every beat, not only the best-co
   assertEquals(clusters.length, 28);
   assert(clusters.some((c) => c.topicHints.includes('gaming')), 'a gaming story survives the cap');
   assert(clusters.some((c) => c.topicHints.includes('sports')), 'a sports story survives the cap');
+  // A "more of this" beat keeps three times its share.
+  const films = Array.from({ length: 8 }, (_, k) =>
+    item({ outlet: 'Variety', topicHint: 'movies', title: ['orbit', 'lantern', 'harbor', 'meadow'].map((w) => `${w}${k}m`).join(' '), link: `https://variety.example/${k}` }));
+  const count = (focus: Topic[]) => clusterAll([...items, ...films], { now: NOW, maxClusters: 30, focus }).clusters.filter((c) => c.topicHints.includes('movies')).length;
+  assertEquals(count([]), 1);
+  assertEquals(count(['movies']), 3);
 });
 
-Deno.test('prompts: all 13 topics are offered; schemas stay within what Gemini accepts; audio length follows the story count', () => {
+Deno.test('prompts: all 14 topics are offered; schemas stay within what Gemini accepts; audio length follows the story count', () => {
   const prompt = pickPrompt([], TOPICS, '2026-10-08', NOW, 12);
-  assert(prompt.includes('Topics to include: ai, tech, business, world, politics, science, health, climate, autos, gaming, sports, entertainment, crypto.'));
+  assert(prompt.includes('Topics to include: ai, tech, business, world, politics, science, health, climate, autos, gaming, sports, entertainment, movies, crypto.'));
+  assert(prompt.includes('Gaming, sports, entertainment, movies, autos and crypto get one story each'));
+  assert(!prompt.includes('asked for more of'), 'no "more of" line without focus topics');
   assert(prompt.includes('its single most important story'));
   assert(!/\bsports, horoscopes\b/.test(prompt), 'sport is a topic now, not junk');
   assert(!prompt.includes('The reader follows'), 'no focus line when every topic is followed');
   const focused = pickPrompt([], TOPICS, '2026-10-08', NOW, 12, ['ai', 'tech', 'business']);
-  assert(focused.includes('The reader follows ai, tech, business') && focused.includes('2–4 stories'), 'followed topics get depth');
+  assert(focused.includes('The reader follows ai, tech and business') && focused.includes('2–4 stories'), 'followed topics get depth');
   assert(focused.includes('Topics to include: ai, tech, business, world, politics,'), 'but the edition still covers every topic');
   // deno-lint-ignore no-explicit-any
   const editor = editorSchema(TOPICS) as any;
@@ -123,4 +134,85 @@ Deno.test('prompts: all 13 topics are offered; schemas stay within what Gemini a
   const story = { id: 's', topic: 'ai' as Topic, headline: 'h', dek: 'd', whatHappened: 'w', whyItMatters: 'y' };
   assert(scriptPrompt('full', ['a'], Array(10).fill(story), 'Thursday').includes('roughly 1,160 words'));
   assert(scriptPrompt('quick', ['a'], Array(18).fill(story), 'Thursday').includes('roughly 690 words'));
+});
+
+// ─── Movies ───
+
+Deno.test('movies: its own beat, fed by Hollywood trades, world and indie film press, and Indian cinema desks', () => {
+  const film = SOURCES.filter((s) => s.topicHint === 'movies');
+  assert(film.length >= 10, `${film.length} film feeds`);
+  const outlets = new Set(film.map((s) => s.outlet));
+  for (const o of ['Variety', 'Deadline', 'The Hollywood Reporter', 'IndieWire', 'Screen Daily', 'Bollywood Hungama', 'Cinema Express', 'The Hindu']) {
+    assert(outlets.has(o), `${o} feeds the movies beat`);
+  }
+  assert(film.every((s) => s.category === 'specialist' || s.category === 'major'));
+  assert(film.filter((s) => s.category === 'major').every((s) => isMajorOutlet(s.outlet)), 'newsroom film desks keep their newsroom standing');
+  assertEquals(outletInfo('Hindustan Times').category, 'major');
+  assertEquals(outletInfo('Bollywood Hungama').category, 'specialist');
+  assert(PICK_SYSTEM.includes('- movies: films from Hollywood, Bollywood'), 'the AI knows what movies covers');
+  assert(PICK_SYSTEM.includes('films go under movies'), 'and that films are not entertainment');
+});
+
+// ─── "More of this" (focus topics) ───
+
+Deno.test('storyTarget: two more stories for each focus topic, capped so the writing still fits in six batches', () => {
+  assertEquals(storyTarget([]), 12);
+  assertEquals(storyTarget(['ai']), 14);
+  assertEquals(storyTarget(['ai', 'movies']), 16);
+  assertEquals(storyTarget(['ai', 'movies', 'sports', 'tech']), 16);
+});
+
+Deno.test('candidateSlate: a focus topic keeps its best 10, other topics their best 4', () => {
+  const big = Array.from({ length: 60 }, (_, i) => cluster(`w${i}`, 'world', ['Reuters', 'BBC News', 'NPR']));
+  const films = Array.from({ length: 12 }, (_, i) => cluster(`m${i}`, 'movies', ['Variety']));
+  const games = Array.from({ length: 12 }, (_, i) => cluster(`g${i}`, 'gaming', ['IGN']));
+  const all = [...big, ...films, ...games];
+  const slate = candidateSlate(all, 30, 4, ['movies']);
+  assertEquals(slate.filter((c) => c.topicHints.includes('movies')).length, FOCUS_TOPIC_CANDIDATES);
+  assertEquals(slate.filter((c) => c.topicHints.includes('gaming')).length, 4);
+  assertEquals(candidateSlate(all, 30, 4).filter((c) => c.topicHints.includes('movies')).length, 4, 'no focus, no extra');
+});
+
+Deno.test('fillTopics: the reader\'s topics first, then a second story for focus topics, then the rest', () => {
+  const cand = candidates([
+    cluster('w1', 'world', ['Reuters', 'BBC News']),
+    cluster('m1', 'movies', ['Variety', 'Deadline'], 'Studio dates its space epic for next summer'),
+    cluster('m2', 'movies', ['Bollywood Hungama', 'Cinema Express'], 'Telugu period drama crosses 300 crore worldwide'),
+    cluster('m3', 'movies', ['IndieWire', 'Screen Daily'], 'Festival names its competition line-up'),
+    cluster('g1', 'gaming', ['IGN', 'Polygon'], 'Console maker confirms handheld successor'),
+    cluster('c1', 'crypto', ['CoinDesk', 'Decrypt'], 'Exchange halts withdrawals after hack'),
+  ]);
+  const picks = [{ clusterIds: ['w1'], topic: 'world' as Topic }];
+  const reader = { followed: ['world', 'movies', 'crypto'] as Topic[], focus: ['movies'] as Topic[] };
+  assertEquals(fillTopics(picks, cand, 10, reader).map((p) => [p.topic, p.clusterIds[0]]), [
+    ['movies', 'm1'], ['crypto', 'c1'], ['movies', 'm2'], ['gaming', 'g1'],
+  ]);
+  assertEquals(fillTopics(picks, cand, 2, reader).map((p) => p.topic), ['movies', 'crypto'], 'little room: the reader\'s own topics win');
+});
+
+Deno.test('prompts: focus topics ask for 4–6 stories and more "Also happening" lines; Movies works at a glance', () => {
+  const pick = pickPrompt([], TOPICS, '2026-10-08', NOW, 14, ['ai', 'tech', 'movies'], ['movies']);
+  assert(pick.includes('The reader asked for more of movies') && pick.includes('4–6 stories'));
+  assert(pick.includes('The reader follows ai, tech and movies'));
+  const editor = editorPrompt([], [], '2026-10-08', NOW, { topics: TOPICS, followed: ['ai', 'tech', 'movies'], more: ['movies'] });
+  assert(editor.includes('up to 4 items for each topic the reader asked for more of (movies)'));
+  assert(editor.includes('2 items for each other topic they follow (ai, tech)'));
+  assert(editor.includes('Movies works well at a glance'));
+  const everyone = editorPrompt([], [], '2026-10-08', NOW);
+  assert(everyone.includes('give every topic at least one item (including science, health, climate, autos, gaming, sports, entertainment, movies and crypto)'));
+  assert(!everyone.includes('at a glance'));
+});
+
+Deno.test('fallbackAlso: if the editor fails, focus topics get up to 4 headline lines, every other topic at most 2', () => {
+  const cand = candidates([
+    ...Array.from({ length: 6 }, (_, i) => cluster(`m${i}`, 'movies', ['Variety', 'Deadline'], `Film story number ${i}`)),
+    ...Array.from({ length: 4 }, (_, i) => cluster(`w${i}`, 'world', ['Reuters', 'BBC News'], `World story number ${i}`)),
+    cluster('j1', 'movies', ['Variety', 'Deadline'], 'Best deals on streaming bundles this week'),
+  ]);
+  const out = fallbackAlso(cand, new Set(['w0']), { followed: ['world', 'movies'], focus: ['movies'] });
+  assertEquals(out.filter((a) => a.topic === 'movies').length, 4);
+  assertEquals(out.filter((a) => a.topic === 'world').length, 2);
+  assertEquals(out[0].topic, 'movies', 'focus topics first');
+  assert(!out.some((a) => a.clusterIds.includes('w0') || a.clusterIds.includes('j1')), 'nothing already taken, no deals');
+  assertEquals(fallbackAlso(cand, new Set()).filter((a) => a.topic === 'movies').length, 2, 'without focus, two per topic');
 });

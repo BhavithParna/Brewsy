@@ -7,9 +7,12 @@
 //                    the 60-second version
 //     → write the editor's additions → markets → edition
 //
-// One edition covers all 13 topics; the app shows each reader the topics they
+// One edition covers all 14 topics; the app shows each reader the topics they
 // follow. Big topics get several full stories, small beats (games, sport, cars…)
 // one each, and "Also happening" carries the rest of every beat in one line.
+// Topics the reader asked for more of ("focus" topics, `prefs.focusTopics`) get
+// more of everything: more candidates in front of the AI, 4–6 stories where the
+// news supports it, a bigger story target, and more "Also happening" lines.
 //
 // Network and AI calls are injectable so the whole thing can be tested offline.
 
@@ -19,10 +22,10 @@ import { type Cluster, clusterAll } from './dedupe.ts';
 import { feedHealth, fetchAllFeeds, isHeadlineOnly, type FeedItem, type FeedStatus } from './feeds.ts';
 import { generateJson, type GenerateJsonOptions, type GenerateJsonResult, LlmError } from './llm.ts';
 import { fetchMarkets } from './markets.ts';
-import type { Prefs } from './prefs.ts';
+import { type Prefs, topicOrder } from './prefs.ts';
 import {
-  EDITION_SYSTEM, EDITOR_SYSTEM, editorPrompt, editorSchema, PICK_SYSTEM, pickPrompt, pickSchema, type ScoredCandidate,
-  type StoryBlock, storiesPrompt, storiesSchema, summaryPrompt, summarySchema,
+  ALSO_LINES_FOLLOWED, ALSO_LINES_MORE, EDITION_SYSTEM, EDITOR_SYSTEM, editorPrompt, editorSchema, PICK_SYSTEM, pickPrompt, pickSchema,
+  type ScoredCandidate, type StoryBlock, storiesPrompt, storiesSchema, summaryPrompt, summarySchema,
 } from './prompts.ts';
 import { type ClusterScore, editionTokenSets, rankClusters } from './scoring.ts';
 import { type FeedSource, SOURCES } from './sources.ts';
@@ -64,8 +67,11 @@ export type PipelineStats = {
   editorError?: string;
   batchesFailed: number;
   editionAttempts: number;
-  /** Topic-coverage picks added in code (topics the AI left without a story). */
+  /** Topic-coverage picks added in code (topics the AI left without a story, focus topics left thin). */
   topicFills: number;
+  /** The reader's "more of this" topics, and the regular-story target they led to. */
+  focusTopics: Topic[];
+  target: number;
   /** Full stories and "Also happening" lines per topic. */
   byTopic: Partial<Record<Topic, { stories: number; also: number }>>;
   model?: string;
@@ -77,6 +83,14 @@ const ARTICLE_TEXT_CHARS = 2800;
 const STORY_BLOCK_CHARS = 7000;
 /** Regular picks (must-includes come on top of these). */
 const TARGET_STORIES = 12;
+/** Each "more of this" topic adds this many to the target… */
+const FOCUS_EXTRA_STORIES = 2;
+/** …up to this, so must-includes and topic fills still fit under MAX_STORIES (no extra AI calls). */
+const MAX_TARGET_STORIES = 16;
+/** A focus topic with real news always gets at least this many full stories… */
+export const FOCUS_MIN_STORIES = 2;
+/** …and this many "Also happening" lines (headlines, if the editor gave it fewer). */
+export const FOCUS_MIN_ALSO = 2;
 /**
  * Hard cap so the writing still fits in one function run: 6 batches of 3, all
  * started at once. With the pick, editor and summary calls that's 9 calls, what
@@ -90,6 +104,8 @@ const PROMPT_CANDIDATES = 160;
 const EDITOR_CANDIDATES = 140;
 /** Each topic's best clusters always reach the AI, however low they score overall. */
 const PER_TOPIC_CANDIDATES = 4;
+/** …and a focus topic's best this many, so the AI has enough to give it depth. */
+export const FOCUS_TOPIC_CANDIDATES = 10;
 /** "Also happening" lines kept. */
 const MAX_ALSO = 30;
 /** Don't start an AI call with less time than this left. */
@@ -119,7 +135,7 @@ export async function collectCandidates(
   // Google News topic items are credited to the real publisher: honour the reader's switches there too.
   const items = fetched.items.filter((it) => !prefs.disabledSources.includes(it.outlet));
   const statuses = fetched.statuses;
-  const { clusters, total } = clusterAll(items, { now });
+  const { clusters, total } = clusterAll(items, { now, focus: prefs.focusTopics ?? [] });
   const { ranked, scores } = rankClusters(clusters, { now, previous: previous ? editionTokenSets(previous.stories) : [] });
   return { items, statuses, clusters: ranked, scores, totalClusters: total };
 }
@@ -131,16 +147,23 @@ export function hintToTopic(c: Cluster, topics: Topic[] = TOPICS): Topic | null 
   return topics.includes('world') ? 'world' : topics[0] ?? null;
 }
 
+/** Regular stories to pick: 12, plus two for each "more of this" topic, at most 16. */
+export function storyTarget(focus: Topic[]): number {
+  return Math.min(MAX_TARGET_STORIES, TARGET_STORIES + FOCUS_EXTRA_STORIES * focus.length);
+}
+
 /**
  * The candidates shown to the AI: the best-scored `max`, but always including
- * the best few of every topic hint, so a small beat isn't crowded out by the
- * general news. Keeps the best-first order.
+ * the best few of every topic hint (the best FOCUS_TOPIC_CANDIDATES of a focus
+ * topic), so a small beat isn't crowded out by the general news. Keeps the
+ * best-first order.
  */
-export function candidateSlate(clusters: Cluster[], max: number, perTopic = PER_TOPIC_CANDIDATES): Cluster[] {
+export function candidateSlate(clusters: Cluster[], max: number, perTopic = PER_TOPIC_CANDIDATES, focus: Topic[] = []): Cluster[] {
   if (clusters.length <= max) return clusters;
   const keep = new Set<Cluster>();
   for (const topic of TOPICS) {
-    clusters.filter((c) => c.topicHints.includes(topic)).slice(0, perTopic).forEach((c) => keep.add(c));
+    const n = focus.includes(topic) ? Math.max(perTopic, FOCUS_TOPIC_CANDIDATES) : perTopic;
+    clusters.filter((c) => c.topicHints.includes(topic)).slice(0, n).forEach((c) => keep.add(c));
   }
   for (const c of clusters) {
     if (keep.size >= max) break;
@@ -154,20 +177,31 @@ const JUNK_RE = /\b(best deals?|deals? of the day|deal alert|prime day|black fri
 
 /**
  * Topics the AI left without a story get their best candidate, if it is real
- * news (two or more outlets, not a deal or a review), while there's room.
+ * news (two or more outlets, not a deal or a review), while there's room: the
+ * reader's topics first, then FOCUS_MIN_STORIES for each focus topic, then the rest.
  */
-export function fillTopics(picks: Pick[], cand: Candidates, room: number): Pick[] {
-  const covered = new Set(picks.map((p) => p.topic));
+export function fillTopics(picks: Pick[], cand: Candidates, room: number, reader: { followed?: Topic[]; focus?: Topic[] } = {}): Pick[] {
+  const followed = reader.followed ?? TOPICS;
+  const focus = reader.focus ?? [];
+  const count = new Map<Topic, number>();
+  for (const p of picks) count.set(p.topic, (count.get(p.topic) ?? 0) + 1);
   const taken = new Set(picks.flatMap((p) => p.clusterIds));
   const fills: Pick[] = [];
-  for (const topic of TOPICS) {
-    if (fills.length >= room) break;
-    if (covered.has(topic)) continue;
-    const best = cand.clusters.find(
-      (c) => !taken.has(c.id) && c.topicHints.includes(topic) && c.outlets.length >= 2 && !JUNK_RE.test(c.title),
-    );
-    if (best) fills.push({ clusterIds: [best.id], topic });
-  }
+  const fill = (topic: Topic, upTo: number) => {
+    while (fills.length < room && (count.get(topic) ?? 0) < upTo) {
+      const best = cand.clusters.find(
+        (c) => !taken.has(c.id) && c.topicHints.includes(topic) && c.outlets.length >= 2 && !JUNK_RE.test(c.title),
+      );
+      if (!best) return;
+      fills.push({ clusterIds: [best.id], topic });
+      taken.add(best.id);
+      count.set(topic, (count.get(topic) ?? 0) + 1);
+    }
+  };
+  const order = topicOrder({ topics: followed, focusTopics: focus });
+  order.filter((t) => followed.includes(t)).forEach((t) => fill(t, 1));
+  focus.forEach((t) => fill(t, FOCUS_MIN_STORIES));
+  order.filter((t) => !followed.includes(t)).forEach((t) => fill(t, 1));
   return fills;
 }
 
@@ -187,8 +221,11 @@ export async function pickStories(
   now: Date,
   deps: PipelineDeps,
   followed: Topic[] = TOPICS,
-): Promise<{ picks: Pick[]; fallback: boolean; model?: string; fills: number }> {
-  const shown = candidateSlate(cand.clusters, PROMPT_CANDIDATES);
+  /** Followed topics the reader wants more of. */
+  focus: Topic[] = [],
+): Promise<{ picks: Pick[]; fallback: boolean; model?: string; fills: number; target: number }> {
+  const target = storyTarget(focus);
+  const shown = candidateSlate(cand.clusters, PROMPT_CANDIDATES, PER_TOPIC_CANDIDATES, focus);
   const known = new Set(shown.map((c) => c.id));
   const must = cand.clusters.filter((c) => cand.scores.get(c.id)?.mustInclude);
   const byId = new Map(cand.clusters.map((c) => [c.id, c]));
@@ -199,7 +236,7 @@ export async function pickStories(
     try {
       const res = await deps.generateJson({
         system: PICK_SYSTEM,
-        prompt: pickPrompt(scored(cand, shown), TOPICS, date, now, TARGET_STORIES, followed) + feedback,
+        prompt: pickPrompt(scored(cand, shown), TOPICS, date, now, target, followed, focus) + feedback,
         schema: pickSchema(TOPICS),
         temperature: 0.2,
         maxOutputTokens: 4096,
@@ -221,7 +258,7 @@ export async function pickStories(
     // The best-scoring clusters. The edition still gets written; it's just less curated.
     picks = [];
     for (const c of cand.clusters) {
-      if (picks.length >= TARGET_STORIES) break;
+      if (picks.length >= target) break;
       if (cand.scores.get(c.id)?.mustInclude) continue;
       const topic = hintToTopic(c);
       if (topic) picks.push({ clusterIds: [c.id], topic });
@@ -243,10 +280,10 @@ export async function pickStories(
   const room = Math.max(0, MAX_STORIES - all.filter(isMust).length);
   const keepRegular = new Set(all.filter((p) => !isMust(p)).slice(0, room));
   const final = all.filter((p) => isMust(p) || keepRegular.has(p));
-  // Last: one story for each topic that has real news but no pick yet.
-  const fills = fillTopics(final, cand, Math.max(0, MAX_STORIES - final.length));
+  // Last: one story for each topic that has real news but no pick yet, and depth for focus topics.
+  const fills = fillTopics(final, cand, Math.max(0, MAX_STORIES - final.length), { followed, focus });
   const out = [...final, ...fills].filter((p) => p.clusterIds.every((id) => byId.has(id)));
-  return { picks: out, fallback, model, fills: fills.length };
+  return { picks: out, fallback, model, fills: fills.length, target };
 }
 
 // ─── Editor checklist ──────────────────────────────────────────────────────
@@ -257,16 +294,17 @@ async function runEditor(
   date: string,
   now: Date,
   deps: PipelineDeps,
+  reader: { followed: Topic[]; focus: Topic[] },
 ): Promise<{ editor: EditorResult | null; error?: string }> {
   const taken = new Set(picks.flatMap((p) => p.clusterIds));
   const byId = new Map(cand.clusters.map((c) => [c.id, c]));
   const selected = picks.map((p) => ({ cluster: byId.get(p.clusterIds[0])!, score: cand.scores.get(p.clusterIds[0])! }));
-  const rest = candidateSlate(cand.clusters.filter((c) => !taken.has(c.id)), EDITOR_CANDIDATES);
+  const rest = candidateSlate(cand.clusters.filter((c) => !taken.has(c.id)), EDITOR_CANDIDATES, PER_TOPIC_CANDIDATES, reader.focus);
   if (!rest.length) return { editor: { additions: [], alsoHappening: [] } };
   try {
     const res = await deps.generateJson({
       system: EDITOR_SYSTEM,
-      prompt: editorPrompt(selected, scored(cand, rest), date, now),
+      prompt: editorPrompt(selected, scored(cand, rest), date, now, { topics: TOPICS, followed: reader.followed, more: reader.focus }),
       schema: editorSchema(TOPICS),
       temperature: 0.2,
       maxOutputTokens: 14_000,
@@ -286,18 +324,24 @@ function headlineAlso(c: Cluster, topic: Topic): AlsoDraft {
 
 /**
  * If the editor call fails, "Also happening" still lists the next best stories
- * by their headlines, at most two per topic so every beat gets a look in.
+ * by their headlines (multi-outlet ones, no deals or reviews), at most 15: the
+ * reader's focus topics first (up to ALSO_LINES_MORE each), then every other
+ * topic, at most two each, the reader's own topics before the rest.
  */
-function fallbackAlso(cand: Candidates, taken: Set<string>): AlsoDraft[] {
+export function fallbackAlso(cand: Candidates, taken: Set<string>, reader: { followed?: Topic[]; focus?: Topic[] } = {}): AlsoDraft[] {
+  const focus = reader.focus ?? [];
+  const order = topicOrder({ topics: reader.followed ?? TOPICS, focusTopics: focus });
+  const used = new Set(taken);
   const out: AlsoDraft[] = [];
-  const perTopic = new Map<Topic, number>();
-  for (const c of cand.clusters) {
-    if (out.length >= 15) break;
-    if (taken.has(c.id) || c.outlets.length < 2 || JUNK_RE.test(c.title)) continue;
-    const topic = hintToTopic(c);
-    if (!topic || (perTopic.get(topic) ?? 0) >= 2) continue;
-    perTopic.set(topic, (perTopic.get(topic) ?? 0) + 1);
-    out.push(headlineAlso(c, topic));
+  for (const topic of order) {
+    const quota = focus.includes(topic) ? ALSO_LINES_MORE : ALSO_LINES_FOLLOWED;
+    const best = cand.clusters
+      .filter((c) => !used.has(c.id) && c.outlets.length >= 2 && !JUNK_RE.test(c.title) && (c.topicHints.includes(topic) || hintToTopic(c) === topic))
+      .slice(0, Math.min(quota, 15 - out.length));
+    for (const c of best) {
+      used.add(c.id);
+      out.push(headlineAlso(c, topic));
+    }
   }
   return out;
 }
@@ -305,15 +349,34 @@ function fallbackAlso(cand: Candidates, taken: Set<string>): AlsoDraft[] {
 /**
  * Every topic with any news ends up somewhere: a topic with no full story and no
  * "Also happening" line gets its best candidate's headline (not a deal or a review).
+ * A focus topic left with fewer than FOCUS_MIN_ALSO lines gets its best multi-outlet
+ * headlines up to that.
  */
-export function topUpAlso(also: AlsoDraft[], storyTopics: Set<Topic>, cand: Candidates, taken: Set<string>, perTopic = 2): AlsoDraft[] {
+export function topUpAlso(
+  also: AlsoDraft[],
+  storyTopics: Set<Topic>,
+  cand: Candidates,
+  taken: Set<string>,
+  perTopic = 2,
+  focus: Topic[] = [],
+): AlsoDraft[] {
   const covered = new Set([...storyTopics, ...also.map((a) => a.topic)]);
   const used = new Set([...taken, ...also.flatMap((a) => a.clusterIds)]);
   const extra: AlsoDraft[] = [];
+  const add = (topic: Topic, list: Cluster[]) => {
+    list.forEach((c) => used.add(c.id));
+    extra.push(...list.map((c) => headlineAlso(c, topic)));
+  };
   for (const topic of TOPICS) {
     if (covered.has(topic)) continue;
-    const best = cand.clusters.filter((c) => !used.has(c.id) && c.topicHints.includes(topic) && !JUNK_RE.test(c.title)).slice(0, perTopic);
-    extra.push(...best.map((c) => headlineAlso(c, topic)));
+    add(topic, cand.clusters.filter((c) => !used.has(c.id) && c.topicHints.includes(topic) && !JUNK_RE.test(c.title)).slice(0, perTopic));
+  }
+  for (const topic of focus) {
+    const have = [...also, ...extra].filter((a) => a.topic === topic).length;
+    if (have >= FOCUS_MIN_ALSO) continue;
+    add(topic, cand.clusters
+      .filter((c) => !used.has(c.id) && c.topicHints.includes(topic) && c.outlets.length >= 2 && !JUNK_RE.test(c.title))
+      .slice(0, FOCUS_MIN_ALSO - have));
   }
   return [...also, ...extra];
 }
@@ -590,10 +653,11 @@ export async function buildEdition(opts: {
   const byId = new Map(cand.clusters.map((c) => [c.id, c]));
   const mustIds = new Set(cand.clusters.filter((c) => cand.scores.get(c.id)?.mustInclude).map((c) => c.id));
 
-  const { picks, fallback, model: pickModel, fills } = await pickStories(cand, date, now, deps, prefs.topics);
+  const reader = { followed: prefs.topics, focus: prefs.focusTopics ?? [] };
+  const { picks, fallback, model: pickModel, fills, target } = await pickStories(cand, date, now, deps, reader.followed, reader.focus);
 
   // Three things at once: the editor's checklist, the stories, the 60-second version.
-  const editorPromise = runEditor(cand, picks, date, now, deps);
+  const editorPromise = runEditor(cand, picks, date, now, deps, reader);
   const articles = await readArticles(picks, byId, deps);
   const blocks = buildBlocks(picks, byId, articles);
   const [written, summaryResult, { editor, error: editorError }] = await Promise.all([
@@ -637,10 +701,12 @@ export async function buildEdition(opts: {
   const taken = new Set([...picks.flatMap((p) => p.clusterIds), ...additions.map((a) => a.clusterId)]);
   const storyTopics = new Set(main.stories.map((s) => s.topic));
   const alsoDrafts = topUpAlso(
-    [...extraAlso, ...(editor ? editor.alsoHappening : fallbackAlso(cand, taken))].slice(0, MAX_ALSO),
+    [...extraAlso, ...(editor ? editor.alsoHappening : fallbackAlso(cand, taken, reader))].slice(0, MAX_ALSO),
     storyTopics,
     cand,
     taken,
+    2,
+    reader.focus,
   );
   const also = assembleAlso(alsoDrafts, byId, used);
 
@@ -676,6 +742,8 @@ export async function buildEdition(opts: {
       batchesFailed: failedBatches,
       editionAttempts: attempts,
       topicFills: fills,
+      focusTopics: reader.focus,
+      target,
       byTopic: countByTopic(main.stories, also.items),
       model: written.model ?? pickModel,
       ms: Date.now() - started,

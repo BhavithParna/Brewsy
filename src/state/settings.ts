@@ -13,6 +13,16 @@ export type Settings = {
   wakeTime: WakeTime;
   /** Topics included in the edition, in display order. */
   topics: Topic[];
+  /** Followed topics the reader wants more of: more stories, shown first on Today. */
+  focusTopics: Topic[];
+  /** Words and phrases whose stories are hidden on Today (case-insensitive, whole words). */
+  mutedWords: string[];
+  /** Reading text size, as a multiplier of the theme's sizes (1 = as designed). */
+  textScale: number;
+  /** The first-run tour of Today has been shown (or skipped). */
+  tourDone: boolean;
+  /** Glass theme: always light, always dark, or light by day and dark at night. */
+  glassAppearance: 'auto' | 'light' | 'dark';
   /** Outlet names (from supabase/functions/_shared/sources.ts) to skip. */
   disabledOutlets: string[];
   /** "Your edition is ready" push each morning. */
@@ -29,7 +39,10 @@ export type Settings = {
   listenRate: number;
   /** Phone voice for editions without studio audio (`null` = the best one on the phone). */
   listenVoice: string | null;
-  /** 2 = the 13-topic list. Older saves had 4 topics, where World also covered politics, science and health. */
+  /**
+   * 3 = Movies split out of Entertainment. 2 = the 13-topic list.
+   * Older saves had 4 topics, where World also covered politics, science and health.
+   */
   topicsVersion: number;
 };
 
@@ -38,6 +51,11 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dune',
   wakeTime: { hour: 5, minute: 30 },
   topics: [...DEFAULT_TOPICS],
+  focusTopics: [],
+  mutedWords: [],
+  textScale: 1,
+  tourDone: false,
+  glassAppearance: 'auto',
   disabledOutlets: [],
   morningPush: true,
   remindTonight: true,
@@ -46,20 +64,38 @@ export const DEFAULT_SETTINGS: Settings = {
   listenMode: 'full',
   listenRate: 1,
   listenVoice: null,
-  topicsVersion: 2,
+  topicsVersion: 3,
 };
 
-/** World used to include politics, science and health; keep those for readers who followed it. */
+/**
+ * Topics that were split out of one a reader already follows: World used to include politics,
+ * science and health (version 2), and Entertainment used to include film (version 3).
+ */
 function migrateTopics(s: Settings): Settings {
-  if (s.topicsVersion >= 2) return s;
-  const split: Topic[] = s.topics.includes('world') ? ['politics', 'science', 'health'] : [];
+  if (s.topicsVersion >= 3) return s;
+  const split: Topic[] = [];
+  if (s.topicsVersion < 2 && s.topics.includes('world')) split.push('politics', 'science', 'health');
+  if (s.topics.includes('entertainment')) split.push('movies');
   const topics = TOPICS.filter((t) => s.topics.includes(t) || split.includes(t));
-  return { ...s, topics, topicsVersion: 2 };
+  return { ...s, topics, topicsVersion: 3 };
+}
+
+/** Fields added later, made safe whatever an older or damaged save holds. */
+function sanitize(s: Settings): Settings {
+  const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+  return {
+    ...s,
+    // A topic can only be starred while it's followed.
+    focusTopics: list(s.focusTopics).filter((t): t is Topic => s.topics.includes(t as Topic)),
+    mutedWords: list(s.mutedWords),
+    textScale: typeof s.textScale === 'number' && s.textScale >= 0.8 && s.textScale <= 1.5 ? s.textScale : 1,
+    glassAppearance: s.glassAppearance === 'light' || s.glassAppearance === 'dark' ? s.glassAppearance : 'auto',
+  };
 }
 
 export const settingsStore = createPersistedStore<Settings>('brewsy:settings', DEFAULT_SETTINGS, (stored, init) =>
   // Saves from before topicsVersion existed count as version 1.
-  migrateTopics({ ...init, topicsVersion: 1, ...(stored as Partial<Settings>) }),
+  sanitize(migrateTopics({ ...init, topicsVersion: 1, ...(stored as Partial<Settings>) })),
 );
 
 export function useSettings(): Settings {

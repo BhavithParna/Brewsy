@@ -65,12 +65,17 @@ export function breakingFlag(title: string): { title: string; breaking: boolean 
 
 /**
  * Promos, deal roundups and newsletters that aren't news. Edit freely.
- * Matched against the headline (case-insensitive).
+ * Matched against the headline (case-insensitive). Shopping phrasing only: a
+ * plain "deal" is news (trade deals, mergers, ceasefires, film distribution).
  */
 export const JUNK_PATTERNS: RegExp[] = [
-  /\bdeals?\b/i,
+  /\b(best|early|last-minute|daily|weekend|holiday|green|today'?s)\b[^.:|]{0,30}\bdeals\b/i,
+  /\bdeals? of the (day|week)\b/i,
+  /\bdeal alert\b/i,
   /\bprime day\b/i,
   /\b\d+% off\b/i,
+  /\$[\d,.]+k? off\b/i,
+  /\b(promo|discount) codes?\b/i,
   /\bcoupon/i,
   /^support ars\b/i,
   /^the download:/i,
@@ -83,6 +88,21 @@ export const JUNK_PATTERNS: RegExp[] = [
 
 export function isJunk(title: string): boolean {
   return JUNK_PATTERNS.some((re) => re.test(title));
+}
+
+/**
+ * Celebrity gossip from film and entertainment desks (holiday photos, pregnancy posts,
+ * outfits, trolls): not news. Only checked for 'movies' and 'entertainment' feeds, so a
+ * health story about pregnancy is never touched.
+ */
+export const GOSSIP_PATTERNS: RegExp[] = [
+  /\b(pregnant|baby bump|vacation|vacay|lounges?|spotted|paparazzi|papped|airport look|stuns in|flaunts|sizzles|slays|dazzles|oops moment|wardrobe|outfits?|net worth|dating rumou?rs?|cosies up|cozies up)\b/i,
+  /\bshares (a |her |his |their )?(first |new |cryptic |adorable |unseen )?(post|pics?|pictures?|photos?|selfies?)\b/i,
+  /\b(trolled|trolls)\b/i,
+];
+
+export function isGossip(title: string, hint: TopicHint): boolean {
+  return (hint === 'movies' || hint === 'entertainment') && GOSSIP_PATTERNS.some((re) => re.test(title));
 }
 
 const parser = new XMLParser({
@@ -258,7 +278,7 @@ export function parseFeedXml(xml: string, source: FeedSource, now: Date, windowH
     const enclosure = (it.enclosure ?? []).find((e: Node) => String(e?.['@_type'] ?? '').startsWith('image'));
     const img = media[0]?.['@_url'] ?? enclosure?.['@_url'] ?? firstImgSrc(contentHtml) ?? firstImgSrc(descHtml);
 
-    if (isJunk(title)) continue;
+    if (isJunk(title) || isGossip(title, source.topicHint)) continue;
     link = link.replace(/[?&]at_(medium|campaign)=[^&]+/g, '').replace(/\?$/, '');
     out.push(makeItem(source, {
       title,
@@ -278,7 +298,7 @@ export function parseFeedXml(xml: string, source: FeedSource, now: Date, windowH
     const link = String(alt?.['@_href'] ?? '').trim();
     const published = Date.parse(textOf(e.published) || textOf(e.updated));
     if (!title || !link || !Number.isFinite(published) || !inWindow(published, nowMs, windowHours)) continue;
-    if (isJunk(title)) continue;
+    if (isJunk(title) || isGossip(title, source.topicHint)) continue;
     const contentHtml = textOf(e.content);
     const summaryHtml = textOf(e.summary);
     const thumb = (e['media:thumbnail'] ?? [])[0]?.['@_url'] ?? (e['media:content'] ?? [])[0]?.['@_url'];
@@ -559,17 +579,28 @@ export async function fetchAllFeeds(
       byKey.set(key, item);
       continue;
     }
-    // Keep the richer copy, but don't lose a breaking flag or related coverage.
+    // Keep the richer copy, but don't lose a breaking flag, related coverage or the narrower topic hint.
     const keep = item.content.length > prev.content.length ? item : prev;
     const other = keep === item ? prev : item;
     const related = [...new Set([...(keep.alsoCoveredBy ?? []), ...(other.alsoCoveredBy ?? [])])];
     byKey.set(key, {
       ...keep,
+      topicHint: narrowerHint(keep.topicHint, other.topicHint),
       breaking: Boolean(keep.breaking || other.breaking),
       ...(related.length ? { alsoCoveredBy: related } : {}),
     });
   }
   return { items: [...byKey.values()], statuses: results.map((r) => r.status) };
+}
+
+/**
+ * The more specific of two hints for one article that came through two feeds of the same
+ * outlet: a section feed (Variety Film) says more than the outlet's main feed (Variety).
+ */
+export function narrowerHint(a: TopicHint, b: TopicHint): TopicHint {
+  if (a === 'mixed') return b;
+  if (a === 'entertainment' && b === 'movies') return b;
+  return a;
 }
 
 /** Feed health for "How this briefing was made" and the >20% failure alert. */

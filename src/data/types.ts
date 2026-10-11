@@ -15,6 +15,7 @@ export type Topic =
   | 'gaming'
   | 'sports'
   | 'entertainment'
+  | 'movies'
   | 'crypto';
 
 /** Order sections appear in on Today. */
@@ -31,6 +32,7 @@ export const TOPICS: Topic[] = [
   'gaming',
   'sports',
   'entertainment',
+  'movies',
   'crypto',
 ];
 

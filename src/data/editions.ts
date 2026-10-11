@@ -95,3 +95,71 @@ export async function availableEditionDates(): Promise<string[]> {
     return local;
   }
 }
+
+// ─── Search and "Earlier in Brewsy" ─────────────────────────────────────────
+
+/**
+ * Editions fetched for search this session. Kept in memory only, so searching never pushes the
+ * editions saved for offline reading out of the device cache.
+ */
+const sessionEditions = new Map<string, Briefing>();
+
+/** Every edition this phone has at hand: the offline copies plus what search fetched this session. */
+export async function editionsAtHand(): Promise<Briefing[]> {
+  const dates = await cachedEditionDates();
+  const saved = await Promise.all(dates.map((d) => sessionEditions.get(d) ?? readCachedEdition(d)));
+  const byDate = new Map<string, Briefing>();
+  for (const b of saved) if (b) byDate.set(b.date, b);
+  for (const [d, b] of sessionEditions) if (!byDate.has(d)) byDate.set(d, b);
+  const sample = sampleFor(todayKey());
+  if (sample && !byDate.has(sample.date)) byDate.set(sample.date, sample);
+  return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Loads the editions from the last `days` days for search, calling `onEdition` as each arrives:
+ * saved copies first (instant, and all there is offline), then the rest from the server.
+ * Resolves with `offline: true` when the server couldn't be reached.
+ */
+export async function loadRecentEditions(
+  days: number,
+  onEdition: (b: Briefing) => void,
+): Promise<{ offline: boolean }> {
+  const today = todayKey();
+  const oldest = shiftDate(today, -(days - 1));
+  const have = new Set<string>();
+  const emit = (b: Briefing) => {
+    have.add(b.date);
+    onEdition(b);
+  };
+
+  for (const b of await editionsAtHand()) if (b.date >= oldest && b.date <= today) emit(b);
+  if (!backendConfigured) return { offline: false };
+
+  let dates: string[];
+  try {
+    dates = (await fetchEditionDates(days + 2)).filter((d) => d >= oldest && d <= today);
+  } catch {
+    return { offline: true };
+  }
+  // Today's saved copy may predate the daytime updates, so it's fetched again.
+  const missing = dates.filter((d) => !have.has(d) || (d === today && !sessionEditions.has(d)));
+  let failed = false;
+  // A few at a time, newest first.
+  for (let i = 0; i < missing.length; i += 4) {
+    const batch = await Promise.all(
+      missing.slice(i, i + 4).map((d) =>
+        fetchEditionRemote(d).catch(() => {
+          failed = true;
+          return null;
+        }),
+      ),
+    );
+    for (const b of batch) {
+      if (!b) continue;
+      sessionEditions.set(b.date, b);
+      emit(b);
+    }
+  }
+  return { offline: failed && have.size === 0 };
+}

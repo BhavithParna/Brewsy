@@ -44,15 +44,26 @@ export function usePreviewState(): PreviewState {
  * Web preview only: URL flags for screenshots and quick testing.
  *   ?onboarded=1   skip onboarding     ?onboarded=0   show it again
  *   ?seed=1        fill the Reading List with sample stories
- *   ?theme=atlantis   switch theme (dune | space | atlantis | highlands | alpine)
+ *   ?tour=0        mark the first-run tour as seen     ?tour=1   show it again
+ *                  (?onboarded=1 without a tour flag also skips the tour, so screenshots stay clear)
+ *   ?theme=atlantis   switch theme. Classic: glass | space | atlantis | highlands | alpine.
+ *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli.
+ *                     Horror: overlook | nosferatu | thering | midsommar.
+ *   ?glass=dark    Glass appearance: light | dark | auto
+ *   ?blur=0        draw frosted glass the way Android does: no blur, just the fills (read in GlassCard)
  */
 export function applyDevUrlFlags() {
   if (!__DEV__ || typeof window === 'undefined' || !window.location?.search) return;
   const params = new URLSearchParams(window.location.search);
   const onboarded = params.get('onboarded');
   if (onboarded != null) updateSettings({ onboarded: onboarded === '1' });
+  const tour = params.get('tour');
+  if (tour != null) updateSettings({ tourDone: tour === '0' });
+  else if (onboarded === '1') updateSettings({ tourDone: true });
   const theme = params.get('theme');
   if (theme && theme in themes) updateSettings({ theme: theme as ThemeName });
+  const glass = params.get('glass');
+  if (glass === 'light' || glass === 'dark' || glass === 'auto') updateSettings({ glassAppearance: glass });
   if (params.get('seed') === '1' && readingListStore.get().items.length === 0) seedReadingList();
 }
 

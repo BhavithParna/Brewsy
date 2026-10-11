@@ -17,7 +17,7 @@ import { json, preflight, readJsonBody } from '../_shared/http.ts';
 import { activeModel, generateJson } from '../_shared/llm.ts';
 import { fetchMarkets } from '../_shared/markets.ts';
 import { buildEdition, collectCandidates, defaultDeps } from '../_shared/pipeline.ts';
-import { type BriefingRow, decideTick, localParts, type Prefs, wakeMinutes } from '../_shared/prefs.ts';
+import { type BriefingRow, decideTick, localParts, type Prefs, topicOrder, wakeMinutes } from '../_shared/prefs.ts';
 import { alertPush, breakingPush, editionPush, MAX_BREAKING_PUSHES, sendAlertEmail, sendExpoPush } from '../_shared/push.ts';
 import { cleanupOldAudio, uploadPublic } from '../_shared/storage.ts';
 import {
@@ -124,7 +124,7 @@ async function generate(date: string, prefs: Prefs, started: number): Promise<Re
   }
 }
 
-async function makeAudio(date: string, claimedAt: string): Promise<Record<string, unknown>> {
+async function makeAudio(date: string, claimedAt: string, prefs: Prefs): Promise<Record<string, unknown>> {
   const started = Date.now();
   try {
     const day = await loadDay(date);
@@ -135,7 +135,7 @@ async function makeAudio(date: string, claimedAt: string): Promise<Record<string
       synthesize: (text) => synthesize(text, provider),
       upload: (path, bytes) => uploadPublic(path, bytes),
       provider,
-    });
+    }, { order: topicOrder(prefs) });
     const problem = stats.ttsErrors.length ? `Text-to-speech failed for ${stats.ttsErrors.length} chapter(s): ${stats.ttsErrors.slice(0, 3).join(' | ')}` : null;
     const saved = await saveAudio(date, claimedAt, audio, problem);
     await logRun({ date, stage: 'audio', ok: !problem && saved, ms: stats.ms, stats: { ...stats, provider, saved, model: activeModel() }, error: problem });
@@ -229,12 +229,12 @@ async function respond(job: Promise<Record<string, unknown>>, extra: Record<stri
   return pending ? json({ ...extra, result: await pending }) : json({ ...extra, status: 'started' }, 202);
 }
 
-async function runAudioStage(date: string, row: BriefingRow | null, force: boolean): Promise<Response> {
+async function runAudioStage(date: string, prefs: Prefs, row: BriefingRow | null, force: boolean): Promise<Response> {
   if (!row || row.status !== 'ready') return json({ stage: 'audio', date, status: 'no edition yet' }, 409);
   if (!force && row.audio_status === 'ready') return json({ stage: 'audio', date, status: 'already made (send "force": true to redo)' });
   const claimedAt = await claimAudio(date, row, force);
   if (!claimedAt) return json({ stage: 'audio', date, status: 'busy' }, 409);
-  return respond(makeAudio(date, claimedAt), { stage: 'audio', date });
+  return respond(makeAudio(date, claimedAt, prefs), { stage: 'audio', date });
 }
 
 async function runUpdateStage(date: string, prefs: Prefs, row: BriefingRow | null, started: number): Promise<Response> {
@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
 
     const row = await getBriefingRow(date);
 
-    if (body.stage === 'audio') return await runAudioStage(date, row, body.force === true);
+    if (body.stage === 'audio') return await runAudioStage(date, prefs, row, body.force === true);
     if (body.stage === 'update') {
       // Without force, only when a check is actually due (so a stray call can't spend AI time).
       const due = decideTick(now, prefs, row).action === 'update';
@@ -290,7 +290,7 @@ Deno.serve(async (req) => {
       case 'push':
         return json({ ...extra, result: await pushEdition(date) });
       case 'audio':
-        return await runAudioStage(date, row, false);
+        return await runAudioStage(date, prefs, row, false);
       case 'update':
         return await runUpdateStage(date, prefs, row, started);
       default:

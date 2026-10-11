@@ -10,8 +10,10 @@ import type { GenerateJsonOptions } from '../_shared/llm.ts';
 import type { PipelineDeps } from '../_shared/pipeline.ts';
 import { DEFAULT_PREFS } from '../_shared/prefs.ts';
 import { editionTokenSets, isPushWorthy, MUST_INCLUDE_MAJOR_OUTLETS, rankClusters, scoreCluster } from '../_shared/scoring.ts';
-import type { Briefing } from '../_shared/types.ts';
-import { checkForUpdates, MAX_UPDATES_PER_CHECK, newMajorClusters, publishedTokens } from '../_shared/updates.ts';
+import type { Briefing, Topic } from '../_shared/types.ts';
+import {
+  checkForUpdates, FOCUS_UPDATE_MIN_OUTLETS, MAX_UPDATES_PER_CHECK, newFocusClusters, newMajorClusters, publishedTokens,
+} from '../_shared/updates.ts';
 import { goodStory, item, NOW, sampleItems } from './fixtures.ts';
 
 const MAJORS = ['Reuters', 'Associated Press', 'BBC News', 'The New York Times', 'The Guardian', 'The Wall Street Journal', 'Bloomberg', 'NPR'];
@@ -135,6 +137,54 @@ Deno.test('checkForUpdates: nothing new → no AI call at all', async () => {
   });
   assertEquals(res.added.length, 0);
   assertEquals(seen.length, 0);
+});
+
+// ─── Daytime updates for "more of this" topics ───
+
+const FILM_DESKS = ['Variety', 'Deadline', 'The Hollywood Reporter', 'IndieWire', 'Screen Daily'];
+
+/** One film story covered by the first `n` film desks. */
+function filmEvent(n: number, words: string, publishedAt = '2026-10-07T10:00:00Z'): FeedItem[] {
+  return FILM_DESKS.slice(0, n).map((outlet, i) =>
+    item({ outlet, topicHint: 'movies', title: `${words} ${['', 'today', 'report', 'exclusive', 'latest'][i]}`.trim(), summary: `${words}, the studio confirmed on Wednesday.`, publishedAt }));
+}
+
+const epic = () => filmEvent(4, 'Harborlight dates its space epic sequel for next summer');
+
+Deno.test('newFocusClusters: a "more of this" story needs 4+ outlets and must have broken after the edition', () => {
+  assertEquals(FOCUS_UPDATE_MIN_OUTLETS, 4);
+  const old = filmEvent(4, 'Coastline festival unveils competition lineup of twenty premieres', '2026-10-06T20:00:00Z');
+  const thin = filmEvent(3, 'Streamer buys global rights to animated musical feature');
+  const { clusters } = clusterAll([...epic(), ...old, ...thin, ...sampleItems()], { now: NOW });
+  const { ranked, scores } = rankClusters(clusters, { now: NOW });
+  const published = publishedTokens(MORNING, []);
+  const out = newFocusClusters(ranked, scores, published, ['movies'], MORNING.generatedAt);
+  assertEquals(out.length, 1);
+  assertEquals(out[0].topic, 'movies');
+  assert(/space epic/i.test(out[0].cluster.title));
+  assertEquals(newFocusClusters(ranked, scores, published, [], MORNING.generatedAt).length, 0, 'no focus topics: nothing');
+  assertEquals(newFocusClusters(ranked, scores, published, ['ai'], MORNING.generatedAt).length, 0, 'only the focus topics');
+});
+
+Deno.test('checkForUpdates: a focus topic\'s new story takes at most one place, after the major ones, and never pushes', async () => {
+  const prefs = { ...DEFAULT_PREFS, topics: ['world', 'movies'] as Topic[], focusTopics: ['movies'] as Topic[] };
+  const seen: GenerateJsonOptions[] = [];
+  const res = await checkForUpdates({
+    prefs, now: NOW, date: '2026-10-07', briefing: MORNING, updates: [], deadlineMs: Date.now() + 120_000,
+    deps: updateDeps(() => [...quake(), ...epic(), ...filmEvent(5, 'Ironbridge confirms animated musical for a July release'), ...sampleItems()], seen),
+  });
+  assertEquals(seen.length, 1, 'one writing call for both');
+  assertEquals(res.added.length, 2);
+  assert(res.added.every((a) => !a.pushWorthy));
+  assert(/earthquake/i.test(res.stats.candidates[0].title), 'the major story comes first');
+  assert(res.stats.candidates[1].why.includes('more of movies'));
+  assert(seen[0].prompt.includes('suggested topic: movies'));
+  // Without focus topics the film stories wait for tomorrow's edition.
+  const plain = await checkForUpdates({
+    prefs: DEFAULT_PREFS, now: NOW, date: '2026-10-07', briefing: MORNING, updates: [], deadlineMs: Date.now() + 120_000,
+    deps: updateDeps(() => [...epic(), ...sampleItems()], []),
+  });
+  assertEquals(plain.added.length, 0);
 });
 
 Deno.test('findStory finds main stories, updates and "also happening" items (for Go deeper / Ask)', () => {

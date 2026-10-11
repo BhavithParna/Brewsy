@@ -39,7 +39,7 @@ import { SpaceGrotesk_500Medium } from '@expo-google-fonts/space-grotesk/500Medi
 import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk/700Bold';
 import { SpaceMono_400Regular } from '@expo-google-fonts/space-mono/400Regular';
-import { useFonts } from 'expo-font';
+import { loadAsync, useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -57,9 +57,12 @@ import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { configureNotifications } from '@/lib/notifications';
 import { deepDiveStore } from '@/state/deepDives';
 import { readingListStore } from '@/state/readingList';
+import { hydrateReads } from '@/state/reads';
+import { hydrateRecentSearches } from '@/state/recentSearches';
 import { hydrateSeen } from '@/state/seen';
 import { settingsStore, useSettings } from '@/state/settings';
 import { AppThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { fontsForTheme, packFonts, resolveThemeName } from '@/theme/themes';
 
 SplashScreen.preventAutoHideAsync();
 configureNotifications();
@@ -72,7 +75,12 @@ const hydrated = Promise.all([
   progressStore.hydrate(),
   hydrateDownloads(),
   hydrateSeen(),
-]).then(applyDevUrlFlags);
+  hydrateReads(),
+  hydrateRecentSearches(),
+])
+  .then(applyDevUrlFlags)
+  // The current theme's typefaces; the other theme packs load in the background once the app is up.
+  .then(() => loadAsync(fontsForTheme(resolveThemeName(settingsStore.get().theme))).catch(() => {}));
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -118,6 +126,7 @@ export default function RootLayout() {
     PlayfairDisplay_500Medium_Italic,
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold_Italic,
+    // Glass, Films and Horror typefaces (theme/packs/*.ts) load with the stores, below.
   });
   const [storesReady, setStoresReady] = useState(false);
 
@@ -128,7 +137,10 @@ export default function RootLayout() {
   const ready = (fontsLoaded || !!fontError) && storesReady;
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (!ready) return;
+    SplashScreen.hideAsync();
+    // Every theme's typefaces, for the theme picker and for switching themes.
+    loadAsync(packFonts).catch(() => {});
   }, [ready]);
 
   if (!ready) return null;
@@ -167,6 +179,7 @@ function AppStack() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="driving" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="listen" options={{ animation: 'none' }} />
+          <Stack.Screen name="search" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack.Protected>
         <Stack.Protected guard={!onboarded}>
           <Stack.Screen name="onboarding" />

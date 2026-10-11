@@ -5,6 +5,8 @@ import {
   Play,
   CalendarDays,
   Check,
+  Search,
+  Settings as SettingsIcon,
   ChevronDown,
   ChevronUp,
   Coffee,
@@ -30,9 +32,10 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listenToReadingList } from '@/audio/listen';
-import { BrewsyMark } from '@/components/BrewsyMark';
 import { Cover } from '@/components/Cover';
+import { CoverBar } from '@/components/CoverBar';
 import { GlassCard } from '@/components/GlassCard';
+import { BarIcon, PinnedBar } from '@/components/JumpBar';
 import { LearnMore } from '@/components/LearnMore';
 import { StoryPlayButton } from '@/components/listen/StoryPlayButton';
 import { Pill } from '@/components/Pill';
@@ -42,7 +45,7 @@ import { StoryBody } from '@/components/StoryView';
 import { useTabBarClearance } from '@/components/TabBar';
 import { toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
-import { useScrollChrome } from '@/hooks/useScrollChrome';
+import { usePinned, useScrollChrome } from '@/hooks/useScrollChrome';
 import { formatShortDate } from '@/lib/format';
 import {
   BUCKETS,
@@ -76,7 +79,11 @@ export default function ReadingListScreen() {
   const clearance = useTabBarClearance();
   const reduceMotion = useReducedMotion();
   const { onScroll, scrollY } = useScrollChrome();
+  const { openSettings } = useSheets();
   const coverHeight = Math.max(330, Math.round(height * 0.44));
+  // Once the count at the foot of the cover scrolls away, a slim bar keeps search and settings at hand.
+  const pinned = usePinned(scrollY, coverHeight - insets.top - 40);
+  const openSearch = () => router.push('/search');
   const items = useReadingList();
   const scrollRef = useRef<Animated.ScrollView>(null);
   const listY = useRef(0);
@@ -140,19 +147,7 @@ export default function ReadingListScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: clearance }]}>
         <Cover height={coverHeight}>
-          <View
-            style={[
-              styles.topRow,
-              { paddingTop: insets.top + 6 },
-              theme.layout.heroAlign === 'center' && styles.topRowCenter,
-            ]}>
-            <View style={styles.brand}>
-              <BrewsyMark size={22} color={theme.colors.onCover} />
-              <Txt variant="spaced" color={theme.colors.onCover}>
-                Brewsy
-              </Txt>
-            </View>
-          </View>
+          <CoverBar onSearch={openSearch} onSettings={openSettings} />
           <View style={styles.coverFoot}>
             <CountHeader count={active.length} empty={items.length === 0} />
           </View>
@@ -244,7 +239,23 @@ export default function ReadingListScreen() {
           </>
         )}
       </Animated.ScrollView>
-      <StatusShade scrollY={scrollY} solidAt={coverHeight - insets.top - 40} />
+      <StatusShade scrollY={scrollY} solidAt={coverHeight - insets.top - 40} handOff={pinned} />
+      <PinnedBar shown={pinned}>
+        <View style={styles.barTitle} accessible accessibilityRole="header">
+          <Txt variant="spaced" numberOfLines={1}>
+            Reading list
+          </Txt>
+          {active.length > 0 && (
+            <Txt variant="caption" tone="tertiary" numberOfLines={1}>
+              {active.length} to read
+            </Txt>
+          )}
+        </View>
+        <View style={styles.barActions}>
+          <BarIcon icon={Search} label="Search" onPress={openSearch} />
+          <BarIcon icon={SettingsIcon} label="Settings" onPress={openSettings} />
+        </View>
+      </PinnedBar>
     </View>
   );
 }
@@ -490,13 +501,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', gap: 14 },
   pad: { paddingHorizontal: GUTTER },
-  topRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: GUTTER },
-  topRowCenter: { justifyContent: 'center' },
   coverFoot: { position: 'absolute', left: 0, right: 0, bottom: 14 },
   centerItems: { alignItems: 'center' },
   centerRow: { justifyContent: 'center' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: GUTTER, marginTop: 4 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: TAP },
+  barTitle: { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 12, paddingLeft: GUTTER },
+  barActions: { flexDirection: 'row', alignItems: 'center', paddingRight: 6 },
   countHeader: { paddingHorizontal: GUTTER, gap: 6 },
   list: { paddingBottom: 8, gap: 12 },
   groupHeading: { marginTop: 32, marginBottom: 4 },

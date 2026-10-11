@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { getCalendars } from 'expo-localization';
 import { Platform } from 'react-native';
 
-import { backendConfigured, upsertDevice } from '@/data/api';
+import { ApiError, backendConfigured, upsertDevice, type DevicePayload } from '@/data/api';
 import type { Settings } from '@/state/settings';
 
 const ID_KEY = 'brewsy:device-id';
@@ -36,19 +36,28 @@ export function wakeTimeString(s: Settings): string {
 
 /**
  * Sends this device's preferences to the backend, which uses them to decide
- * when to make the edition, which topics and sources to use, and where to push.
+ * when to make the edition, which topics and sources to use (and which topics
+ * get more stories), and where to push.
  */
 export async function syncDevice(settings: Settings): Promise<void> {
   if (!backendConfigured) return;
-  await upsertDevice({
+  const payload: DevicePayload = {
     device_id: await deviceId(),
     push_token: await AsyncStorage.getItem(TOKEN_KEY),
     platform: Platform.OS,
     timezone: timeZone(),
     wake_time: wakeTimeString(settings),
     topics: settings.topics,
+    focus_topics: settings.focusTopics.filter((t) => settings.topics.includes(t)),
     disabled_sources: settings.disabledOutlets,
     morning_push: settings.morningPush,
     breaking_push: settings.breakingPush,
-  });
+  };
+  try {
+    await upsertDevice(payload);
+  } catch (e) {
+    // A backend from before the focus_topics column: save everything else rather than nothing.
+    if (!(e instanceof ApiError && /focus_topics/.test(e.message))) throw e;
+    await upsertDevice({ ...payload, focus_topics: undefined });
+  }
 }

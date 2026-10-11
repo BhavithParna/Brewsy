@@ -1,5 +1,5 @@
 import { ArrowDown, Pause, Play } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useSheets } from './SheetHost';
@@ -18,10 +18,12 @@ type Props = {
   readMinutes: number;
   /** Jumps to the first story. */
   onRead: () => void;
+  /** For the first-run tour. */
+  listenRef?: Ref<View>;
 };
 
 /** Two big tiles under the cover: how much there is to read, and the Listen button. */
-export function EditionTiles({ briefing, storyCount, readMinutes, onRead }: Props) {
+export function EditionTiles({ briefing, storyCount, readMinutes, onRead, listenRef }: Props) {
   const { theme } = useTheme();
   const { openListen, openPlayer } = useSheets();
   const { listenMode, topics } = useSettings();
@@ -45,10 +47,11 @@ export function EditionTiles({ briefing, storyCount, readMinutes, onRead }: Prop
         accessibilityLabel={`${storyCount} stories, about ${readMinutes} minutes to read. Start reading`}
       />
       <Tile
+        tileRef={listenRef}
         bg={card}
         border={cardBorder}
         ink={text}
-        glass={theme.surface === 'glass'}
+        glass={theme.surface === 'glass' && !theme.liquid}
         label={active ? 'Playing\nnow' : loaded ? 'Resume\nlistening' : 'Listen\nto it'}
         value={String(listenMin)}
         unit="min briefing"
@@ -77,7 +80,9 @@ function Tile({
   icon,
   onPress,
   accessibilityLabel,
+  tileRef,
 }: {
+  tileRef?: Ref<View>;
   bg: string;
   border: string;
   ink: string;
@@ -99,10 +104,20 @@ function Tile({
       accessibilityLabel={accessibilityLabel}
       style={styles.flex}>
       <View
+        ref={tileRef}
         style={[
           styles.tile,
           { backgroundColor: bg, borderColor: border, borderRadius: radius(radii.lg) },
           glass && { backgroundColor: withAlpha(theme.colors.text.slice(0, 7), 0.08) },
+          // Liquid glass (Glass): the frosted pane catches light along its top edge, like the cards.
+          theme.liquid &&
+            bg === theme.colors.card && {
+              borderTopColor: theme.liquid.cardRim.top,
+              borderLeftColor: theme.liquid.cardRim.side,
+              borderRightColor: theme.liquid.cardRim.side,
+              borderBottomColor: theme.liquid.cardRim.bottom,
+              boxShadow: theme.liquid.cardShadow,
+            },
         ]}>
         <View style={styles.top}>
           <Txt variant="label" color={ink} style={styles.label}>
