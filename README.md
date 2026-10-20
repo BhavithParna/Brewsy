@@ -18,7 +18,9 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
 - **Your topics** — star up to 4 of the topics you follow for **more of this**: they come first
   on Today, get 4–6 full stories where the news supports it and more quick hits, and lead the
   audio briefing. **Movies** covers Hollywood, Bollywood and the other Indian film industries,
-  plus world and indie cinema (box office, releases, trailers, casting, festivals, awards).
+  plus world cinema (East Asia, the Philippines, the Middle East, Turkey, Africa, Europe,
+  Australia, Canada), animation, documentaries and indie film (box office, releases, trailers,
+  casting, festivals, awards).
   Under an opened story, **Stories like this: More · Less** tunes it further; "Less" can hide a
   person, company or word (Settings → Hidden words).
 - **Search** — the last two weeks of editions, offline over saved ones. A result opens on Today.
@@ -31,8 +33,9 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   the tab bar; tap it for chapters, speed (0.8×–2×), offline download and **Driving mode**
   (huge buttons, screen stays on). Every story has a small ▶ to start from it, and the
   Reading List has **Play my reading list**. Plays with the screen locked in an installed build.
-- **Never miss the big one** — ~125 sources (wires, major outlets, tech/AI, specialist press for
-  each beat including film trades and Indian cinema, official sources, Yahoo News as a safety net),
+- **Never miss the big one** — ~150 sources (wires, major outlets, tech/AI, specialist press for
+  each beat including film trades, Indian cinema and world-cinema press, official sources, Yahoo
+  News as a safety net),
   grouped and scored; anything 5+ major outlets cover is always in, and every topic with real news
   gets at least one full story. During the day Brewsy checks every 2 hours and adds **Since this
   morning** at the top, with an optional breaking-news push (at most 2 a day). **How this briefing

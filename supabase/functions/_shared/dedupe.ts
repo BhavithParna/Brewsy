@@ -266,9 +266,32 @@ function averageLinkage(n: number, pairScore: (i: number, j: number) => number, 
 }
 
 /**
+ * A beat's best `n` stories, spread across outlets: first the best story of each
+ * outlet not picked yet, then the next best. The big outlets' stories score high
+ * anyway; this gives the reserved places to the beat's smaller voices (a Nollywood
+ * site, a Malayalam film desk) instead of one prolific feed. Keeps best-first order.
+ */
+export function spreadAcrossOutlets(clusters: Cluster[], n: number): Cluster[] {
+  const picked = new Set<Cluster>();
+  const seen = new Set<string>();
+  for (const c of clusters) {
+    if (picked.size >= n) break;
+    if (c.outlets.some((o) => seen.has(o))) continue;
+    picked.add(c);
+    c.outlets.forEach((o) => seen.add(o));
+  }
+  for (const c of clusters) {
+    if (picked.size >= n) break;
+    picked.add(c);
+  }
+  return clusters.filter((c) => picked.has(c));
+}
+
+/**
  * Keeps the best clusters while making sure every topic hint gets a fair share:
  * a small beat (games, cricket) has fewer outlets, so it would otherwise lose
  * every slot to the general news. "More of this" topics get three times the share.
+ * Each share is spread across the beat's outlets (spreadAcrossOutlets).
  */
 function diversify(clusters: Cluster[], max: number, focus: TopicHint[] = []): Cluster[] {
   if (clusters.length <= max) return clusters;
@@ -276,7 +299,7 @@ function diversify(clusters: Cluster[], max: number, focus: TopicHint[] = []): C
   const chosen = new Set<Cluster>();
   for (const hint of ALL_HINTS) {
     const share = focus.includes(hint) ? perHint * 3 : perHint;
-    clusters.filter((c) => c.topicHints.includes(hint)).slice(0, share).forEach((c) => chosen.add(c));
+    spreadAcrossOutlets(clusters.filter((c) => c.topicHints.includes(hint)), share).forEach((c) => chosen.add(c));
   }
   for (const c of clusters) {
     if (chosen.size >= max) break;

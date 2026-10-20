@@ -18,7 +18,7 @@
 
 import { type ArticleText, fetchArticle } from './articles.ts';
 import { alsoToStory, uniqueId } from './briefing.ts';
-import { type Cluster, clusterAll } from './dedupe.ts';
+import { type Cluster, clusterAll, spreadAcrossOutlets } from './dedupe.ts';
 import { feedHealth, fetchAllFeeds, isHeadlineOnly, type FeedItem, type FeedStatus } from './feeds.ts';
 import { generateJson, type GenerateJsonOptions, type GenerateJsonResult, LlmError } from './llm.ts';
 import { fetchMarkets } from './markets.ts';
@@ -155,15 +155,16 @@ export function storyTarget(focus: Topic[]): number {
 /**
  * The candidates shown to the AI: the best-scored `max`, but always including
  * the best few of every topic hint (the best FOCUS_TOPIC_CANDIDATES of a focus
- * topic), so a small beat isn't crowded out by the general news. Keeps the
- * best-first order.
+ * topic), spread across the topic's outlets, so a small beat isn't crowded out by
+ * the general news and a beat's smaller outlets aren't crowded out by its biggest.
+ * Keeps the best-first order.
  */
 export function candidateSlate(clusters: Cluster[], max: number, perTopic = PER_TOPIC_CANDIDATES, focus: Topic[] = []): Cluster[] {
   if (clusters.length <= max) return clusters;
   const keep = new Set<Cluster>();
   for (const topic of TOPICS) {
     const n = focus.includes(topic) ? Math.max(perTopic, FOCUS_TOPIC_CANDIDATES) : perTopic;
-    clusters.filter((c) => c.topicHints.includes(topic)).slice(0, n).forEach((c) => keep.add(c));
+    spreadAcrossOutlets(clusters.filter((c) => c.topicHints.includes(topic)), n).forEach((c) => keep.add(c));
   }
   for (const c of clusters) {
     if (keep.size >= max) break;

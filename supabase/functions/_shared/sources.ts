@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THE NEWS SOURCES. Edit this list to add or remove feeds.
 //
-// Brewsy casts a wide net (≈125 feeds across 14 topics), groups articles about
+// Brewsy casts a wide net (≈150 feeds across 14 topics), groups articles about
 // the same event, scores each group, and only then narrows down. Each source has:
 //
 // - `outlet`    What you see in the app (Settings → Sources toggles use it).
@@ -54,6 +54,15 @@
 // listicles), NDTV Movies and Hindustan Times' Bollywood feed (mostly celebrity
 // gossip). Film and entertainment feeds also skip gossip headlines (feeds.ts).
 // Indian Express Entertainment is kept for its Malayalam, Tamil and Telugu film news.
+// World cinema, checked Oct 2026: Cineuropa, Asian Movie Pulse, LatAm Cinema, The
+// Japan Times, Unifrance, IFTN and the Cannes feed (403 to servers); Film New Europe
+// (never answers); Filmmaker Magazine, Screen Africa, Nollywood Reinvented, China Film
+// Insider and the Korea JoongAng Daily (stale, gone or no feed); Film Comment (only
+// podcasts lately); The Film Verdict, IONCINEMA, Slant and other review sites (reviews,
+// not news); Anime News Network (mostly TV anime and manga); and the culture feeds of
+// Yonhap, the Korea Herald, Dawn, the Express Tribune, Khaleej Times, Inquirer,
+// Philstar, Malay Mail and Premium Times (mostly K-pop, TV or celebrity gossip).
+// Spanish, French and Italian feeds are left out: grouping matches English words only.
 //
 // Plain data only: the app imports this file too, so no Deno/npm imports here.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,6 +163,11 @@ export const SOURCES: FeedSource[] = [
   // Film: Indian newsrooms' cinema desks (Bollywood and the regional film industries)
   { id: 'hindu-movies', outlet: 'The Hindu', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://www.thehindu.com/entertainment/movies/feeder/default.rss' },
   { id: 'indian-express-entertainment', outlet: 'The Indian Express', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://indianexpress.com/section/entertainment/feed/' },
+  { id: 'ht-tamil-cinema', outlet: 'Hindustan Times', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://www.hindustantimes.com/feeds/rss/entertainment/tamil-cinema/rssfeed.xml' },
+  { id: 'ht-telugu-cinema', outlet: 'Hindustan Times', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://www.hindustantimes.com/feeds/rss/entertainment/telugu-cinema/rssfeed.xml' },
+  // Film: other newsrooms' film desks (British and world cinema; Hong Kong, Chinese, Japanese and Korean film)
+  { id: 'guardian-film', outlet: 'The Guardian', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: guardian('film') },
+  { id: 'scmp-film', outlet: 'South China Morning Post', kind: 'rss', topicHint: 'movies', category: 'major', trust: 'high', url: 'https://www.scmp.com/rss/318254/feed' },
 
   // ── Tech and AI ──
   { id: 'verge', outlet: 'The Verge', kind: 'rss', topicHint: 'tech', category: 'tech', trust: 'medium', url: 'https://www.theverge.com/rss/index.xml' },
@@ -211,15 +225,43 @@ export const SOURCES: FeedSource[] = [
   { id: 'deadline-film', outlet: 'Deadline', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://deadline.com/v/film/feed/' },
   { id: 'hollywood-reporter-movies', outlet: 'The Hollywood Reporter', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.hollywoodreporter.com/c/movies/feed/' },
   { id: 'indiewire', outlet: 'IndieWire', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.indiewire.com/feed/' },
+  // The trades' international desks: Asian box office and festivals (Variety Global), Europe,
+  // Latin America and the Middle East (Variety's global section), sales and co-productions (Deadline)
+  { id: 'variety-global', outlet: 'Variety', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://variety.com/v/global/feed/' },
+  { id: 'variety-international', outlet: 'Variety', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://variety.com/c/global/feed/' },
+  { id: 'deadline-international', outlet: 'Deadline', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://deadline.com/v/international/feed/' },
   // World cinema, festivals and independent film
   { id: 'screen-daily', outlet: 'Screen Daily', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.screendaily.com/45202.rss' },
   { id: 'the-playlist', outlet: 'The Playlist', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://theplaylist.net/feed/' },
   { id: 'film-stage', outlet: 'The Film Stage', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://thefilmstage.com/feed/' },
   { id: 'world-of-reel', outlet: 'World of Reel', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://www.worldofreel.com/blog?format=rss' },
+  // Genre and world cinema news (its feeds are http only)
+  { id: 'screen-anarchy', outlet: 'ScreenAnarchy', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'http://feeds.screenanarchy.com/sa-news' },
   // Indian cinema: Bollywood, the South Indian industries, box office
   { id: 'bollywood-hungama', outlet: 'Bollywood Hungama', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.bollywoodhungama.com/feed/' },
   { id: 'cinema-express', outlet: 'Cinema Express', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.cinemaexpress.com/stories.rss' },
   { id: 'koimoi', outlet: 'Koimoi', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://www.koimoi.com/feed/' },
+  { id: 'onmanorama-movies', outlet: 'Onmanorama', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.onmanorama.com/entertainment.feeds.onmrss.xml' },
+  // East and Southeast Asia: Hong Kong and Asian action cinema, Philippine film
+  { id: 'city-on-fire', outlet: 'City On Fire', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://cityonfire.com/feed/' },
+  { id: 'rappler-movies', outlet: 'Rappler', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.rappler.com/entertainment/movies/feed/' },
+  // Middle East and Turkey (a newsroom we don't otherwise read counts as film press)
+  { id: 'the-national-film', outlet: 'The National', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.thenationalnews.com/arc/outboundfeeds/rss/category/arts-culture/film-tv/?outputType=xml' },
+  { id: 'daily-sabah-cinema', outlet: 'Daily Sabah', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.dailysabah.com/rss/arts/cinema' },
+  // Africa: African film criticism and news, Nollywood, East African and South African film
+  { id: 'afrocritik', outlet: 'Afrocritik', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://afrocritik.com/feed/' },
+  { id: 'nollycritic', outlet: 'Nollycritic', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://nollycritic.com/feed/' },
+  { id: 'sinema-focus', outlet: 'Sinema Focus', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://sinemafocus.com/feed/' },
+  { id: 'bizcommunity-film', outlet: 'Bizcommunity', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'low', url: 'https://www.bizcommunity.com/rss/196/482.html' },
+  // Europe, Australia and Canada: Italian film (English edition), the Australian and Canadian screen trades
+  { id: 'cinecitta-news', outlet: 'Cinecittà News', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://cinecittanews.it/en/feed/' },
+  { id: 'if-magazine', outlet: 'IF Magazine', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://if.com.au/feed/' },
+  { id: 'playback', outlet: 'Playback', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://playbackonline.ca/feed/' },
+  // Animation and documentary
+  { id: 'cartoon-brew', outlet: 'Cartoon Brew', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.cartoonbrew.com/feed' },
+  { id: 'animation-magazine', outlet: 'Animation Magazine', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://www.animationmagazine.net/feed/' },
+  { id: 'pov-magazine', outlet: 'POV Magazine', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://povmagazine.com/feed/' },
+  { id: 'business-doc-europe', outlet: 'Business Doc Europe', kind: 'rss', topicHint: 'movies', category: 'specialist', trust: 'medium', url: 'https://businessdoceurope.com/feed/' },
   // Crypto
   { id: 'coindesk', outlet: 'CoinDesk', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'medium', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
   { id: 'the-block', outlet: 'The Block', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'medium', url: 'https://www.theblock.co/rss.xml' },
@@ -383,6 +425,26 @@ export const OUTLET_ALIASES: Record<string, string> = {
   'cinema express': 'Cinema Express',
   'koimoi': 'Koimoi',
   'koimoi.com': 'Koimoi',
+  'scmp': 'South China Morning Post',
+  'onmanorama': 'Onmanorama',
+  'screenanarchy': 'ScreenAnarchy',
+  'screen anarchy': 'ScreenAnarchy',
+  'city on fire': 'City On Fire',
+  'rappler': 'Rappler',
+  'the national news': 'The National',
+  'daily sabah': 'Daily Sabah',
+  'afrocritik': 'Afrocritik',
+  'nollycritic': 'Nollycritic',
+  'sinema focus': 'Sinema Focus',
+  'bizcommunity': 'Bizcommunity',
+  'cinecittà news': 'Cinecittà News',
+  'cinecitta news': 'Cinecittà News',
+  'if magazine': 'IF Magazine',
+  'playback': 'Playback',
+  'cartoon brew': 'Cartoon Brew',
+  'animation magazine': 'Animation Magazine',
+  'pov magazine': 'POV Magazine',
+  'business doc europe': 'Business Doc Europe',
   'coindesk': 'CoinDesk',
   'the block': 'The Block',
   'decrypt': 'Decrypt',

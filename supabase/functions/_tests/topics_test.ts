@@ -3,7 +3,7 @@
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
 
-import { type Cluster, clusterAll } from '../_shared/dedupe.ts';
+import { type Cluster, clusterAll, spreadAcrossOutlets } from '../_shared/dedupe.ts';
 import {
   type Candidates, candidateSlate, countByTopic, fallbackAlso, fillTopics, FOCUS_TOPIC_CANDIDATES, storyTarget, topUpAlso,
 } from '../_shared/pipeline.ts';
@@ -140,15 +140,32 @@ Deno.test('prompts: all 14 topics are offered; schemas stay within what Gemini a
 
 Deno.test('movies: its own beat, fed by Hollywood trades, world and indie film press, and Indian cinema desks', () => {
   const film = SOURCES.filter((s) => s.topicHint === 'movies');
-  assert(film.length >= 10, `${film.length} film feeds`);
+  assert(film.length >= 35, `${film.length} film feeds`);
   const outlets = new Set(film.map((s) => s.outlet));
   for (const o of ['Variety', 'Deadline', 'The Hollywood Reporter', 'IndieWire', 'Screen Daily', 'Bollywood Hungama', 'Cinema Express', 'The Hindu']) {
     assert(outlets.has(o), `${o} feeds the movies beat`);
   }
+  // World cinema, not just Hollywood and Bollywood: one outlet per region or beat at least.
+  const world: Record<string, string[]> = {
+    'the trades\' international desks': ['variety-global', 'variety-international', 'deadline-international'],
+    'South Indian film': ['ht-tamil-cinema', 'ht-telugu-cinema', 'onmanorama-movies'],
+    'East and Southeast Asia': ['scmp-film', 'city-on-fire', 'rappler-movies'],
+    'the Middle East and Turkey': ['the-national-film', 'daily-sabah-cinema'],
+    'Africa': ['afrocritik', 'nollycritic', 'sinema-focus', 'bizcommunity-film'],
+    'Europe, Australia and Canada': ['guardian-film', 'cinecitta-news', 'if-magazine', 'playback'],
+    'animation and documentary': ['cartoon-brew', 'animation-magazine', 'pov-magazine', 'business-doc-europe'],
+  };
+  const ids = new Set(film.map((s) => s.id));
+  for (const [region, list] of Object.entries(world)) {
+    for (const id of list) assert(ids.has(id), `${id} feeds the movies beat (${region})`);
+  }
   assert(film.every((s) => s.category === 'specialist' || s.category === 'major'));
   assert(film.filter((s) => s.category === 'major').every((s) => isMajorOutlet(s.outlet)), 'newsroom film desks keep their newsroom standing');
   assertEquals(outletInfo('Hindustan Times').category, 'major');
+  assertEquals(outletInfo('South China Morning Post').category, 'major');
   assertEquals(outletInfo('Bollywood Hungama').category, 'specialist');
+  assertEquals(outletInfo('Afrocritik').category, 'specialist');
+  assert(!isMajorOutlet('The National') && !isMajorOutlet('Daily Sabah'), 'newsrooms we only read for film count as film press');
   assert(PICK_SYSTEM.includes('- movies: films from Hollywood, Bollywood'), 'the AI knows what movies covers');
   assert(PICK_SYSTEM.includes('films go under movies'), 'and that films are not entertainment');
 });
@@ -171,6 +188,34 @@ Deno.test('candidateSlate: a focus topic keeps its best 10, other topics their b
   assertEquals(slate.filter((c) => c.topicHints.includes('movies')).length, FOCUS_TOPIC_CANDIDATES);
   assertEquals(slate.filter((c) => c.topicHints.includes('gaming')).length, 4);
   assertEquals(candidateSlate(all, 30, 4).filter((c) => c.topicHints.includes('movies')).length, 4, 'no focus, no extra');
+});
+
+Deno.test('a beat\'s reserved places go to different outlets first, so one prolific feed can\'t take them all', () => {
+  const big = Array.from({ length: 30 }, (_, i) => cluster(`w${i}`, 'world', ['Reuters', 'BBC News', 'NPR']));
+  const variety = Array.from({ length: 6 }, (_, i) => cluster(`m${i}`, 'movies', ['Variety']));
+  const africa = [cluster('a1', 'movies', ['Afrocritik']), cluster('n1', 'movies', ['Nollycritic'])];
+  const ranked = candidates([...big, ...variety, ...africa]).clusters;
+  const films = (focus: Topic[] = []) =>
+    candidateSlate(ranked, 34, 4, focus).filter((c) => c.topicHints.includes('movies')).map((c) => c.id);
+  assertEquals(films(), ['m0', 'm1', 'a1', 'n1'], 'the best Variety story, then each other outlet\'s best, then the next best');
+  assertEquals(films(['movies']).length, 8, 'a focus topic still gets its 10 places, here all 8 film stories');
+  // Most-covered stories first; a story that brings no new outlet waits for the second pass.
+  const trades = cluster('t1', 'movies', ['Variety', 'Deadline']);
+  const spread = spreadAcrossOutlets([trades, cluster('t2', 'movies', ['Deadline']), cluster('t3', 'movies', ['Afrocritik']), cluster('t4', 'movies', ['Variety'])], 3);
+  assertEquals(spread.map((c) => c.id), ['t1', 't2', 't3'], 'best-first order kept');
+  assertEquals(spreadAcrossOutlets([trades], 3).map((c) => c.id), ['t1'], 'a short list is returned as is');
+  // The grouping cap (280 stories) spreads each beat's share the same way.
+  const items = [
+    ...Array.from({ length: 40 }, (_, k) =>
+      ['Reuters', 'BBC News', 'NPR'].map((outlet, i) =>
+        item({ outlet, topicHint: 'world', title: `${['zephyr', 'quartz', 'nimbus'].map((w) => `${w}${k}x`).join(' ')} update ${i}`, link: `https://w.example/${k}/${i}` }))).flat(),
+    ...Array.from({ length: 6 }, (_, k) =>
+      item({ outlet: 'Variety', topicHint: 'movies', title: ['orbit', 'lantern', 'harbor'].map((w) => `${w}${k}m`).join(' '), link: `https://variety.example/${k}` })),
+    item({ outlet: 'Nollycritic', topicHint: 'movies', title: 'Lagos epic leads African film award nominations', link: 'https://nollycritic.example/1' }),
+  ];
+  const kept = clusterAll(items, { now: NOW, maxClusters: 30, focus: ['movies'] }).clusters.filter((c) => c.topicHints.includes('movies'));
+  assertEquals(kept.length, 3);
+  assert(kept.some((c) => c.outlets.includes('Nollycritic')), 'the Nollywood story survives the cap next to Variety\'s');
 });
 
 Deno.test('fillTopics: the reader\'s topics first, then a second story for focus topics, then the rest', () => {

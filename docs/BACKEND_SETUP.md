@@ -4,7 +4,7 @@ This puts Brewsy's "newsroom" online so a fresh edition, with an audio version, 
 
 ```
 every 10 min   Supabase timer (pg_cron) ──► daily-briefing function: does the next thing that's due
-                 ~30 min before wake   EDITION  reads ~125 feeds (~1,000 articles), groups them into stories,
+                 ~30 min before wake   EDITION  reads ~150 feeds (~1,500 articles), groups them into stories,
                                                 scores importance, Claude picks + writes ~12–18 stories,
                                                 a second "editor" pass checks for misses, "Also happening"
                  right after           AUDIO    radio scripts (Quick ≈ 3 min, Full ≈ 10 min) → voice → MP3s
@@ -278,7 +278,10 @@ Everything is in `supabase/functions/_shared/scoring.ts` (numbers you can tune a
   or a review) gets its best story, the reader's own topics first, up to 18 full stories in all. That's 6 batches
   of 3, written at the same time: with the pick, editor and summary calls, 9 AI calls, what two Gemini free-tier
   models allow in a minute. The AI is shown the best ~160 candidates plus the best 4 of every topic, so small
-  beats always reach it.
+  beats always reach it. Those reserved places (and each beat's share of the ~280 stories kept after grouping)
+  go to different outlets first: the best story of each outlet not yet picked, then the next best
+  (`spreadAcrossOutlets` in `dedupe.ts`). The big outlets' stories rank high anyway, so the reserved places
+  bring in a beat's smaller voices instead of more stories from its busiest feed.
 - **More of this (focus topics):** a topic the reader starred gets real depth. Grouping keeps three times its
   usual share of stories, the AI sees its best 10 candidates instead of 4 and is asked for 4–6 stories on it
   where the news supports it; the story target grows
@@ -288,11 +291,22 @@ Everything is in `supabase/functions/_shared/scoring.ts` (numbers you can tune a
   starred topic and 2 per other followed topic before the rest (at least 2 headline lines if the editor gives a
   starred topic fewer). The daytime check may add one starred-topic story per check that broke after the edition
   and 4+ outlets already cover; it never sends a push. The audio briefing plays starred topics first, like Today.
-- **Movies** has its own film desks: the Hollywood trades (Variety, Deadline, The Hollywood Reporter, IndieWire),
-  world and independent film (Screen Daily, The Playlist, The Film Stage, World of Reel) and Indian cinema
-  (Bollywood Hungama, Cinema Express for South Indian film, Koimoi for box office, and the cinema desks of The Hindu
-  and The Indian Express). TV, music and celebrities stay under Entertainment. Film and entertainment feeds skip
-  celebrity-gossip headlines (holiday photos, outfits, "shares first post"; `GOSSIP_PATTERNS` in `feeds.ts`), and
+- **Movies** has its own film desks (37 feeds): the Hollywood trades (Variety, Deadline, The Hollywood
+  Reporter, IndieWire) and their international desks (Variety Global and Variety's global section, Deadline
+  International: Asian, European, Latin American and Middle Eastern film business, box office and festivals);
+  world and independent film (Screen Daily, The Playlist, The Film Stage, World of Reel, ScreenAnarchy, and the
+  film desks of The Guardian and the South China Morning Post); Indian cinema (Bollywood Hungama, Cinema Express
+  for South Indian film, Koimoi for box office, Onmanorama for Malayalam film, and the cinema desks of The Hindu,
+  The Indian Express and the Hindustan Times' Tamil and Telugu pages); East and Southeast Asia (City On Fire for
+  Hong Kong and Asian action cinema, Rappler for Philippine film); the Middle East and Turkey (The National,
+  Daily Sabah); Africa (Afrocritik, Nollycritic for Nollywood, Sinema Focus for East Africa, Bizcommunity for South
+  Africa); Europe, Australia and Canada (Cinecittà News for Italy, IF Magazine, Playback); and animation and
+  documentary (Cartoon Brew, Animation Magazine, POV Magazine, Business Doc Europe). Only English-language feeds:
+  grouping compares English words, so a Spanish or Korean headline would never join its story. Korea, Japan,
+  Latin America and most of Europe have no working English film feed of their own (blocked, gone, or mostly K-pop,
+  TV and gossip; see the notes at the top of `sources.ts`), so their film news comes through the trades'
+  international desks, Screen Daily and the SCMP. TV, music and celebrities stay under Entertainment. Film and
+  entertainment feeds skip celebrity-gossip headlines (holiday photos, outfits, "shares first post"; `GOSSIP_PATTERNS` in `feeds.ts`), and
   every feed skips shopping roundups (`JUNK_PATTERNS`); a plain "deal" in a headline is news and is kept.
 - **Daily AI budget:** the Gemini free tier also caps each model at **20 requests a day** (40 with the
   fallback model). An edition uses 9 (11 if the editor adds stories), its audio 2, and the daytime
@@ -467,7 +481,7 @@ parsing), `dedupe.ts` (grouping), `scoring.ts` (importance), `pipeline.ts` (the 
 (daytime checks), `audio.ts` + `audio-config.ts` + `tts.ts` + `mp3.ts` + `storage.ts` (audio),
 `llm.ts` (Claude/Gemini), `prompts.ts`, `validate.ts`, `prefs.ts` (the tick schedule), `store.ts`, `push.ts`.
 
-Run the backend tests (107 tests, no keys needed):
+Run the backend tests (108 tests, no keys needed):
 
 ```bash
 npx --yes deno@latest test -A --node-modules-dir=none --no-lock supabase/functions/_tests/
