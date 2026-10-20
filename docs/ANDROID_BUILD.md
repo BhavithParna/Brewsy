@@ -89,6 +89,11 @@ It builds in the cloud (often 10–20 minutes on the free plan, longer if there'
 When it's done you get a link and a QR code: open it on your phone, download the `.apk`
 and install it (Android will ask you to allow installing from your browser; that's expected).
 
+The APK is built for 64-bit phones only (`arm64-v8a`), with R8 code shrinking and unused
+resources removed (`expo-build-properties` in `app.json`). That keeps it near 50 MB instead of
+~170 MB. 32-bit-only phones (some very cheap "Android Go" models) and the x86 emulator can't
+install it; add `"armeabi-v7a"` or `"x86_64"` to `buildArchs` if you need them.
+
 Open Brewsy, finish onboarding and allow notifications. The app sends its push token,
 wake-up time and topics to your backend. Check it arrived in the Supabase dashboard →
 **Table Editor** → `devices` (the `push_token` column starts with `ExponentPushToken[`).

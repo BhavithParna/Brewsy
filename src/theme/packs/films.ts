@@ -19,10 +19,13 @@ import { NewsCycle_700Bold } from '@expo-google-fonts/news-cycle/700Bold';
 import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
 import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
-import { ZenMaruGothic_700Bold } from '@expo-google-fonts/zen-maru-gothic/700Bold';
 import type { FontSource } from 'expo-font';
 
 import type { Theme } from '../themes';
+
+// Zen Maru Gothic without its Japanese characters (3.8 MB → 93 KB): Brewsy only sets English in it.
+// Every Latin, Greek and Cyrillic glyph is kept. Made with fontTools' pyftsubset; license in assets/fonts.
+const ZenMaruGothic_700Bold: FontSource = require('../../../assets/fonts/ZenMaruGothic_700Bold-latin.ttf');
 
 // ─── Star Wars ────────────────────────────────────────────────────────────────
 // Deep-space black and a binary sunset. News Cycle (a News Gothic revival, the opening crawl's
