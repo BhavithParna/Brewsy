@@ -31,6 +31,7 @@ import { WakeTimePicker } from '@/components/WakeTimePicker';
 import { TOPICS } from '@/data/types';
 import { rememberPushToken } from '@/lib/device';
 import { formatWakeTime } from '@/lib/format';
+import { REGIONS, type Region } from '@/lib/region';
 import { isExpoGoAndroid, registerForPush, requestNotificationPermission } from '@/lib/notifications';
 import { updateSettings, useSettings, type Settings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -46,15 +47,15 @@ import {
 } from '@/theme/themes';
 import { GUTTER, capsLabel, fonts, radii, withAlpha } from '@/theme/tokens';
 
-/** Steps after the welcome: look, topics, wake-up time, notifications. */
-const STEPS = 4;
+/** Steps after the welcome: look, region, topics, wake-up time, notifications. */
+const STEPS = 5;
 /** Side margin of the step screens. */
 const PAD = 24;
 const TILE_GAP = 12;
 /** The look grid stops growing past this width (tablets, desktop web). */
 const MAX_GRID = 560;
 
-/** First launch: a welcome, then the look, topics, wake-up time and notifications. */
+/** First launch: a welcome, then the look, where the news comes from, topics, wake-up time and notifications. */
 export default function Onboarding() {
   const [step, setStep] = useState(0);
 
@@ -78,9 +79,10 @@ export default function Onboarding() {
   return (
     <StepFrame step={step} onBack={() => setStep((s) => s - 1)}>
       {step === 1 && <LookStep onNext={next} />}
-      {step === 2 && <TopicsStep onNext={next} />}
-      {step === 3 && <WakeStep onNext={next} />}
-      {step === 4 && <NotifyStep />}
+      {step === 2 && <RegionStep onNext={next} />}
+      {step === 3 && <TopicsStep onNext={next} />}
+      {step === 4 && <WakeStep onNext={next} />}
+      {step === 5 && <NotifyStep />}
     </StepFrame>
   );
 }
@@ -395,6 +397,60 @@ function GlassAppearance() {
   );
 }
 
+// ─── Region ───────────────────────────────────────────────────────────────────
+
+/**
+ * Where the local section comes from. Starts on the phone's own region (its timezone, then its
+ * language settings; see lib/region.ts), so most people just tap Continue.
+ */
+function RegionStep({ onNext }: { onNext: () => void }) {
+  const { region } = useSettings();
+  const choose = (id: Region) => {
+    if (id === region) return;
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    updateSettings({ region: id });
+  };
+  return (
+    <StepBody footer={<PrimaryButton label="Continue" onPress={onNext} />}>
+      <StepHeading
+        step={2}
+        title={'Where should your\nnews come from?'}
+        body="Your edition has the world’s news, plus a short section of local news. You can change this any time."
+      />
+      <View style={styles.topicList} accessibilityRole="radiogroup">
+        {REGIONS.map((r) => (
+          <RegionChoice key={r.id} label={r.label} selected={region === r.id} onPress={() => choose(r.id)} />
+        ))}
+      </View>
+    </StepBody>
+  );
+}
+
+/**
+ * One region as its own panel. The marker stays round in every theme (not the theme's corner
+ * shape, as the topic checks are), so it reads as "pick one".
+ */
+function RegionChoice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const { theme } = useTheme();
+  return (
+    <GlassCard radius={radii.lg} style={selected && { borderColor: theme.colors.textSecondary }}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: selected }}
+        accessibilityLabel={label}
+        style={({ pressed }) => [styles.choice, pressed && styles.pressed]}>
+        <View style={[styles.radio, { borderColor: selected ? theme.colors.text : theme.colors.textTertiary }]}>
+          {selected && <View style={[styles.radioDot, { backgroundColor: theme.colors.text }]} />}
+        </View>
+        <Txt variant="title" style={styles.flex}>
+          {label}
+        </Txt>
+      </Pressable>
+    </GlassCard>
+  );
+}
+
 // ─── Topics, wake-up time, notifications ─────────────────────────────────────
 
 function TopicsStep({ onNext }: { onNext: () => void }) {
@@ -403,7 +459,7 @@ function TopicsStep({ onNext }: { onNext: () => void }) {
   return (
     <StepBody footer={<PrimaryButton label="Continue" onPress={onNext} />}>
       <StepHeading
-        step={2}
+        step={3}
         title={'What should\nwe brew?'}
         body="Pick the topics for your morning edition, and star any you want more of. You can change this any time."
       />
@@ -429,7 +485,7 @@ function WakeStep({ onNext }: { onNext: () => void }) {
   return (
     <StepBody footer={<PrimaryButton label="Continue" onPress={onNext} />}>
       <StepHeading
-        step={3}
+        step={4}
         title={'When do you\nwake up?'}
         body="Brewsy reads the news overnight. Your edition is ready by this time each morning."
       />
@@ -495,7 +551,7 @@ function NotifyStep() {
         <Bell size={24} color={theme.colors.text} strokeWidth={1.5} />
       </View>
       <StepHeading
-        step={4}
+        step={5}
         title={'Want a\ngentle nudge?'}
         body="One notification when your edition is ready. And if you save stories for tonight or the weekend, a quiet reminder then. Never more than that."
       />
@@ -558,6 +614,10 @@ const styles = StyleSheet.create({
   appearance: { padding: 16, gap: 12 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   topicList: { gap: 12 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, paddingVertical: 15, paddingHorizontal: 18 },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 12, height: 12, borderRadius: 6 },
+  pressed: { opacity: 0.6 },
   wakeShow: { paddingVertical: 8 },
   bell: { width: 56, height: 56, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   footer: { paddingHorizontal: PAD, paddingTop: 12, gap: 6 },

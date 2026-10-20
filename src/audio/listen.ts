@@ -5,7 +5,6 @@ import { playerStore } from './store';
 import { toast } from '@/components/Toast';
 import { fetchAndCacheEdition, readCachedEdition } from '@/data/editions';
 import type { Briefing, ListenMode } from '@/data/types';
-import { orderedTopics } from '@/lib/curation';
 import type { SavedItem } from '@/state/readingList';
 import { settingsStore, updateSettings } from '@/state/settings';
 
@@ -14,7 +13,7 @@ export async function listenToEdition(b: Briefing, opts: { mode?: ListenMode; st
   const settings = settingsStore.get();
   const mode = opts.mode ?? settings.listenMode;
   if (opts.mode && opts.mode !== settings.listenMode) updateSettings({ listenMode: opts.mode });
-  const session = editionSession(b, mode, orderedTopics(settings));
+  const session = editionSession(b, mode, settings);
   if (opts.storyId) {
     const index = chapterFor(session, opts.storyId);
     await play(session, { index: Math.max(0, index) });

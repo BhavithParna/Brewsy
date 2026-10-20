@@ -9,7 +9,8 @@ import type { Settings } from '@/state/settings';
 const ID_KEY = 'brewsy:device-id';
 const TOKEN_KEY = 'brewsy:push-token';
 
-async function deviceId(): Promise<string> {
+/** This phone's random id: the server knows a device by it (no accounts). */
+export async function deviceId(): Promise<string> {
   const existing = await AsyncStorage.getItem(ID_KEY);
   if (existing) return existing;
   const id = Crypto.randomUUID();
@@ -34,10 +35,12 @@ export function wakeTimeString(s: Settings): string {
   return `${String(s.wakeTime.hour).padStart(2, '0')}:${String(s.wakeTime.minute).padStart(2, '0')}`;
 }
 
+/** Columns an older backend may not have yet: left out (one at a time) if the server rejects them. */
+const OPTIONAL_COLUMNS = ['region', 'focus_topics'] as const;
+
 /**
- * Sends this device's preferences to the backend, which uses them to decide
- * when to make the edition, which topics and sources to use (and which topics
- * get more stories), and where to push.
+ * Sends this device's preferences to the backend, which uses them to decide which local section
+ * to make, which topics get more stories, and when and where to push.
  */
 export async function syncDevice(settings: Settings): Promise<void> {
   if (!backendConfigured) return;
@@ -50,14 +53,22 @@ export async function syncDevice(settings: Settings): Promise<void> {
     topics: settings.topics,
     focus_topics: settings.focusTopics.filter((t) => settings.topics.includes(t)),
     disabled_sources: settings.disabledOutlets,
+    region: settings.region,
     morning_push: settings.morningPush,
     breaking_push: settings.breakingPush,
   };
-  try {
-    await upsertDevice(payload);
-  } catch (e) {
-    // A backend from before the focus_topics column: save everything else rather than nothing.
-    if (!(e instanceof ApiError && /focus_topics/.test(e.message))) throw e;
-    await upsertDevice({ ...payload, focus_topics: undefined });
+  let body = payload;
+  for (;;) {
+    try {
+      await upsertDevice(body);
+      return;
+    } catch (e) {
+      // A backend from before the region or focus_topics column: save everything else rather than nothing.
+      const missing =
+        e instanceof ApiError &&
+        OPTIONAL_COLUMNS.find((c) => body[c] !== undefined && new RegExp(`\\b${c}\\b`).test(e.message));
+      if (!missing) throw e;
+      body = { ...body, [missing]: undefined };
+    }
   }
 }

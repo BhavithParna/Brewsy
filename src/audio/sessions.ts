@@ -3,9 +3,14 @@ import type { Chapter, PhoneVoiceReason, Session } from './types';
 import { backendConfigured } from '@/data/api';
 import { readCachedEdition } from '@/data/editions';
 import type { AudioEdition, Briefing, ListenMode, Story, Topic } from '@/data/types';
+import { curateEdition, mutedMatcher, orderedTopics, type CuratedEdition, type LocalGroup } from '@/lib/curation';
 import { formatShortDate, parseDateKey } from '@/lib/format';
 import { storyKey, type SavedItem } from '@/state/readingList';
+import type { Settings } from '@/state/settings';
 import { TOPIC_LABEL } from '@/theme/themes';
+
+/** What shapes a reader's own running order. */
+export type ListenPrefs = Pick<Settings, 'topics' | 'focusTopics' | 'mutedWords' | 'disabledOutlets' | 'region'>;
 
 /** Words per minute of a calm news read at 1×. */
 const WPM = 160;
@@ -63,43 +68,111 @@ function updateChapter(s: Story, date: string): Chapter {
   };
 }
 
+/** A chapter the phone reads aloud. Stories are keyed by `date`, the date they're saved under. */
+function spokenChapter(date: string, title: string, text: string, story?: Story): Chapter {
+  const script = speakable(text);
+  return {
+    key: story ? storyKey(date, story.id) : null,
+    storyId: story?.id ?? null,
+    editionDate: date,
+    title,
+    uri: null,
+    start: 0,
+    duration: secondsFor(script),
+    script,
+    artworkUrl: story?.imageUrl ?? undefined,
+  };
+}
+
+/** A story told from its text, when there's no script for it. */
+function storyScript(s: Story, mode: ListenMode): string {
+  return mode === 'quick'
+    ? `${s.headline}. ${firstSentence(s.whatHappened)}`
+    : `${s.headline}. ${s.whatHappened} Why it matters: ${s.whyItMatters}`;
+}
+
+/**
+ * The local section as a group of chapters after the topics: "Next, in Canada." `first`: nothing
+ * came before it.
+ */
+function localChapters(local: LocalGroup, mode: ListenMode, first: boolean): Chapter[] {
+  const place = local.label.startsWith('United ') ? `the ${local.label}` : local.label;
+  return local.stories.map((s, i) => {
+    const lead = i > 0 ? `Also in ${place}.` : first ? `First, in ${place}.` : `Next, in ${place}.`;
+    return spokenChapter(local.date, s.headline, `${lead} ${storyScript(s, mode)}`, s);
+  });
+}
+
 /**
  * The edition read by the phone's own voice, for when the server has no audio
  * (sample edition, or the audio step hasn't run yet). Follows the same running order
  * as the server script: intro + 60-second summary, one chapter per story, outro.
  */
-function deviceChapters(b: Briefing, mode: ListenMode, stories: Story[]): Chapter[] {
-  const chapter = (title: string, text: string, story?: Story): Chapter => {
-    const script = speakable(text);
-    return {
-      key: story ? storyKey(b.date, story.id) : null,
-      storyId: story?.id ?? null,
-      editionDate: b.date,
-      title,
-      uri: null,
-      start: 0,
-      duration: secondsFor(script),
-      script,
-      artworkUrl: story?.imageUrl ?? undefined,
-    };
-  };
-  const out: Chapter[] = [
-    chapter(
-      'The 60-second briefing',
-      `Good morning, it's ${spokenDate(b.date)}. Here's what you need to know. ${b.summary.join(' ')}`,
-    ),
-  ];
+function deviceChapters(b: Briefing, mode: ListenMode, stories: Story[], local: LocalGroup | null): Chapter[] {
+  const chapter = (title: string, text: string, story?: Story) => spokenChapter(b.date, title, text, story);
+  const out: Chapter[] = [chapter('The 60-second briefing', introText(b.date, b.summary))];
   let lastTopic: Topic | null = null;
   stories.forEach((s, i) => {
     const lead = i === 0 ? 'First, ' : s.topic !== lastTopic ? `Next, in ${TOPIC_LABEL[s.topic]}. ` : 'Also. ';
     lastTopic = s.topic;
-    const body =
-      mode === 'quick'
-        ? `${s.headline}. ${firstSentence(s.whatHappened)}`
-        : `${s.headline}. ${s.whatHappened} Why it matters: ${s.whyItMatters}`;
-    out.push(chapter(s.headline, `${lead}${body}`, s));
+    out.push(chapter(s.headline, `${lead}${storyScript(s, mode)}`, s));
   });
+  if (local) out.push(...localChapters(local, mode, stories.length === 0));
   out.push(chapter('Wrap-up', "That's your briefing. You're all caught up."));
+  return out;
+}
+
+/** The server wrote each story as a lead-in plus a body, so the phone can make its own running order. */
+function hasParts(audio: AudioEdition): boolean {
+  return !audio.url && audio.chapters.some((c) => c.storyId != null && typeof c.body === 'string' && c.body.trim() !== '');
+}
+
+/** The greeting and the 60-second summary, as the phone says it. */
+function introText(date: string, summary: string[]): string {
+  return `Good morning, it's ${spokenDate(date)}. Here's what you need to know. ${summary.join(' ')}`;
+}
+
+/**
+ * The reader's own running order, read by the phone: the intro, then only their topics (starred
+ * ones first, stories hidden by muted words or turned-off outlets left out), each story's body
+ * with a short way in of our own ("Next, in Business."), then the local section, then the outro.
+ */
+function personalChapters(
+  b: Briefing,
+  mode: ListenMode,
+  audio: AudioEdition,
+  curated: CuratedEdition,
+  mutedWords: string[],
+): Chapter[] {
+  const chapters = audio.chapters;
+  const byStory = new Map(chapters.flatMap((c) => (c.storyId ? [[c.storyId, c] as const] : [])));
+  const intro = chapters[0] && !chapters[0].storyId ? chapters[0] : null;
+  const last = chapters[chapters.length - 1];
+  const outro = last && !last.storyId && last !== intro ? last : null;
+
+  const out: Chapter[] = [];
+  if (intro) {
+    // An intro that mentions a muted word is told from Today's takeaways instead, which leave it out.
+    const muted = mutedMatcher(mutedWords);
+    const text = muted?.test(intro.script) ? introText(b.date, curated.summary) : intro.script;
+    out.push(spokenChapter(b.date, intro.title, text));
+  }
+  let told = 0;
+  for (const g of curated.groups) {
+    const label = TOPIC_LABEL[g.topic];
+    let inTopic = 0;
+    for (const s of g.stories) {
+      const c = byStory.get(s.id);
+      if (!c) continue;
+      const lead = told === 0 ? `First, in ${label}.` : inTopic === 0 ? `Next, in ${label}.` : `Also in ${label}.`;
+      const text = c.body?.trim() ? `${lead} ${c.body}` : c.script;
+      out.push(spokenChapter(b.date, c.title, text, s));
+      told++;
+      inTopic++;
+    }
+  }
+  if (curated.local) out.push(...localChapters(curated.local, mode, told === 0));
+  if (outro) out.push(spokenChapter(b.date, outro.title, outro.script));
   return out;
 }
 
@@ -125,16 +198,31 @@ export function editionSessionId(date: string, mode: ListenMode) {
 }
 
 /**
- * The whole edition as a listening session. "Since this morning" stories go first, then the
- * stories in Today's order: by topic (`topics` in the reader's order, focus topics first), then rank.
+ * Everything after "Since this morning": the studio MP3 as made; the reader's own running order
+ * when the server wrote chapters in parts (lead + body); older text-only editions as written;
+ * and before any audio exists, the phone's version in Today's order.
  */
-export function editionSession(b: Briefing, mode: ListenMode, topics: Topic[]): Session {
-  const stories = topics.flatMap((t) => b.stories.filter((s) => s.topic === t));
+function editionChapters(b: Briefing, mode: ListenMode, prefs: ListenPrefs, curated: CuratedEdition): Chapter[] {
   const audio = b.audio?.[mode] ?? null;
-  const chapters = [
-    ...(b.sinceThisMorning ?? []).filter((s) => topics.includes(s.topic)).map((s) => updateChapter(s, b.date)),
-    ...(audio ? serverChapters(b, audio) : deviceChapters(b, mode, stories)),
-  ];
+  if (audio && hasParts(audio)) return personalChapters(b, mode, audio, curated, prefs.mutedWords);
+  if (audio) return serverChapters(b, audio);
+  const stories = orderedTopics(prefs).flatMap((t) => b.stories.filter((s) => s.topic === t));
+  return deviceChapters(b, mode, stories, curated.local);
+}
+
+/**
+ * The whole edition as a listening session. "Since this morning" stories go first, then the
+ * stories in Today's order: by topic (the reader's, focus topics first), then rank, then the
+ * local section.
+ */
+export function editionSession(b: Briefing, mode: ListenMode, prefs: ListenPrefs): Session {
+  const audio = b.audio?.[mode] ?? null;
+  const curated = curateEdition(b, prefs);
+  const topics = orderedTopics(prefs);
+  // The reader's own running order also leaves out what Today hides; older editions play as before.
+  const updates =
+    audio && hasParts(audio) ? curated.updates : (b.sinceThisMorning ?? []).filter((s) => topics.includes(s.topic));
+  const chapters = [...updates.map((s) => updateChapter(s, b.date)), ...editionChapters(b, mode, prefs, curated)];
   return {
     id: editionSessionId(b.date, mode),
     kind: 'edition',
@@ -155,11 +243,12 @@ export function phoneVoiceReason(b: Briefing): PhoneVoiceReason {
 }
 
 /** Total listening time in whole minutes (for "Listen · 8 min"). */
-export function listenMinutes(b: Briefing, mode: ListenMode, topics: Topic[]): number {
+export function listenMinutes(b: Briefing, mode: ListenMode, prefs: ListenPrefs): number {
   const audio = b.audio?.[mode];
-  const seconds = audio
-    ? audio.duration
-    : deviceChapters(b, mode, b.stories.filter((s) => topics.includes(s.topic))).reduce((n, c) => n + c.duration, 0);
+  const seconds =
+    audio && !hasParts(audio)
+      ? audio.duration
+      : editionChapters(b, mode, prefs, curateEdition(b, prefs)).reduce((n, c) => n + c.duration, 0);
   return Math.max(1, Math.round(seconds / 60));
 }
 

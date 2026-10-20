@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { GoDeeper } from './GoDeeper';
-import { SourceList } from './SourceLinks';
+import { SourceList, useVisibleSources } from './SourceLinks';
 import { StoryFeedback } from './StoryFeedback';
 import { Txt } from './Txt';
 import { editionsAtHand } from '@/data/editions';
@@ -28,6 +28,7 @@ export function LearnMore({
 }) {
   const { theme } = useTheme();
   const radius = useRadius();
+  const sources = useVisibleSources(story.allSources);
 
   // Opening a story counts as reading it (for the read mark and the end-of-edition tally).
   useEffect(() => {
@@ -91,9 +92,9 @@ export function LearnMore({
 
       <EarlierInBrewsy story={story} editionDate={editionDate} />
 
-      {story.allSources.length > 0 && (
-        <Block title={`All sources (${story.allSources.length})`}>
-          <SourceList sources={story.allSources} />
+      {sources.length > 0 && (
+        <Block title={`All sources (${sources.length})`}>
+          <SourceList sources={sources} />
         </Block>
       )}
 

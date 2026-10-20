@@ -1,4 +1,5 @@
-import type { AskAnswer, Briefing, DeepDive } from './types';
+import type { AskAnswer, Briefing, DeepDive, RegionalEdition } from './types';
+import { REGIONS, type LocalRegion } from '../../supabase/functions/_shared/sources';
 
 // Set these in `.env` (see .env.example). Until they exist the app uses the
 // bundled sample edition and "Go deeper" explains how to connect the backend.
@@ -38,7 +39,12 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 1200
       signal: controller.signal,
     });
     const text = await res.text();
-    const body = text ? JSON.parse(text) : null;
+    let body = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      // Not JSON (a gateway error page): the status says enough.
+    }
     if (!res.ok) {
       throw new ApiError(body?.error ?? body?.message ?? `Request failed (${res.status})`, res.status);
     }
@@ -75,19 +81,76 @@ export async function fetchEditionDates(limit = 30): Promise<string[]> {
   return rows.map((r) => r.date);
 }
 
-export async function fetchDeepDive(date: string, storyId: string): Promise<DeepDive> {
+/**
+ * The reader's local section for one date, or null when there isn't one. A backend from before
+ * local sections has no such table (404): that's "none" too, not an error.
+ */
+export async function fetchRegionalEdition(date: string, region: LocalRegion): Promise<RegionalEdition | null> {
+  let rows: { data: RegionalEdition | null }[];
+  try {
+    rows = await request(
+      `/rest/v1/regional_editions?date=eq.${date}&region=eq.${region}&status=eq.ready&select=data`,
+    );
+  } catch (e) {
+    if (e instanceof ApiError && e.status != null && e.status < 500) return null;
+    throw e;
+  }
+  return cleanRegional(rows[0]?.data, region, date);
+}
+
+/** The reader's local sections from `oldest` on (for search), oldest backends giving none. */
+export async function fetchRegionalEditionsSince(region: LocalRegion, oldest: string): Promise<RegionalEdition[]> {
+  let rows: { date: string; data: RegionalEdition | null }[];
+  try {
+    rows = await request(
+      `/rest/v1/regional_editions?date=gte.${oldest}&region=eq.${region}&status=eq.ready&select=date,data`,
+    );
+  } catch (e) {
+    if (e instanceof ApiError && e.status != null && e.status < 500) return [];
+    throw e;
+  }
+  return rows.flatMap((r) => cleanRegional(r.data, region, r.date) ?? []);
+}
+
+/** Whatever the row holds, the screen gets lists it can map over. */
+function cleanRegional(d: RegionalEdition | null | undefined, region: LocalRegion, date: string): RegionalEdition | null {
+  if (!d || typeof d !== 'object') return null;
+  return {
+    ...d,
+    region,
+    // The row's date is what the server looks stories up by (Go deeper, Ask).
+    date,
+    label: d.label || (REGIONS.find((r) => r.id === region)?.label ?? region),
+    stories: Array.isArray(d.stories) ? d.stories : [],
+    also: Array.isArray(d.also) ? d.also : [],
+  };
+}
+
+const deviceHeader = (id?: string): Record<string, string> => (id ? { 'x-device-id': id } : {});
+
+/**
+ * Go deeper and Ask send the device id: the server keeps a daily allowance per device. Over it,
+ * the server answers 429 with a friendly `error`, which the screen shows as it is.
+ * Local-section stories pass their own section's date (RegionalEdition.date).
+ */
+export async function fetchDeepDive(date: string, storyId: string, deviceId?: string): Promise<DeepDive> {
   const res = await request<{ deepDive: DeepDive; cached: boolean }>(
     '/functions/v1/go-deeper',
-    { method: 'POST', body: JSON.stringify({ date, storyId }) },
+    { method: 'POST', headers: deviceHeader(deviceId), body: JSON.stringify({ date, storyId }) },
     90000,
   );
   return res.deepDive;
 }
 
-export async function askAboutStory(date: string, storyId: string, question: string): Promise<AskAnswer> {
+export async function askAboutStory(
+  date: string,
+  storyId: string,
+  question: string,
+  deviceId?: string,
+): Promise<AskAnswer> {
   return request<AskAnswer>(
     '/functions/v1/ask',
-    { method: 'POST', body: JSON.stringify({ date, storyId, question }) },
+    { method: 'POST', headers: deviceHeader(deviceId), body: JSON.stringify({ date, storyId, question }) },
     60000,
   );
 }
@@ -102,6 +165,8 @@ export type DevicePayload = {
   /** Followed topics the reader wants more of (at most 4; a subset of `topics`). Left out for older backends. */
   focus_topics?: string[];
   disabled_sources: string[];
+  /** Where the reader's local section comes from (a Region code). Left out for older backends. */
+  region?: string;
   morning_push: boolean;
   /** 'off' | 'major': breaking-news pushes (at most 2 a day). */
   breaking_push: 'off' | 'major';

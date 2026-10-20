@@ -31,12 +31,13 @@ const OPTIONS: { mode: ListenMode; title: string; body: string; Icon: LucideIcon
 /** Quick or Full? Shown when you tap "Listen" on Today. */
 export function ListenChooserBody({ briefing, onDone }: { briefing: Briefing; onDone: () => void }) {
   const { theme } = useTheme();
-  const { topics, listenMode } = useSettings();
+  const settings = useSettings();
+  const { listenMode } = settings;
 
   return (
     <View style={styles.body}>
       {OPTIONS.map(({ mode, title, body, Icon }) => {
-        const minutes = listenMinutes(briefing, mode, topics);
+        const minutes = listenMinutes(briefing, mode, settings);
         const saved = savedProgress(editionSessionId(briefing.date, mode));
         const resume = saved && saved.index > 0 ? `Resume from part ${saved.index + 1}` : null;
         const preferred = mode === listenMode;

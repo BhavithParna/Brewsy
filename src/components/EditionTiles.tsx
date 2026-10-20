@@ -26,10 +26,11 @@ type Props = {
 export function EditionTiles({ briefing, storyCount, readMinutes, onRead, listenRef }: Props) {
   const { theme } = useTheme();
   const { openListen, openPlayer } = useSheets();
-  const { listenMode, topics } = useSettings();
+  const settings = useSettings();
+  const { listenMode } = settings;
   const loaded = usePlayer((s) => s.session?.editionDate === briefing.date && s.session.kind === 'edition');
   const playing = usePlayer((s) => s.playing);
-  const listenMin = listenMinutes(briefing, listenMode, topics);
+  const listenMin = listenMinutes(briefing, listenMode, settings);
   const active = loaded && playing;
   const { accent, accentInk, card, cardBorder, text } = theme.colors;
 

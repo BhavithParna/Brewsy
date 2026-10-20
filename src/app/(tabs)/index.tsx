@@ -55,8 +55,8 @@ import {
   useSectionSpy,
   type SectionSpy,
 } from '@/hooks/useScrollChrome';
-import { curateEdition, type CuratedEdition } from '@/lib/curation';
-import { formatShortDate, formatWakeTime } from '@/lib/format';
+import { curateEdition, type CuratedEdition, type LocalGroup } from '@/lib/curation';
+import { formatDayParts, formatShortDate, formatWakeTime } from '@/lib/format';
 import { exportEditionPdf } from '@/lib/pdf';
 import { setSelectedEdition, useSelectedEdition } from '@/state/editionNav';
 import { isNew } from '@/state/seen';
@@ -88,13 +88,13 @@ export default function TodayScreen() {
   const { onScroll, progress, scrollY } = chrome;
   const coverHeight = Math.max(440, Math.round(height * 0.6));
   const scrollRef = useRef<Animated.ScrollView>(null);
-  const { wakeTime, topics, focusTopics, mutedWords } = useSettings();
+  const { wakeTime, topics, focusTopics, mutedWords, disabledOutlets, region } = useSettings();
   const [sectionsOpen, setSectionsOpen] = useState(false);
 
   const briefing = state.status === 'ready' ? state.briefing : null;
   const curated = useMemo(
-    () => (briefing ? curateEdition(briefing, { topics, focusTopics, mutedWords }) : null),
-    [briefing, topics, focusTopics, mutedWords],
+    () => (briefing ? curateEdition(briefing, { topics, focusTopics, mutedWords, disabledOutlets, region }) : null),
+    [briefing, topics, focusTopics, mutedWords, disabledOutlets, region],
   );
   const sections = useMemo(() => (briefing && curated ? navSections(briefing, curated) : []), [briefing, curated]);
   const sectionIds = useMemo(() => sections.map((s) => s.id), [sections]);
@@ -204,7 +204,8 @@ export default function TodayScreen() {
             )}
 
             <View style={styles.coverFoot}>
-              <EditionHeader date={date} />
+              {/* Today's edition not out yet: the earlier one shows its own date. */}
+              <EditionHeader date={briefing?.date ?? date} />
             </View>
           </Cover>
 
@@ -225,6 +226,7 @@ export default function TodayScreen() {
                 refreshing={refreshing}
                 onRefresh={refresh}
                 isToday={date === today}
+                earlier={briefing.date < date}
                 scrollRef={scrollRef}
                 offsetRef={editionOffset}
                 topClear={topClear}
@@ -236,7 +238,7 @@ export default function TodayScreen() {
                 }}
                 onJump={jumpTo}
                 onOpenSections={() => setSectionsOpen(true)}
-                onPrevious={() => goTo(shiftDate(date, -1))}
+                onPrevious={() => goTo(shiftDate(briefing.date, -1))}
                 onBackToToday={date !== today ? () => goTo(today) : undefined}
               />
             ) : (
@@ -309,6 +311,18 @@ function navSections(briefing: Briefing, curated: CuratedEdition): NavSection[] 
       focus: g.focus,
     });
   }
+  if (curated.local) {
+    const { label, region, stories, quick } = curated.local;
+    out.push({
+      id: LOCAL_SECTION,
+      label,
+      // "United Kingdom" and "United States" are long for a chip.
+      short: label.startsWith('United ') ? region : undefined,
+      detail: [stories.length ? storiesLabel(stories.length) : null, quick.length ? `${quick.length} in brief` : null]
+        .filter(Boolean)
+        .join(' · '),
+    });
+  }
   if (briefing.calendar.length) {
     const n = briefing.calendar.length;
     out.push({ id: 'radar', label: 'On the radar', detail: `${n} ${n === 1 ? 'event' : 'events'}` });
@@ -318,6 +332,8 @@ function navSections(briefing: Briefing, curated: CuratedEdition): NavSection[] 
 }
 
 const topicSection = (topic: Topic) => `topic:${topic}`;
+/** The reader's local section ("Canada"). */
+const LOCAL_SECTION = 'local';
 const storiesLabel = (n: number) => `${n} ${n === 1 ? 'story' : 'stories'}`;
 
 type EditionProps = {
@@ -329,6 +345,8 @@ type EditionProps = {
   refreshing: boolean;
   onRefresh: () => void;
   isToday: boolean;
+  /** Today's edition isn't out yet: this is the latest one before it. */
+  earlier: boolean;
   scrollRef: RefObject<Animated.ScrollView | null>;
   offsetRef: RefObject<number>;
   /** Screen space covered at the top (status bar + pinned bar) when scrolling something into view. */
@@ -346,7 +364,7 @@ type EditionProps = {
 /**
  * The whole edition as one column: the jump rail, the tiles, Since this morning, the 60-second
  * card, then the reader's topics (focus topics first), each with its stories and quick hits,
- * then On the radar, Markets and the end.
+ * then the local section, On the radar, Markets and the end.
  */
 function Edition({
   briefing,
@@ -356,6 +374,7 @@ function Edition({
   refreshing,
   onRefresh,
   isToday,
+  earlier,
   scrollRef,
   offsetRef,
   topClear,
@@ -381,18 +400,25 @@ function Edition({
   const pendingQuick = useRef<string | null>(null);
   // Where stories and quick-hit cards sit inside the edition.
   const storyY = useRef(new Map<string, number>());
-  const quickY = useRef(new Map<Topic, number>());
+  // By section: a topic, or the local section.
+  const quickY = useRef(new Map<string, number>());
 
-  const { groups, updates, hidden } = curated;
+  const { groups, updates, local, hidden } = curated;
   const visible = groups.flatMap((g) => g.stories);
+  const localStories = local?.stories ?? [];
   // Every story on the page once (a story can show both under Since this morning and in its topic).
-  const storyIds = [...new Set([...updates, ...visible].map((s) => s.id))];
+  // Local stories are kept under their own section's date, so they count when that's this edition's.
+  const storyIds = [
+    ...new Set([...updates, ...visible, ...(local?.date === briefing.date ? localStories : [])].map((s) => s.id)),
+  ];
   const leadIds = new Set(briefing.stories.slice(0, 2).map((s) => s.id));
   // The tour points at the first story on the page (a story can show both under Since this morning and in its topic).
   const tourStory = updates[0] ?? visible[0];
   const isTourStory = (story: Story, update = false) => story === tourStory && update === updates.length > 0;
-  const minutes = readingMinutes(curated.summary, visible);
+  const minutes = readingMinutes(curated.summary, [...visible, ...localStories]);
   const audioUrl = isToday ? briefing.audio?.[settings.listenMode]?.url : null;
+  // The studio MP3 has no local section in it, so its stories can't be started from there.
+  const localPlayable = !briefing.audio?.[settings.listenMode]?.url;
   const centerKicker = theme.layout.heroAlign === 'center' || theme.layout.sections === 'rule';
 
   // Today's audio downloads in the background, so it plays instantly and offline.
@@ -407,12 +433,17 @@ function Edition({
   // A story that broke after this copy was loaded isn't here yet, so look once more after a refresh.
   const refetchedFor = useRef<number | null>(null);
   const openFocused = (id: string, seq: number) => {
-    const isStory = updates.some((s) => s.id === id) || groups.some((g) => g.stories.some((s) => s.id === id));
-    const isQuick = groups.some((g) => g.quick.some((q) => q.id === id));
+    const isStory =
+      updates.some((s) => s.id === id) ||
+      groups.some((g) => g.stories.some((s) => s.id === id)) ||
+      localStories.some((s) => s.id === id);
+    const isQuick = groups.some((g) => g.quick.some((q) => q.id === id)) || !!local?.quick.some((q) => q.id === id);
     const inEdition =
       briefing.stories.some((s) => s.id === id) ||
       !!briefing.sinceThisMorning?.some((s) => s.id === id) ||
-      !!briefing.alsoHappening?.some((a) => a.id === id);
+      !!briefing.alsoHappening?.some((a) => a.id === id) ||
+      !!briefing.regional?.stories.some((s) => s.id === id) ||
+      !!briefing.regional?.also.some((a) => a.id === id);
     if (!isStory && !isQuick && !inEdition && refetchedFor.current !== seq) {
       // Keep the request: the effect below runs again once the refresh is done.
       refetchedFor.current = seq;
@@ -464,11 +495,12 @@ function Edition({
     scrollTo(y);
   };
 
-  const onQuickRowLayout = (topic: Topic) => (id: string, y: number) => {
+  const onQuickRowLayout = (section: string, id: string, y: number) => {
     if (pendingQuick.current !== id) return;
     pendingQuick.current = null;
-    scrollTo((quickY.current.get(topic) ?? 0) + y);
+    scrollTo((quickY.current.get(section) ?? 0) + y);
   };
+  const toggleQuick = (id: string) => setQuickOpenId((cur) => (cur === id ? null : id));
 
   const exportPdf = async () => {
     setExporting(true);
@@ -481,18 +513,22 @@ function Edition({
     }
   };
 
-  const renderStory = (story: Story, i: number, opts: { update?: boolean } = {}) => (
+  const renderStory = (story: Story, i: number, opts: { update?: boolean; local?: LocalGroup } = {}) => (
     <StoryView
       key={opts.update ? `u-${story.id}` : story.id}
       story={story}
-      editionDate={briefing.date}
+      // Local stories are saved, marked read and explained under their own section's date.
+      editionDate={opts.local?.date ?? briefing.date}
       isNew={opts.update ? isNew(story.addedAt) : undefined}
-      showImage={!opts.update && leadIds.has(story.id)}
-      showTopic={opts.update}
+      showImage={opts.local ? i === 0 : !opts.update && leadIds.has(story.id)}
+      // Since this morning and the local section mix topics, so each story says its own.
+      showTopic={opts.update || !!opts.local}
       expanded={expandedId === story.id}
       onToggle={() => toggle(story.id)}
       onLayout={onStoryLayout(story.id)}
-      onPlay={() => listenToEdition(briefing, { storyId: story.id })}
+      onPlay={
+        opts.local && !localPlayable ? undefined : () => listenToEdition(briefing, { storyId: story.id })
+      }
       actionsRef={isTourStory(story, opts.update) ? tourTargets.storyActions : undefined}
       moreRef={isTourStory(story, opts.update) ? tourTargets.storyMore : undefined}
       style={[styles.pad, i > 0 && styles.storyGap]}
@@ -515,11 +551,16 @@ function Edition({
       <Animated.View layout={storyLayout} style={styles.headerBlock}>
         <EditionTiles
           briefing={briefing}
-          storyCount={visible.length}
+          storyCount={visible.length + localStories.length}
           readMinutes={minutes}
-          onRead={() => groups[0] && onJump(topicSection(groups[0].topic))}
+          onRead={() => (groups[0] ? onJump(topicSection(groups[0].topic)) : local && onJump(LOCAL_SECTION))}
           listenRef={tourTargets.listen}
         />
+        {earlier && (
+          <Txt variant="bodySm" tone="secondary" align={centerKicker ? 'center' : 'left'} style={styles.earlierNote}>
+            {`Today’s edition isn’t out yet. This is ${formatDayParts(briefing.date).weekday}’s.`}
+          </Txt>
+        )}
         {(briefing.isSample || offline) && (
           <View style={[styles.pad, styles.badges]}>
             {briefing.isSample && <Pill label="Sample edition" variant="outline" />}
@@ -581,15 +622,42 @@ function Edition({
                 title={g.stories.length > 0 ? `More in ${label}` : 'In brief'}
                 showTopic={false}
                 openId={quickOpenId}
-                onToggle={(id) => setQuickOpenId((cur) => (cur === id ? null : id))}
-                onRowLayout={onQuickRowLayout(g.topic)}
+                onToggle={toggleQuick}
+                onRowLayout={(id, y) => onQuickRowLayout(g.topic, id, y)}
               />
             </Animated.View>
           ),
         ];
       })}
 
-      {groups.length === 0 && (
+      {local && [
+        <Animated.View
+          key="h-local"
+          layout={storyLayout}
+          style={styles.topicHeading}
+          onLayout={spy.track(LOCAL_SECTION)}>
+          <TopicHeading label={local.label} count={local.stories.length + local.quick.length} />
+        </Animated.View>,
+        ...local.stories.map((story, i) => renderStory(story, i, { local })),
+        local.quick.length > 0 && (
+          <Animated.View
+            key="q-local"
+            layout={storyLayout}
+            style={local.stories.length > 0 && styles.quickGap}
+            onLayout={(e) => quickY.current.set(LOCAL_SECTION, e.nativeEvent.layout.y)}>
+            <AlsoHappening
+              items={local.quick}
+              editionDate={local.date}
+              title={local.stories.length > 0 ? 'More local news' : 'In brief'}
+              openId={quickOpenId}
+              onToggle={toggleQuick}
+              onRowLayout={(id, y) => onQuickRowLayout(LOCAL_SECTION, id, y)}
+            />
+          </Animated.View>
+        ),
+      ]}
+
+      {groups.length === 0 && !local && (
         <Txt variant="body" tone="secondary" align="center" style={[styles.pad, styles.noStories]}>
           No stories in your chosen topics today. You can change topics in Settings.
         </Txt>
@@ -633,6 +701,7 @@ function Edition({
           dateLabel={formatShortDate(briefing.date)}
           onExport={exportPdf}
           exporting={exporting}
+          earlier={earlier}
           onPrevious={onPrevious}
           onBackToToday={onBackToToday}
           editionDate={briefing.date}
@@ -675,6 +744,7 @@ const styles = StyleSheet.create({
   edition: { paddingTop: 2 },
   headerBlock: { gap: 14, marginTop: 6, marginBottom: 14 },
   badges: { flexDirection: 'row', gap: 8 },
+  earlierNote: { paddingHorizontal: GUTTER + 2 },
   pad: { paddingHorizontal: GUTTER },
   topicHeading: { marginTop: 40, marginBottom: 16 },
   focusKicker: { paddingHorizontal: GUTTER + 2, marginBottom: 10 },

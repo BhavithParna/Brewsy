@@ -115,7 +115,6 @@ export function previewVoice(id: string | undefined) {
 export function phoneVoiceNote(reason: PhoneVoiceReason | undefined): string {
   const tip = 'Try another voice in Settings → Phone voice.';
   if (reason === 'sample') return `Read by your phone’s voice: the sample edition has no studio voice. ${tip}`;
-  if (reason === 'off') return `Read by your phone’s voice: no voice service is set up on the server yet. ${tip}`;
-  if (reason === 'pending') return 'Read by your phone’s voice for now. The studio-voice version arrives a few minutes after each edition.';
+  // 'off' and 'pending': the server writes the script but makes no MP3s, so the phone's voice is the voice.
   return `Read by your phone’s voice. ${tip}`;
 }

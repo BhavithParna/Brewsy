@@ -12,10 +12,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 export function ListenPill({ briefing }: { briefing: Briefing }) {
   const { theme } = useTheme();
   const { openListen, openPlayer } = useSheets();
-  const { listenMode, topics } = useSettings();
+  const settings = useSettings();
+  const { listenMode } = settings;
   const loaded = usePlayer((s) => s.session?.editionDate === briefing.date && s.session.kind === 'edition');
   const playing = usePlayer((s) => s.playing);
-  const minutes = listenMinutes(briefing, listenMode, topics);
+  const minutes = listenMinutes(briefing, listenMode, settings);
   const active = loaded && playing;
   const ink = theme.colors.inverseText;
 

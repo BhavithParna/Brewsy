@@ -10,11 +10,16 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   jumps straight to a section, and the chip for the section you're reading lights up. Past the
   cover the row pins to the top with **search** and **settings**, so both are always one tap
   away; the list icon opens "In this edition" with every section and what's in it.
-  Each topic section holds its full stories and then its quick hits ("More in AI").
+  Each topic section holds its full stories and then its quick hits ("More in AI"). After your
+  topics comes a short **local section** named after where you chose (India, the United States,
+  the United Kingdom, Canada or Australia): one or two local stories and a few one-liners, made at
+  5 am there. Everyone shares the world edition; if today's isn't out yet where you are, Today
+  shows the latest one with a quiet note.
   Each story has three layers: the short version → **Learn more** (explained simply,
   background, key players, key terms, what to watch, earlier stories about the same people and
   companies, all sources) → **Go deeper** (a longer explainer written from the story's sources)
-  plus **Ask a question about this**. Every story can be played, shared or saved.
+  plus **Ask a question about this** (each phone gets a few of these a day). Every story can be
+  played, shared or saved.
 - **Your topics** — star up to 4 of the topics you follow for **more of this**: they come first
   on Today, get 4–6 full stories where the news supports it and more quick hits, and lead the
   audio briefing. **Movies** covers Hollywood, Bollywood and the other Indian film industries,
@@ -29,7 +34,9 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   Opened stories get a small check; the end of the edition shows how many you opened and a quiet
   days-in-a-row count (kept on the phone).
 - **Listen** — **▶ Listen · 8 min** under the date plays the edition as a radio-style
-  briefing: Quick (~3 min) or Full (~10 min), one chapter per story. A mini player sits above
+  briefing: Quick (~3 min) or Full (~10 min), one chapter per story, read by the phone's own voice
+  in your own running order: your starred topics first, only the topics you follow, without
+  stories you've hidden, then your local section. A mini player sits above
   the tab bar; tap it for chapters, speed (0.8×–2×), offline download and **Driving mode**
   (huge buttons, screen stays on). Every story has a small ▶ to start from it, and the
   Reading List has **Play my reading list**. Plays with the screen locked in an installed build.
@@ -41,9 +48,12 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   morning** at the top, with an optional breaking-news push (at most 2 a day). **How this briefing
   was made** at the bottom shows what was scanned.
 - **Settings** — the gear on Today and the Reading List (also in the pinned bar): theme, topics
-  and stars, reading (text size, hidden words), wake-up time, breaking news, listening, sources,
-  reminders, PDF export, past editions, and Help → **Take the tour again**.
-- **First run** — welcome → pick your look → topics (with stars) → wake-up time → notifications,
+  and stars, reading (text size, hidden words), wake-up time, **news from** (your local section),
+  breaking news, listening, sources (world outlets plus your region's; turning one off drops its
+  links, and any story only it reported), reminders, PDF export, past editions, and Help →
+  **Take the tour again**.
+- **First run** — welcome → pick your look → where your news comes from (picked from the phone's
+  timezone, then its region setting) → topics (with stars) → wake-up time → notifications,
   then a short tour of Today that points at the real controls (Skip or Android back ends it).
 - **Themes** — nineteen complete looks, each with its own typefaces, shapes, card style, section
   headings and cover, in three groups (Settings → Theme, or onboarding):
@@ -78,8 +88,7 @@ npx expo start          # scan the QR code with Expo Go on your phone
 ```
 
 Without a backend the app shows a bundled sample edition (7 Oct 2026), so you can try
-everything except Go deeper / Ask, the studio-voice audio (the phone's voice reads it instead)
-and the notifications.
+everything except Go deeper / Ask and the notifications.
 
 Expo Go can't play audio with the screen locked, show lock-screen controls, receive pushes
 on Android or add home-screen shortcuts. For those, install a build:
@@ -108,7 +117,10 @@ assets/brand/       the logo's source SVGs and the app icon set
 
 Web preview flags (development): `?onboarded=1` (also skips the tour) · `?tour=0|1` ·
 `?theme=<name>` · `?glass=light|dark|auto` · `?blur=0` (draws glass the way Android does) ·
-`?seed=1` (sample Reading List) · `?preview=loading|empty|error`.
+`?seed=1` (sample Reading List) · `?preview=loading|empty|error` ·
+`?region=IN|CA|US|UK|AU|WORLD` · `?local=sample` (a sample local section) · `?fallback=1`
+(today's edition "not out yet") · `?audio=parts` (a script in parts, so Listen builds your own
+running order).
 
 ## Voice assistants, CarPlay and Android Auto
 

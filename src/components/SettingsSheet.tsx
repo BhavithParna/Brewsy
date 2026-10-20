@@ -2,7 +2,7 @@ import { Check, ChevronDown, ChevronUp, FileDown, History, Volume2 } from 'lucid
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { SOURCE_GROUPS } from '../../supabase/functions/_shared/sources';
+import { OUTLET_REGION, REGIONS, SOURCE_GROUPS } from '../../supabase/functions/_shared/sources';
 import { Pill } from './Pill';
 import { HelpSettings } from './settings/HelpSettings';
 import { ReadingSettings } from './settings/ReadingSettings';
@@ -28,7 +28,7 @@ import {
 } from '@/lib/notifications';
 import { exportEditionPdf } from '@/lib/pdf';
 import { useReadingList } from '@/state/readingList';
-import { updateSettings, useSettings } from '@/state/settings';
+import { updateSettings, useSettings, type Settings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GUTTER } from '@/theme/tokens';
 
@@ -59,12 +59,25 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
     if (reg.token) await rememberPushToken(reg.token);
   };
 
+  // Breaking news needs the push token too.
+  const chooseBreaking = async (id: Settings['breakingPush']) => {
+    updateSettings({ breakingPush: id });
+    if (id === 'off' || !(await requestNotificationPermission())) return;
+    const reg = await registerForPush();
+    if (reg.token) await rememberPushToken(reg.token);
+  };
+
   const toggleReminder = async (patch: { remindTonight?: boolean; remindWeekend?: boolean }) => {
     updateSettings(patch);
     if (Object.values(patch).some(Boolean)) await requestNotificationPermission();
   };
 
   const [openSources, setOpenSources] = useState<string | null>(null);
+  // World outlets, plus the ones that only feed the reader's own local section.
+  const sourceGroups = SOURCE_GROUPS.map((g) => ({
+    ...g,
+    outlets: g.outlets.filter((o) => !OUTLET_REGION[o] || OUTLET_REGION[o] === settings.region),
+  })).filter((g) => g.outlets.length > 0);
   const toggleOutlet = (outlet: string, on: boolean) => {
     updateSettings({
       disabledOutlets: on
@@ -113,6 +126,28 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
           <WakeTimePicker value={settings.wakeTime} onChange={(wakeTime) => updateSettings({ wakeTime })} />
         </View>
         <Divider />
+        <View style={styles.rowStack}>
+          <View>
+            <Txt variant="label">News from</Txt>
+            <Txt variant="bodySm" tone="tertiary">
+              Adds local news to Today. Changes apply from the next local section.
+            </Txt>
+          </View>
+          <View style={styles.pills} accessibilityRole="radiogroup">
+            {REGIONS.map((r) => (
+              <Pill
+                key={r.id}
+                label={r.label}
+                size="md"
+                variant={settings.region === r.id ? 'solid' : 'glass'}
+                color={theme.colors.inverseBg}
+                selected={settings.region === r.id}
+                onPress={() => updateSettings({ region: r.id })}
+              />
+            ))}
+          </View>
+        </View>
+        <Divider />
         <ToggleRow
           title="Morning notification"
           subtitle={
@@ -143,8 +178,7 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
               color={theme.colors.inverseBg}
               selected={settings.breakingPush === o.id}
               onPress={() => {
-                updateSettings({ breakingPush: o.id });
-                if (o.id === 'major') requestNotificationPermission().catch(() => {});
+                chooseBreaking(o.id).catch(() => {});
               }}
             />
           ))}
@@ -218,8 +252,8 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
 
       <Group
         title="Sources"
-        footer="Brewsy reads all of these every morning. Turn one off to leave it out. The full list, with each source's trust level, is in supabase/functions/_shared/sources.ts.">
-        {SOURCE_GROUPS.map((group, gi) => {
+        footer="Brewsy reads all of these every morning. Turn one off to drop its links, and any story only it reported. The full list, with each source's trust level, is in supabase/functions/_shared/sources.ts.">
+        {sourceGroups.map((group, gi) => {
           const on = group.outlets.filter((o) => !settings.disabledOutlets.includes(o)).length;
           const open = openSources === group.category;
           return (
@@ -287,10 +321,10 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
 
 const VOICE_TIP =
   Platform.OS === 'ios'
-    ? 'Only used until an edition’s studio voice is ready. For a much more natural one: iPhone Settings → Accessibility → Spoken Content → Voices → English, download a “Premium” voice (Ava or Zoe, for example), then pick it here.'
+    ? 'Brewsy reads editions aloud with your phone’s voice. For a much more natural one: iPhone Settings → Accessibility → Spoken Content → Voices → English, download a “Premium” voice (Ava or Zoe, for example), then pick it here.'
     : Platform.OS === 'android'
-      ? 'Only used until an edition’s studio voice is ready. For more voices: Android Settings → search “Text-to-speech” → Speech Services by Google → ⚙️ → Install voice data → English.'
-      : 'Only used until an edition’s studio voice is ready. These voices come from your browser.';
+      ? 'Brewsy reads editions aloud with your phone’s voice. For more voices: Android Settings → search “Text-to-speech” → Speech Services by Google → ⚙️ → Install voice data → English.'
+      : 'Brewsy reads editions aloud with your phone’s voice. These voices come from your browser.';
 
 /** Picks the phone voice for editions without studio audio. Tapping one plays a short sample. */
 function PhoneVoiceRows() {

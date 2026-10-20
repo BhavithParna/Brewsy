@@ -22,7 +22,7 @@ import { focusStory } from '@/state/storyFocus';
 /**
  * Background jobs that follow the app's state:
  * - re-plans reading reminders when the Reading List or reminder settings change
- * - sends wake-up time, topics and sources to the backend when they change
+ * - sends wake-up time, topics, sources and region to the backend when they change
  * - opens the right screen when a notification is tapped
  */
 export function useAppSync() {
@@ -53,19 +53,22 @@ export function useAppSync() {
     settings.topics,
     settings.focusTopics,
     settings.disabledOutlets,
+    settings.region,
     settings.morningPush,
     settings.breakingPush,
   ]);
 
   useEffect(() => {
     if (!settingsStore.get().onboarded) return;
-    // The web preview isn't a reader's device: the server follows the most recently saved device,
-    // so a preview session would otherwise replace the phone's wake time, topics and timezone.
+    // The web preview isn't a reader's device: saving it would add a stray reader to the server,
+    // counted for its region's local section and the topics most readers star.
     if (Platform.OS === 'web' && __DEV__) return;
     const timer = setTimeout(async () => {
       try {
         const current = settingsStore.get();
-        if (current.morningPush && (await notificationsAllowed())) {
+        // Either push needs the token: the morning one and breaking news.
+        const wantsPush = current.morningPush || current.breakingPush !== 'off';
+        if (wantsPush && (await notificationsAllowed())) {
           const reg = await registerForPush();
           if (reg.token) await rememberPushToken(reg.token);
         }

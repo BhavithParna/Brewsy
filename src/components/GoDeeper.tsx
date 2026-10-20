@@ -8,6 +8,7 @@ import { SkeletonBlock } from './Skeleton';
 import { Txt } from './Txt';
 import { askAboutStory, backendConfigured, fetchDeepDive } from '@/data/api';
 import type { AskAnswer, DeepDive, Story } from '@/data/types';
+import { deviceId } from '@/lib/device';
 import { paragraphs } from '@/lib/format';
 import { useStore } from '@/lib/persisted';
 import { noFocusRing } from '@/lib/webStyles';
@@ -38,7 +39,7 @@ export function GoDeeper({ story, editionDate }: { story: Story; editionDate: st
     setLoading(true);
     setError(null);
     try {
-      const dd = await fetchDeepDive(editionDate, story.id);
+      const dd = await fetchDeepDive(editionDate, story.id, await deviceId());
       cacheDeepDive(key, dd);
       if (saved) attachDeepDive(key, dd);
     } catch (e) {
@@ -185,7 +186,7 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
     }
     setBusy(true);
     try {
-      const answer = await askAboutStory(editionDate, story.id, q);
+      const answer = await askAboutStory(editionDate, story.id, q, await deviceId());
       setHistory((h) => [...h, { question: q, answer }]);
     } catch (e) {
       setHistory((h) => [...h, { question: q, error: e instanceof Error ? e.message : 'Something went wrong.' }]);

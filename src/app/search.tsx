@@ -64,8 +64,11 @@ export default function SearchScreen() {
   const [offline, setOffline] = useState(false);
   const input = useRef<TextInput>(null);
   const center = theme.layout.heroAlign === 'center';
-  const { topics, mutedWords } = useSettings();
-  const hiddenReason = useMemo(() => hiddenReasons({ topics, mutedWords }), [topics, mutedWords]);
+  const { topics, mutedWords, disabledOutlets, region } = useSettings();
+  const hiddenReason = useMemo(
+    () => hiddenReasons({ topics, mutedWords, disabledOutlets, region }),
+    [topics, mutedWords, disabledOutlets, region],
+  );
 
   useEffect(() => {
     let live = true;
@@ -366,7 +369,13 @@ function ResultRow({
 }) {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
-  const where = hit.kind === 'also' ? 'Also happening' : hit.kind === 'update' ? 'Since this morning' : null;
+  const where = hit.local
+    ? hit.local.label
+    : hit.kind === 'also'
+      ? 'Also happening'
+      : hit.kind === 'update'
+        ? 'Since this morning'
+        : null;
   const inPlace = hidden != null;
   const Chevron = inPlace ? (open ? ChevronUp : ChevronDown) : ChevronRight;
   const whatHappened = hit.story?.whatHappened ?? hit.also?.whatHappened ?? '';

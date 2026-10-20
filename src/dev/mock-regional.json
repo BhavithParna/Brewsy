@@ -1,0 +1,99 @@
+{
+  "region": "CA",
+  "date": "2026-10-20",
+  "generatedAt": "2026-10-20T09:04:00.000Z",
+  "label": "Canada",
+  "stories": [
+    {
+      "id": "ca-bank-of-canada-rate-hold",
+      "topic": "business",
+      "headline": "Bank of Canada expected to hold rates as inflation cools",
+      "dek": "Economists see no change on Wednesday after September prices rose less than forecast.",
+      "whatHappened": "Most economists polled this week expect the Bank of Canada to keep its policy rate unchanged on Wednesday. September's consumer price index rose 1.9% from a year earlier, a little below forecasts, while the jobless rate held near 7%.",
+      "whyItMatters": "The rate sets what Canadians pay on variable mortgages and lines of credit. A hold would mean no relief for borrowers this month, but signals the bank thinks inflation is back under control.",
+      "explainSimply": "Think of the central bank as a thermostat for the economy. Prices have stopped heating up, so it is likely to leave the dial where it is for now.",
+      "background": "The bank cut its rate several times over the past two years as inflation eased from its 2022 peak.\n\nIt meets eight times a year and publishes a full economic outlook with four of those decisions, including this one.",
+      "keyPlayers": [
+        { "name": "Bank of Canada", "role": "Sets the policy interest rate" },
+        { "name": "Statistics Canada", "role": "Published the September inflation figures" }
+      ],
+      "keyTerms": [
+        { "term": "Policy rate", "definition": "The interest rate the central bank sets, which other lending rates follow." }
+      ],
+      "whatToWatch": ["Wednesday's decision and the bank's new forecasts", "Whether the bank hints at cuts in December"],
+      "readTimeMinutes": 1,
+      "sources": [
+        { "name": "CBC News", "url": "https://www.cbc.ca/news/business", "title": "Bank of Canada expected to hold rates" },
+        { "name": "The Globe and Mail", "url": "https://www.theglobeandmail.com/business/" }
+      ],
+      "allSources": [
+        { "name": "CBC News", "url": "https://www.cbc.ca/news/business", "title": "Bank of Canada expected to hold rates" },
+        { "name": "The Globe and Mail", "url": "https://www.theglobeandmail.com/business/" },
+        { "name": "CTV News", "url": "https://www.ctvnews.ca/business/" }
+      ],
+      "imageUrl": null
+    },
+    {
+      "id": "ca-bc-wildfire-season-ends",
+      "topic": "climate",
+      "headline": "British Columbia closes its wildfire season early",
+      "dek": "Autumn rain ended a season that burned less land than the last three.",
+      "whatHappened": "The BC Wildfire Service said on Monday that the province's fire season is over after a week of heavy rain on the coast and the interior. About 400,000 hectares burned this year, well below the record set in 2023.",
+      "whyItMatters": "A quieter year gives crews and towns time to rebuild firebreaks and clear dry brush before next summer. It also eases pressure on insurance costs in fire-prone areas.",
+      "explainSimply": "After several summers of huge fires, this one was more like a normal year, and the rain has now put out what was left.",
+      "background": "British Columbia has had some of the worst fire seasons on record in recent years, with whole towns evacuated.\n\nThe province has since added crews and paid for more brush clearing near communities.",
+      "keyPlayers": [{ "name": "BC Wildfire Service", "role": "Runs firefighting in the province" }],
+      "keyTerms": [{ "term": "Firebreak", "definition": "A strip of land cleared of fuel to stop a fire spreading." }],
+      "whatToWatch": ["Next spring's snowpack and drought forecasts"],
+      "readTimeMinutes": 1,
+      "sources": [{ "name": "CBC News", "url": "https://www.cbc.ca/news/canada/british-columbia" }],
+      "allSources": [
+        { "name": "CBC News", "url": "https://www.cbc.ca/news/canada/british-columbia" },
+        { "name": "Global News", "url": "https://globalnews.ca/bc/" }
+      ],
+      "imageUrl": null
+    }
+  ],
+  "also": [
+    {
+      "id": "ca-toronto-transit-line-opens",
+      "topic": "world",
+      "headline": "Toronto's Finch West light rail line carries its first riders",
+      "whatHappened": "The long-delayed Finch West light rail line opened to the public on Sunday, adding 18 stops across the city's north end.",
+      "whyItMatters": "It cuts travel times for neighbourhoods that have relied on crowded buses.",
+      "sources": [{ "name": "CTV News", "url": "https://toronto.ctvnews.ca/" }]
+    },
+    {
+      "id": "ca-housing-starts-september",
+      "topic": "business",
+      "headline": "Housing starts slowed in September, the national housing agency says",
+      "whatHappened": "Builders began work on fewer homes in September than in August, mostly because of a drop in new condo projects in Toronto and Vancouver.",
+      "whyItMatters": "",
+      "sources": [{ "name": "The Globe and Mail", "url": "https://www.theglobeandmail.com/real-estate/" }]
+    },
+    {
+      "id": "ca-leafs-win-home-opener",
+      "topic": "sports",
+      "headline": "Maple Leafs win their home opener in overtime",
+      "whatHappened": "Toronto beat Montreal 3–2 in overtime on Saturday night in front of a sold-out crowd.",
+      "whyItMatters": "",
+      "sources": [{ "name": "Sportsnet", "url": "https://www.sportsnet.ca/hockey/nhl/" }]
+    },
+    {
+      "id": "ca-quebec-teachers-deal",
+      "topic": "politics",
+      "headline": "Quebec reaches a tentative deal with its largest teachers' union",
+      "whatHappened": "The Quebec government and the province's largest teachers' union reached a tentative agreement on pay and class sizes, ending talks that began in the spring.",
+      "whyItMatters": "Members still need to vote on it in the coming weeks.",
+      "sources": [{ "name": "CBC News", "url": "https://www.cbc.ca/news/canada/montreal" }]
+    },
+    {
+      "id": "ca-viff-audience-award",
+      "topic": "movies",
+      "headline": "A Canadian documentary wins the audience award at the Vancouver film festival",
+      "whatHappened": "A documentary about a Nunavut youth choir won the audience award at the Vancouver International Film Festival.",
+      "whyItMatters": "",
+      "sources": [{ "name": "The Globe and Mail", "url": "https://www.theglobeandmail.com/arts/film/" }]
+    }
+  ]
+}

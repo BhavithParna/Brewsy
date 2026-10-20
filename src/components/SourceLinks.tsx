@@ -3,12 +3,20 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from './Txt';
 import type { SourceRef } from '@/data/types';
+import { visibleSources } from '@/lib/curation';
 import { openLink } from '@/lib/links';
+import { useSettings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+/** Sources minus the outlets the reader turned off in Settings → Sources. */
+export function useVisibleSources(sources: SourceRef[]): SourceRef[] {
+  return visibleSources(sources, useSettings().disabledOutlets);
+}
+
 /** Small inline source links under a story: "CNBC · Financial Times". */
-export function SourceLinks({ sources }: { sources: SourceRef[] }) {
+export function SourceLinks({ sources: all }: { sources: SourceRef[] }) {
   const { theme } = useTheme();
+  const sources = useVisibleSources(all);
   if (sources.length === 0) return null;
   return (
     <View style={styles.row}>
@@ -36,8 +44,9 @@ export function SourceLinks({ sources }: { sources: SourceRef[] }) {
 }
 
 /** Full source list for "Learn more": outlet + article title. */
-export function SourceList({ sources }: { sources: SourceRef[] }) {
+export function SourceList({ sources: all }: { sources: SourceRef[] }) {
   const { theme } = useTheme();
+  const sources = useVisibleSources(all);
   return (
     <View style={styles.list}>
       {sources.map((s, i) => (

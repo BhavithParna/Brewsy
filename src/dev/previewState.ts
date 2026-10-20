@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import sample from '@/data/mock-briefing.json';
 import type { Briefing } from '@/data/types';
+import { isRegion } from '@/lib/region';
 import { readingListStore, saveStory, setDone, storyKey, type Bucket } from '@/state/readingList';
 import { updateSettings } from '@/state/settings';
 import { themes, type ThemeName } from '@/theme/themes';
@@ -51,6 +52,8 @@ export function usePreviewState(): PreviewState {
  *                     Horror: overlook | nosferatu | thering | midsommar | scream.
  *   ?glass=dark    Glass appearance: light | dark | auto
  *   ?blur=0        draw frosted glass the way Android does: no blur, just the fills (read in GlassCard)
+ *   ?region=CA     where the local section comes from: IN | CA | US | UK | AU | WORLD
+ *   ?local=sample  a sample local section · ?fallback=1  today's edition "not out yet" (dev/devEditions.ts)
  */
 export function applyDevUrlFlags() {
   if (!__DEV__ || typeof window === 'undefined' || !window.location?.search) return;
@@ -62,6 +65,8 @@ export function applyDevUrlFlags() {
   else if (onboarded === '1') updateSettings({ tourDone: true });
   const theme = params.get('theme');
   if (theme && theme in themes) updateSettings({ theme: theme as ThemeName });
+  const region = params.get('region');
+  if (isRegion(region)) updateSettings({ region });
   const glass = params.get('glass');
   if (glass === 'light' || glass === 'dark' || glass === 'auto') updateSettings({ glassAppearance: glass });
   if (params.get('seed') === '1' && readingListStore.get().items.length === 0) seedReadingList();

@@ -1,6 +1,7 @@
 import { TOPIC_LABEL } from '@/data/topics';
 import type { AlsoItem, Briefing, Story, Topic } from '@/data/types';
-import { mutedMatcher } from '@/lib/curation';
+import { mutedMatcher, outletMuter } from '@/lib/curation';
+import type { Region } from '@/lib/region';
 
 /** One searchable thing in an edition: a full story, a "Since this morning" story or an "Also happening" line. */
 export type SearchDoc = {
@@ -19,6 +20,8 @@ export type SearchDoc = {
   /** The item itself, for reading it in place. */
   story?: Story;
   also?: AlsoItem;
+  /** From the edition's local section: its region and name ("Canada"). */
+  local?: { region: Region; label: string };
 };
 
 export type SearchHit = SearchDoc & {
@@ -30,8 +33,9 @@ export type SearchHit = SearchDoc & {
   snippet: string | null;
 };
 
-function storyDoc(date: string, s: Story, kind: 'story' | 'update'): SearchDoc {
+function storyDoc(date: string, s: Story, kind: 'story' | 'update', local?: SearchDoc['local']): SearchDoc {
   return {
+    local,
     key: `${date}:${kind}:${s.id}`,
     date,
     kind,
@@ -54,22 +58,29 @@ export function editionDocs(b: Briefing): SearchDoc[] {
     seen.add(d.id);
     docs.push(d);
   };
+  const alsoDoc = (a: AlsoItem, local?: SearchDoc['local']): SearchDoc => ({
+    local,
+    key: `${b.date}:also:${a.id}`,
+    date: b.date,
+    kind: 'also',
+    id: a.id,
+    topic: a.topic,
+    headline: a.headline,
+    body: [a.whatHappened, a.whyItMatters].filter(Boolean).join(' '),
+    players: [],
+    terms: [],
+    also: a,
+  });
   b.stories.forEach((s) => add(storyDoc(b.date, s, 'story')));
   (b.sinceThisMorning ?? []).forEach((s) => add(storyDoc(b.date, s, 'update')));
-  (b.alsoHappening ?? []).forEach((a) =>
-    add({
-      key: `${b.date}:also:${a.id}`,
-      date: b.date,
-      kind: 'also',
-      id: a.id,
-      topic: a.topic,
-      headline: a.headline,
-      body: [a.whatHappened, a.whyItMatters].filter(Boolean).join(' '),
-      players: [],
-      terms: [],
-      also: a,
-    }),
-  );
+  (b.alsoHappening ?? []).forEach((a) => add(alsoDoc(a)));
+  // The local section shows on Today with this edition, so its stories open there too.
+  const r = b.regional;
+  if (r) {
+    const local = { region: r.region, label: r.label };
+    r.stories.forEach((s) => add(storyDoc(b.date, s, 'story', local)));
+    r.also.forEach((a) => add(alsoDoc(a, local)));
+  }
   return docs;
 }
 
@@ -179,17 +190,27 @@ export function searchDocs(docs: SearchDoc[], query: string): SearchHit[] {
 }
 
 /**
- * A check for why Today wouldn't show a result (its topic is off, or it mentions a hidden word),
- * giving null when it's there. Mirrors lib/curation.ts.
+ * A check for why Today wouldn't show a result (its topic is off, it mentions a hidden word, or
+ * only turned-off outlets reported it), giving null when it's there. Mirrors lib/curation.ts.
  */
-export function hiddenReasons(prefs: { topics: Topic[]; mutedWords: string[] }): (d: SearchDoc) => string | null {
+export function hiddenReasons(prefs: {
+  topics: Topic[];
+  mutedWords: string[];
+  disabledOutlets: string[];
+  region: Region;
+}): (d: SearchDoc) => string | null {
   const muted = mutedMatcher(prefs.mutedWords);
+  const isOff = outletMuter(prefs.disabledOutlets);
   return (d) => {
-    if (!prefs.topics.includes(d.topic)) return `Not in your edition: ${TOPIC_LABEL[d.topic]} is turned off.`;
+    if (d.local && d.local.region !== prefs.region) return `Not in your edition: it's from the ${d.local.label} section.`;
+    // The local section isn't split by topic.
+    if (!d.local && !prefs.topics.includes(d.topic)) return `Not in your edition: ${TOPIC_LABEL[d.topic]} is turned off.`;
     const text = d.story
       ? `${d.story.headline}\n${d.story.dek}\n${d.story.whatHappened}`
       : `${d.headline}\n${d.also?.whatHappened ?? ''}`;
     if (muted?.test(text)) return 'Not in your edition: it mentions a word you’ve hidden.';
+    const sources = d.story ? (d.story.allSources?.length ? d.story.allSources : d.story.sources) : d.also?.sources;
+    if (isOff && sources?.length && sources.every(isOff)) return 'Not in your edition: its sources are ones you’ve turned off.';
     return null;
   };
 }

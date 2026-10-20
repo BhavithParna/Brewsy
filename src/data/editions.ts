@@ -1,13 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { backendConfigured, fetchEditionDates, fetchEditionRemote } from './api';
+import {
+  backendConfigured,
+  fetchEditionDates,
+  fetchEditionRemote,
+  fetchRegionalEdition,
+  fetchRegionalEditionsSince,
+} from './api';
 import mockBriefing from './mock-briefing.json';
-import type { Briefing } from './types';
+import type { Briefing, RegionalEdition } from './types';
+import { sampleRegional } from '@/dev/devEditions';
+import { settingsStore } from '@/state/settings';
 
 const PREFIX = 'brewsy:edition:';
 const INDEX_KEY = 'brewsy:edition-index';
 /** How many editions to keep on the device. */
 const KEEP = 10;
+/**
+ * When today's edition isn't made yet, Today shows the latest one from up to this many days
+ * before (an Australian reader at 7 am sees yesterday's until the new one is made).
+ */
+const RECENT_DAYS = 2;
 
 /** Local date as YYYY-MM-DD. */
 export function dateKey(d: Date): string {
@@ -34,7 +47,40 @@ export function yesterdayKey(): string {
 /** The bundled sample stands in for "today" until the backend exists. */
 function sampleFor(date: string): Briefing | null {
   if (backendConfigured || date !== todayKey()) return null;
-  return { ...(mockBriefing as Briefing), date };
+  const b: Briefing = { ...(mockBriefing as Briefing), date };
+  const region = settingsStore.get().region;
+  const local = __DEV__ && region !== 'WORLD' ? sampleRegional(date, region) : null;
+  return local ? { ...b, regional: local } : b;
+}
+
+// ─── The local section ────────────────────────────────────────────────────────
+
+/**
+ * The reader's local section for a date: null when there's none (or they chose world news only),
+ * undefined when it couldn't be checked (offline).
+ */
+export async function regionalFor(date: string): Promise<RegionalEdition | null | undefined> {
+  const region = settingsStore.get().region;
+  if (region === 'WORLD') return null;
+  if (__DEV__) {
+    const sample = sampleRegional(date, region);
+    if (sample) return sample;
+  }
+  if (!backendConfigured) return null;
+  try {
+    return await fetchRegionalEdition(date, region);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The world edition with the reader's local section for that date. When the section couldn't be
+ * checked, the one in `saved` stays (if it's still the reader's region).
+ */
+function withRegional(b: Briefing, regional: RegionalEdition | null | undefined, saved?: Briefing | null): Briefing {
+  const kept = saved?.regional?.region === settingsStore.get().region ? saved.regional : null;
+  return { ...b, regional: regional === undefined ? kept : regional };
 }
 
 export async function readCachedEdition(date: string): Promise<Briefing | null> {
@@ -78,9 +124,37 @@ export async function fetchAndCacheEdition(date: string): Promise<Briefing | nul
   const sample = sampleFor(date);
   if (sample) return sample;
   if (!backendConfigured) return null;
-  const remote = await fetchEditionRemote(date);
-  if (remote) await writeCachedEdition(remote);
-  return remote;
+  const [remote, regional] = await Promise.all([fetchEditionRemote(date), regionalFor(date)]);
+  if (!remote) return null;
+  const b = withRegional(remote, regional, regional === undefined ? await readCachedEdition(date) : null);
+  await writeCachedEdition(b);
+  return b;
+}
+
+/**
+ * The newest edition from the few days before `date` (see RECENT_DAYS), for when `date` has none
+ * yet. From the server when it answers, else (or when `offline`) from the copies on this phone.
+ */
+export async function latestEditionBefore(
+  date: string,
+  { offline = false }: { offline?: boolean } = {},
+): Promise<{ briefing: Briefing; offline: boolean } | null> {
+  const oldest = shiftDate(date, -RECENT_DAYS);
+  const recent = (d: string) => d < date && d >= oldest;
+  if (backendConfigured && !offline) {
+    try {
+      const found = (await fetchEditionDates(RECENT_DAYS + 3)).find(recent);
+      const b = found ? await fetchAndCacheEdition(found) : null;
+      return b ? { briefing: b, offline: false } : null;
+    } catch {
+      // Offline: look on the phone.
+    }
+  }
+  for (const d of (await cachedEditionDates()).filter(recent)) {
+    const b = await readCachedEdition(d);
+    if (b) return { briefing: b, offline: backendConfigured };
+  }
+  return null;
 }
 
 /** Past editions to offer in the calendar: from the server when possible, else this device. */
@@ -133,7 +207,12 @@ export async function loadRecentEditions(
     onEdition(b);
   };
 
-  for (const b of await editionsAtHand()) if (b.date >= oldest && b.date <= today) emit(b);
+  const saved = new Map<string, Briefing>();
+  for (const b of await editionsAtHand()) {
+    if (b.date < oldest || b.date > today) continue;
+    saved.set(b.date, b);
+    emit(b);
+  }
   if (!backendConfigured) return { offline: false };
 
   let dates: string[];
@@ -145,6 +224,12 @@ export async function loadRecentEditions(
   // Today's saved copy may predate the daytime updates, so it's fetched again.
   const missing = dates.filter((d) => !have.has(d) || (d === today && !sessionEditions.has(d)));
   let failed = false;
+  // The reader's local sections for the whole range, in one request.
+  const region = settingsStore.get().region;
+  const local = new Map<string, RegionalEdition>();
+  if (region !== 'WORLD' && missing.length) {
+    for (const r of await fetchRegionalEditionsSince(region, oldest).catch(() => [])) local.set(r.date, r);
+  }
   // A few at a time, newest first.
   for (let i = 0; i < missing.length; i += 4) {
     const batch = await Promise.all(
@@ -155,8 +240,9 @@ export async function loadRecentEditions(
         }),
       ),
     );
-    for (const b of batch) {
-      if (!b) continue;
+    for (const remote of batch) {
+      if (!remote) continue;
+      const b = { ...remote, regional: local.get(remote.date) ?? saved.get(remote.date)?.regional ?? null };
       sessionEditions.set(b.date, b);
       emit(b);
     }

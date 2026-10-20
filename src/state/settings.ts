@@ -1,6 +1,7 @@
 import { DEFAULT_TOPICS } from '@/data/topics';
 import { TOPICS, type ListenMode, type Topic } from '@/data/types';
 import { createPersistedStore, useStore } from '@/lib/persisted';
+import { guessRegion, isRegion, type Region } from '@/lib/region';
 import type { ThemeName } from '@/theme/themes';
 
 export type WakeTime = { hour: number; minute: number };
@@ -25,6 +26,8 @@ export type Settings = {
   glassAppearance: 'auto' | 'light' | 'dark';
   /** Outlet names (from supabase/functions/_shared/sources.ts) to skip. */
   disabledOutlets: string[];
+  /** Where the local section on Today comes from (WORLD: none). */
+  region: Region;
   /** "Your edition is ready" push each morning. */
   morningPush: boolean;
   /** 8pm reminder when something is saved for tonight. */
@@ -57,6 +60,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tourDone: false,
   glassAppearance: 'auto',
   disabledOutlets: [],
+  // Onboarding starts from where the phone seems to be; saves from before regions get the same guess.
+  region: guessRegion(),
   morningPush: true,
   remindTonight: true,
   remindWeekend: true,
@@ -90,6 +95,8 @@ function sanitize(s: Settings): Settings {
     mutedWords: list(s.mutedWords),
     textScale: typeof s.textScale === 'number' && s.textScale >= 0.8 && s.textScale <= 1.5 ? s.textScale : 1,
     glassAppearance: s.glassAppearance === 'light' || s.glassAppearance === 'dark' ? s.glassAppearance : 'auto',
+    disabledOutlets: list(s.disabledOutlets),
+    region: isRegion(s.region) ? s.region : guessRegion(),
   };
 }
 

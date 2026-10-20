@@ -224,6 +224,8 @@ type EndProps = {
   dateLabel: string;
   onExport: () => void;
   exporting: boolean;
+  /** Today's edition isn't out yet and this earlier one is standing in. */
+  earlier?: boolean;
   onPrevious: () => void;
   onBackToToday?: () => void;
   /** The edition's date and the stories shown in it, for "3 of 12 stories opened". */
@@ -238,20 +240,22 @@ export function EndOfEdition({
   dateLabel,
   onExport,
   exporting,
+  earlier,
   onPrevious,
   onBackToToday,
   editionDate,
   storyIds,
 }: EndProps) {
   const { theme } = useTheme();
+  const caughtUp = isToday && !earlier;
   return (
     <View style={styles.end}>
       <BrewsyMark size={30} />
       <Txt variant="displayM" align="center" accessibilityRole="header">
-        {isToday ? 'You’re all caught up' : 'That’s the whole edition'}
+        {caughtUp ? 'You’re all caught up' : 'That’s the whole edition'}
       </Txt>
       <Txt variant="body" tone="secondary" align="center">
-        {isToday ? `See you tomorrow at ${wakeLabel}.` : `You've read the ${dateLabel} edition.`}
+        {caughtUp ? `See you tomorrow at ${wakeLabel}.` : `You've read the ${dateLabel} edition.`}
       </Txt>
       <ReadingTally isToday={isToday} editionDate={editionDate} storyIds={storyIds} />
       <Pill
@@ -265,7 +269,7 @@ export function EndOfEdition({
       />
       <View style={styles.links}>
         <Pressable onPress={onPrevious} accessibilityRole="link" style={styles.link}>
-          <Txt variant="label">{isToday ? 'Read yesterday’s →' : 'Read the day before →'}</Txt>
+          <Txt variant="label">{caughtUp ? 'Read yesterday’s →' : 'Read the day before →'}</Txt>
         </Pressable>
         {onBackToToday && (
           <Pressable onPress={onBackToToday} accessibilityRole="link" style={styles.link}>
