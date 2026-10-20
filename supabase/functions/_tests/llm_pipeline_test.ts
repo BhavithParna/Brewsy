@@ -1,10 +1,11 @@
-// Exercises the Claude and Gemini request code and the whole edition pipeline with fakes.
+// Exercises the Claude and Gemini request code (used only when LLM_ROUTES names them)
+// and the whole edition pipeline with fakes. The free providers are in llm_routes_test.ts.
 
 import { assert, assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
 import type { ArticleText } from '../_shared/articles.ts';
 import type { FeedItem } from '../_shared/feeds.ts';
-import { _resetLlmStateForTests, activeModel, generateJson, LlmError, parseJsonText, toClaudeSchema } from '../_shared/llm.ts';
+import { _resetLlmStateForTests, _setUsageStoreForTests, activeModel, generateJson, LlmError, parseJsonText, toClaudeSchema } from '../_shared/llm.ts';
 import { parseCnbcQuotes } from '../_shared/markets.ts';
 import { buildEdition, collectCandidates, type PipelineDeps } from '../_shared/pipeline.ts';
 import { DEFAULT_PREFS } from '../_shared/prefs.ts';
@@ -28,12 +29,16 @@ async function withFetch(handler: (url: string, init: RequestInit) => Response |
   Deno.env.set('GEMINI_API_KEY', 'test-key');
   Deno.env.delete('GEMINI_MODEL');
   Deno.env.delete('ANTHROPIC_API_KEY');
-  Deno.env.delete('LLM_PROVIDER');
+  // Gemini is never a default: the route has to name it.
+  Deno.env.set('LLM_ROUTES', JSON.stringify({ edition: ['gemini'] }));
   _resetLlmStateForTests();
+  _setUsageStoreForTests({ load: () => Promise.resolve([]), add: () => Promise.resolve() });
   try {
     await fn(calls);
   } finally {
     globalThis.fetch = original;
+    Deno.env.delete('LLM_ROUTES');
+    _setUsageStoreForTests(null);
   }
 }
 
@@ -102,6 +107,7 @@ async function withClaude(handler: (url: string) => Response, fn: (calls: { url:
   await withFetch(handler, async (calls) => {
     Deno.env.set('ANTHROPIC_API_KEY', 'sk-ant-test');
     Deno.env.delete('CLAUDE_MODEL');
+    Deno.env.set('LLM_ROUTES', JSON.stringify({ edition: ['anthropic'] }));
     try {
       await fn(calls);
     } finally {
@@ -110,9 +116,9 @@ async function withClaude(handler: (url: string) => Response, fn: (calls: { url:
   });
 }
 
-Deno.test('Claude: chosen when ANTHROPIC_API_KEY is set; structured output, effort, fallback beta', async () => {
+Deno.test('Claude: used when LLM_ROUTES names it; structured output, effort, fallback beta', async () => {
   await withClaude(() => claudeMessage('{"ok":true}'), async (calls) => {
-    assertEquals(activeModel(), 'claude-opus-5-5');
+    assertEquals(activeModel(), 'anthropic:claude-opus-5-5');
     const r = await generateJson({ ...opts, schema: { type: 'object', properties: { xs: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'string', maxLength: 9 } } } } });
     assertEquals(r.data, { ok: true });
     assertEquals(r.model, 'claude-opus-5-5');
@@ -134,15 +140,18 @@ Deno.test('Claude: chosen when ANTHROPIC_API_KEY is set; structured output, effo
   });
 });
 
-Deno.test('Claude: LLM_PROVIDER=gemini overrides an Anthropic key', async () => {
+Deno.test('no paid provider by default: Claude and Gemini keys alone pick nothing', async () => {
   await withClaude(() => gemini('{"g":1}'), async (calls) => {
-    Deno.env.set('LLM_PROVIDER', 'gemini');
-    try {
-      assertEquals((await generateJson(opts)).data, { g: 1 });
-      assert(calls[0].url.includes('generativelanguage'));
-    } finally {
-      Deno.env.delete('LLM_PROVIDER');
-    }
+    Deno.env.delete('LLM_ROUTES');
+    const e = await assertRejects(() => generateJson(opts), LlmError);
+    assert(e.message.startsWith('No AI provider is set up for "edition"'), e.message);
+    assertEquals([e.status, e.retryable], [null, false], 'like a missing key: the pipeline stops instead of retrying');
+    assertEquals(calls.length, 0);
+    assertEquals(activeModel(), 'none');
+    // Named in LLM_ROUTES, after a provider that isn't set up: Gemini answers.
+    Deno.env.set('LLM_ROUTES', JSON.stringify({ edition: ['sambanova', 'gemini'] }));
+    assertEquals((await generateJson(opts)).data, { g: 1 });
+    assert(calls[0].url.includes('generativelanguage'));
   });
 });
 

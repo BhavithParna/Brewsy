@@ -1,21 +1,49 @@
 // Local smoke test of the real network path, no database and no AI:
-//   npx --yes deno@latest run -A supabase/functions/daily-briefing/dev.ts [--articles]
+//   npx --yes deno@latest run -A supabase/functions/daily-briefing/dev.ts [--articles] [--region CA]
 //
 // Prints feed health, items per category/outlet, grouping time, the top stories
 // with their importance scores (and which are must-include), and markets.
 // With --articles it also reads the top stories' article pages.
+// With --region IN|CA|US|UK|AU it checks that region's local section instead: its own
+// feeds plus world items that name the country (without the world edition to leave out).
 // Set SEC_CONTACT_EMAIL in your shell to include SEC filings.
 
 import { fetchArticle } from '../_shared/articles.ts';
 import { clusterAll } from '../_shared/dedupe.ts';
 import { feedHealth, fetchAllFeeds, itemCategory } from '../_shared/feeds.ts';
 import { fetchMarkets } from '../_shared/markets.ts';
+import { defaultDeps, WORLD_SOURCES } from '../_shared/pipeline.ts';
+import { collectRegionCandidates, regionSources } from '../_shared/region.ts';
 import { rankClusters } from '../_shared/scoring.ts';
-import { SOURCES } from '../_shared/sources.ts';
+import { type LocalRegion, REGIONS } from '../_shared/sources.ts';
+
+const regionArg = Deno.args[Deno.args.indexOf('--region') + 1];
+if (Deno.args.includes('--region')) {
+  if (!REGIONS.some((r) => r.id === regionArg && r.id !== 'WORLD')) {
+    console.error('--region needs one of IN, CA, US, UK, AU');
+    Deno.exit(1);
+  }
+  const region = regionArg as LocalRegion;
+  const t0 = Date.now();
+  const cand = await collectRegionCandidates(region, new Date(), defaultDeps, null);
+  const local = new Set(regionSources(region).local.map((s) => s.id));
+  console.log(`\n== ${region} local feeds (${Date.now() - t0} ms, with the general world feeds for mentions)`);
+  for (const s of cand.statuses.filter((x) => local.has(x.sourceId))) {
+    console.log(`${s.ok ? 'ok  ' : 'FAIL'} ${s.sourceId.padEnd(16)} ${String(s.items).padStart(4)} items  ${String(s.ms).padStart(5)} ms ${s.error ?? ''}`);
+  }
+  console.log(`Items: ${cand.items.length} (${cand.localItems} from local feeds, ${cand.items.length - cand.localItems} world items naming the country)`);
+  console.log(`Stories grouped: ${cand.clusters.length}`);
+  for (const c of cand.ranked.slice(0, 20)) {
+    const s = cand.scores.get(c.id)!;
+    console.log(`\n[${c.id}] score ${s.score.toFixed(1)} · ${c.outlets.join(', ')}`);
+    for (const it of c.items.slice(0, 3)) console.log(`   - (${it.outlet}) ${it.title.slice(0, 110)}`);
+  }
+  Deno.exit(0);
+}
 
 const now = new Date();
 const t0 = Date.now();
-const { items, statuses } = await fetchAllFeeds(SOURCES, now);
+const { items, statuses } = await fetchAllFeeds(WORLD_SOURCES, now);
 const t1 = Date.now();
 
 console.log(`\n== Feeds (${t1 - t0} ms, failed ones retried once)`);

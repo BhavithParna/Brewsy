@@ -193,22 +193,45 @@ export function validateEdition(
 
 // ─── Listening scripts ───
 
-export type ScriptDraft = { summary: string; stories: { storyId: string; text: string }[] };
+/** `lead` is the spoken way into a story, `body` the story; `text` = both, for apps that play one script. */
+export type ScriptPart = { storyId: string; lead: string; body: string; text: string };
+export type ScriptDraft = { summary: string; stories: ScriptPart[] };
 
-/** Every story needs a script; the order follows the edition, not the reply. */
+export function joinScript(lead: string, body: string): string {
+  return [lead, body].filter(Boolean).join(' ');
+}
+
+/** Every story needs a script; the order follows the edition, not the reply. A reply with only `text` still counts. */
 export function validateScript(raw: Raw, storyIds: string[]): Result<ScriptDraft> {
   if (!isObj(raw)) return { ok: false, errors: ['reply must be a JSON object'] };
   const summary = str(raw.summary);
-  const byId = new Map<string, string>();
+  const byId = new Map<string, ScriptPart>();
   for (const s of Array.isArray(raw.stories) ? raw.stories : []) {
     const id = str(s?.storyId);
-    const text = str(s?.text);
-    if (id && text && !byId.has(id)) byId.set(id, text);
+    const lead = str(s?.lead);
+    const body = str(s?.body) || str(s?.text);
+    if (id && body && !byId.has(id)) byId.set(id, { storyId: id, lead, body, text: joinScript(lead, body) });
   }
   const missing = storyIds.filter((id) => !byId.has(id));
   const errors = [...(summary ? [] : ['"summary" is empty']), ...(missing.length ? [`no script for: ${missing.join(', ')}`] : [])];
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { summary, stories: storyIds.map((id) => ({ storyId: id, text: byId.get(id)! })) } };
+  return { ok: true, value: { summary, stories: storyIds.map((id) => byId.get(id)!) } };
+}
+
+// ─── Regional sections ───
+
+export type RegionPicks = { stories: string[]; also: AlsoDraft[] };
+
+/**
+ * The local editor's reply: 1–2 known candidate ids for full stories, and up to 6
+ * one-liners about other candidates (the same checks as "Also happening").
+ */
+export function validateRegion(raw: Raw, ctx: { known: Set<string>; topics: Topic[] }): RegionPicks {
+  const stories = [...new Set<string>((Array.isArray(raw?.stories) ? raw.stories : []).map(str))]
+    .filter((id) => ctx.known.has(id))
+    .slice(0, 2);
+  const { alsoHappening } = validateEditor({ additions: [], alsoHappening: raw?.also }, { known: ctx.known, taken: new Set(stories), topics: ctx.topics });
+  return { stories, also: alsoHappening.slice(0, 6) };
 }
 
 // ─── Layer 3 ───

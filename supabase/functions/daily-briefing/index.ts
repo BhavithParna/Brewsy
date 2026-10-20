@@ -1,11 +1,16 @@
 // daily-briefing: called every 10 minutes by pg_cron (see migrations).
 //
-//   POST {}                                → "tick": does the next thing that's due (at most one heavy job):
-//                                            write the edition → morning push → audio → daytime check
-//   POST {"force": true}                   → write today's edition right now (replaces today's)
-//   POST {"stage": "audio", "force"?: true}  → make today's audio now (force: even if it's already made)
-//   POST {"stage": "update", "force"?: true} → run a "Since this morning" check now (force: any time of day)
-//   POST {"dryRun": true}                  → feeds + grouping + scoring only; no AI, no database writes
+//   POST {}  → "tick". First the cheap things, every time: the morning pushes now due
+//              (per reader, at their own wake time) and the owner's alert when an AI
+//              provider nears its free daily limit. Then at most one heavy job
+//              (prefs.ts planTick): the world edition → its audio scripts → a region's
+//              local section → a "Since this morning" check.
+//   POST {"force": true}                          → write today's world edition right now (replaces it)
+//   POST {"stage": "audio", "force"?: true}       → make the world edition's audio now (force: even if made)
+//   POST {"stage": "update", "force"?: true}      → a "Since this morning" check on the latest edition
+//                                                    (force: even if no check is due)
+//   POST {"stage": "region", "region": "CA", "force"?: true} → make a region's local section now
+//   POST {"dryRun": true, "region"?: "CA"}         → feeds + grouping + scoring only; no AI, no database writes
 //
 // Every request must carry the header `x-brewsy-secret: <CRON_SECRET>`.
 // Each heavy job runs in its own request, so each gets the full time limit.
@@ -14,15 +19,21 @@ import { buildAudio, KEEP_AUDIO_DAYS } from '../_shared/audio.ts';
 import { ttsProvider } from '../_shared/audio-config.ts';
 import { feedHealth } from '../_shared/feeds.ts';
 import { json, preflight, readJsonBody } from '../_shared/http.ts';
-import { activeModel, generateJson } from '../_shared/llm.ts';
+import { activeModel, budgetWarnings, generateJson, loadUsage, usageDay } from '../_shared/llm.ts';
 import { fetchMarkets } from '../_shared/markets.ts';
 import { buildEdition, collectCandidates, defaultDeps } from '../_shared/pipeline.ts';
-import { type BriefingRow, decideTick, localParts, type Prefs, topicOrder, wakeMinutes } from '../_shared/prefs.ts';
+import {
+  type BriefingRow, editionPrefs, localParts, normalizePrefs, planTick, type Prefs, readerRegion, regionDue, regionTimeZone, type TickPlan,
+  topicOrder,
+} from '../_shared/prefs.ts';
 import { alertPush, breakingPush, editionPush, MAX_BREAKING_PUSHES, sendAlertEmail, sendExpoPush } from '../_shared/push.ts';
+import { buildRegionalEdition, collectRegionCandidates } from '../_shared/region.ts';
+import { type LocalRegion, REGIONS } from '../_shared/sources.ts';
 import { cleanupOldAudio, uploadPublic } from '../_shared/storage.ts';
 import {
-  appendUpdates, claimAlert, claimAudio, claimBreakingPush, claimGeneration, claimPush, claimUpdateCheck, clearPushToken, getBriefingRow,
-  loadBriefing, loadDay, loadPrefs, loadPreviousBriefing, logRun, markAudioError, markError, pushTokens, saveAudio, saveEdition,
+  appendUpdates, claimAlert, claimAudio, claimBreakingPush, claimGeneration, claimMorningPushes, claimRegional, claimSlot, claimUpdateCheck,
+  clearPushToken, finishSlot, getBriefingRow, getRegionalRows, loadBriefing, loadDay, loadLatestReady, loadPreviousBriefing, loadReaders,
+  logRun, markAudioError, markError, markRegionalError, pushTokens, saveAudio, saveEdition, saveRegional, takenSlots,
 } from '../_shared/store.ts';
 import { synthesize } from '../_shared/tts.ts';
 import { checkForUpdates } from '../_shared/updates.ts';
@@ -31,6 +42,8 @@ import { checkForUpdates } from '../_shared/updates.ts';
 const BUDGET_MS = 135_000;
 /** Alert the owner when more than this share of the feeds failed in the morning run. */
 const FEED_ALERT_RATE = 0.2;
+/** …and when an AI model has used this share of its free daily allowance. */
+const BUDGET_ALERT_SHARE = 0.8;
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
@@ -66,7 +79,7 @@ async function kickStage(stage: 'audio' | 'update'): Promise<boolean> {
 }
 
 /** Push + optional email to the owner, at most once per day per kind. Never throws. */
-async function raiseAlert(date: string, kind: 'late' | 'feeds', subject: string, detail: string): Promise<Record<string, unknown>> {
+async function raiseAlert(date: string, kind: string, subject: string, detail: string): Promise<Record<string, unknown>> {
   try {
     if (!(await claimAlert(date, kind, detail))) return { alert: kind, sent: false, reason: 'already sent today' };
     const tokens = await pushTokens('alert');
@@ -79,19 +92,89 @@ async function raiseAlert(date: string, kind: 'late' | 'feeds', subject: string,
   }
 }
 
-// ─── Stages ────────────────────────────────────────────────────────────────
+// ─── Every tick: cheap things first ────────────────────────────────────────
 
-async function pushEdition(date: string): Promise<Record<string, unknown>> {
-  const briefing = await loadBriefing(date);
-  if (!briefing?.stories.length) return { pushed: false, reason: 'no edition' };
-  if (!(await claimPush(date))) return { pushed: false, reason: 'already pushed' };
-  const tokens = await pushTokens('edition');
-  if (!tokens.length) return { pushed: false, reason: 'no devices with a push token' };
-  const result = await sendExpoPush(tokens, editionPush(briefing));
-  await Promise.all(result.invalidTokens.map(clearPushToken));
-  await logRun({ date, stage: 'push', ok: result.failed === 0, ms: 0, stats: { kind: 'edition', ...result } });
-  return { pushed: true, ...result };
+/** Morning pushes now due, per reader: each gets the edition they'll see. Never throws. */
+async function sendMorningPushes(): Promise<Record<string, unknown>> {
+  try {
+    const due = await claimMorningPushes();
+    if (!due.length) return { morningPushes: 0 };
+    const byDate = new Map<string, string[]>();
+    for (const d of due) byDate.set(d.edition_date, [...(byDate.get(d.edition_date) ?? []), d.push_token]);
+    let sent = 0;
+    let failed = 0;
+    for (const [date, tokens] of byDate) {
+      const briefing = await loadBriefing(date);
+      if (!briefing?.stories.length) continue;
+      const result = await sendExpoPush([...new Set(tokens)], editionPush(briefing));
+      await Promise.all(result.invalidTokens.map(clearPushToken));
+      sent += result.sent;
+      failed += result.failed;
+      await logRun({ date, stage: 'push', ok: result.failed === 0, ms: 0, stats: { kind: 'edition', ...result } });
+    }
+    return { morningPushes: due.length, sent, failed };
+  } catch (e) {
+    return { morningPushes: 'failed', error: errorMessage(e).slice(0, 300) };
+  }
 }
+
+/** The owner hears about it when a model nears its free daily allowance. Never throws. */
+async function checkBudgets(): Promise<Record<string, unknown> | null> {
+  try {
+    const day = usageDay();
+    const warnings = budgetWarnings(await loadUsage(day), BUDGET_ALERT_SHARE);
+    if (!warnings.length) return null;
+    const results = [];
+    for (const w of warnings) {
+      const pct = Math.round(w.share * 100);
+      results.push(await raiseAlert(
+        day,
+        `budget:${w.provider}:${w.model}`,
+        `${w.provider} is at ${pct}% of today's free AI allowance`,
+        `${w.provider} (${w.model}) has used ${pct}% of its free daily limit (resets at midnight UTC). Brewsy moves on to the next provider; check the ai_usage table.`,
+      ));
+    }
+    return { budget: results };
+  } catch (e) {
+    return { budget: 'failed', error: errorMessage(e).slice(0, 300) };
+  }
+}
+
+// ─── Who reads, and when ───────────────────────────────────────────────────
+
+type Schedule = {
+  /** The world edition's settings: the owner's timing, everyone's topics and stars. */
+  prefs: Prefs;
+  /** The owner's local date. */
+  date: string;
+  world: BriefingRow | null;
+  latest: Awaited<ReturnType<typeof loadLatestReady>>;
+  regions: { region: LocalRegion; date: string; row: Awaited<ReturnType<typeof getRegionalRows>>[number] | null }[];
+  taken: Set<string>;
+  readers: number;
+};
+
+async function loadSchedule(now: Date): Promise<Schedule> {
+  const { owner, active } = await loadReaders(now);
+  const others = active.filter((r) => !r.is_owner && r.device_id !== owner?.device_id).map(normalizePrefs);
+  const prefs = editionPrefs(normalizePrefs(owner), others);
+  const { date } = localParts(now, prefs.timezone);
+  const wanted = new Set(active.map(readerRegion).filter((r): r is LocalRegion => r !== null));
+  const regionDates = REGIONS.filter((r) => wanted.has(r.id as LocalRegion))
+    .map((r) => ({ region: r.id as LocalRegion, date: localParts(now, regionTimeZone(r.id as LocalRegion)).date }));
+  const [world, latest, rows, taken] = await Promise.all([
+    getBriefingRow(date),
+    loadLatestReady(),
+    getRegionalRows(regionDates),
+    takenSlots([date, ...regionDates.map((r) => r.date)]),
+  ]);
+  return {
+    prefs, date, world, latest, taken, readers: active.length,
+    regions: regionDates.map((r) => ({ ...r, row: rows.find((x) => x.region === r.region && x.date === r.date) ?? null })),
+  };
+}
+
+// ─── Stages ────────────────────────────────────────────────────────────────
 
 async function generate(date: string, prefs: Prefs, started: number): Promise<Record<string, unknown>> {
   try {
@@ -111,9 +194,8 @@ async function generate(date: string, prefs: Prefs, started: number): Promise<Re
 
     // Audio is its own run (its own time limit). If this kick fails, the next tick starts it.
     const audioKicked = await kickStage('audio');
-    // If it's already past wake time, send the morning push right away.
-    const { minutes } = localParts(new Date(), prefs.timezone);
-    const push = prefs.morningPush && minutes >= wakeMinutes(prefs.wakeTime) ? await pushEdition(date) : { pushed: false, reason: 'before wake time' };
+    // Anyone already past their wake time (the owner, if it ran late) gets their push now.
+    const push = await sendMorningPushes();
     return { ok: true, stories: briefing.stories.length, alsoHappening: briefing.alsoHappening?.length ?? 0, audioKicked, push, ...(alert ? { alert } : {}) };
   } catch (e) {
     const message = errorMessage(e);
@@ -138,7 +220,7 @@ async function makeAudio(date: string, claimedAt: string, prefs: Prefs): Promise
     }, { order: topicOrder(prefs) });
     const problem = stats.ttsErrors.length ? `Text-to-speech failed for ${stats.ttsErrors.length} chapter(s): ${stats.ttsErrors.slice(0, 3).join(' | ')}` : null;
     const saved = await saveAudio(date, claimedAt, audio, problem);
-    await logRun({ date, stage: 'audio', ok: !problem && saved, ms: stats.ms, stats: { ...stats, provider, saved, model: activeModel() }, error: problem });
+    await logRun({ date, stage: 'audio', ok: !problem && saved, ms: stats.ms, stats: { ...stats, provider, saved, model: activeModel('script') }, error: problem });
     const removed = await cleanupOldAudio(date, KEEP_AUDIO_DAYS);
     return { ok: !problem, saved, provider, ...stats, oldFilesRemoved: removed };
   } catch (e) {
@@ -150,7 +232,7 @@ async function makeAudio(date: string, claimedAt: string, prefs: Prefs): Promise
   }
 }
 
-async function checkUpdates(date: string, prefs: Prefs, started: number): Promise<Record<string, unknown>> {
+async function checkUpdates(date: string, prefs: Prefs, started: number, slot?: { date: string; slot: string }): Promise<Record<string, unknown>> {
   try {
     const day = await loadDay(date);
     if (!day) throw new Error('No ready edition for this date.');
@@ -160,16 +242,18 @@ async function checkUpdates(date: string, prefs: Prefs, started: number): Promis
     const stories = result.added.map((a) => a.story);
     const saved = stories.length ? await appendUpdates(date, day.briefing.generatedAt, stories, result.contexts) : false;
 
-    // At most one breaking push per check, MAX_BREAKING_PUSHES a day, only for the genuinely major.
+    // At most one breaking push per check, MAX_BREAKING_PUSHES per edition, only for the genuinely
+    // major, and only to readers for whom it's 07:00–22:00.
     let push: Record<string, unknown> = { pushed: false, reason: 'nothing push-worthy' };
     const top = saved ? result.added.find((a) => a.pushWorthy) : undefined;
     if (top) {
-      if (!(await claimBreakingPush(date, MAX_BREAKING_PUSHES))) push = { pushed: false, reason: `already sent ${MAX_BREAKING_PUSHES} today` };
+      const tokens = await pushTokens('breaking');
+      if (!tokens.length) push = { pushed: false, reason: 'no readers with breaking news on and awake' };
+      else if (!(await claimBreakingPush(date, MAX_BREAKING_PUSHES))) push = { pushed: false, reason: `already sent ${MAX_BREAKING_PUSHES} for this edition` };
       else {
-        const tokens = await pushTokens('breaking');
-        const sent = tokens.length ? await sendExpoPush(tokens, breakingPush(date, top.story)) : null;
-        if (sent) await Promise.all(sent.invalidTokens.map(clearPushToken));
-        push = sent ? { pushed: true, storyId: top.story.id, ...sent } : { pushed: false, reason: 'no devices with breaking pushes on' };
+        const sent = await sendExpoPush(tokens, breakingPush(date, top.story));
+        await Promise.all(sent.invalidTokens.map(clearPushToken));
+        push = { pushed: true, storyId: top.story.id, ...sent };
       }
     }
 
@@ -177,27 +261,59 @@ async function checkUpdates(date: string, prefs: Prefs, started: number): Promis
       added: stories.map((s) => ({ id: s.id, headline: s.headline })),
       saved,
       push,
+      ...(slot ? { slot: slot.slot } : {}),
       ...result.stats,
     };
     await logRun({ date, stage: 'update', ok: true, ms: result.stats.ms, feeds_failed: result.stats.feedsFailed, stats: out });
+    if (slot) await finishSlot(slot.date, slot.slot, true);
     return { ok: true, ...out };
   } catch (e) {
     const message = errorMessage(e);
     console.error(JSON.stringify({ event: 'update_failed', date, message }));
     await logRun({ date, stage: 'update', ok: false, ms: Date.now() - started, error: message });
+    if (slot) await finishSlot(slot.date, slot.slot, false, message);
     return { ok: false, error: message };
+  }
+}
+
+async function makeRegion(region: LocalRegion, date: string, started: number): Promise<Record<string, unknown>> {
+  try {
+    const latest = await loadLatestReady();
+    const world = latest ? await loadDay(latest.date) : null;
+    const { edition, contexts, stats } = await buildRegionalEdition({
+      region, date, now: new Date(), deadlineMs: started + BUDGET_MS,
+      world: world ? { briefing: world.briefing, updates: world.updates } : null,
+    });
+    await saveRegional(edition, contexts);
+    console.log(JSON.stringify({ event: 'region_ready', date, ...stats }));
+    await logRun({ date, stage: 'region', ok: true, ms: stats.ms, feeds_failed: stats.feedsFailed, stats });
+    return { ok: true, region, stories: edition.stories.length, also: edition.also.length };
+  } catch (e) {
+    const message = errorMessage(e);
+    console.error(JSON.stringify({ event: 'region_failed', date, region, message }));
+    await markRegionalError(date, region, message).catch(() => {});
+    await logRun({ date, stage: 'region', ok: false, ms: Date.now() - started, error: message, stats: { region } });
+    return { ok: false, region, error: message };
   }
 }
 
 // ─── Handlers ──────────────────────────────────────────────────────────────
 
-async function dryRun(date: string, prefs: Prefs, started: number): Promise<Response> {
+async function dryRun(date: string, prefs: Prefs, started: number, region: LocalRegion | null): Promise<Response> {
   const previous = await loadPreviousBriefing(date).catch(() => null);
-  const [cand, markets] = await Promise.all([collectCandidates(prefs, new Date(), defaultDeps, previous), fetchMarkets()]);
+  const latest = region ? await loadLatestReady().catch(() => null) : null;
+  const world = latest ? await loadDay(latest.date).catch(() => null) : null;
+  const [cand, markets] = await Promise.all([
+    region
+      ? collectRegionCandidates(region, new Date(), defaultDeps, world ? { briefing: world.briefing, updates: world.updates } : null)
+        .then((c) => ({ ...c, clusters: c.ranked, totalClusters: c.clusters.length }))
+      : collectCandidates(prefs, new Date(), defaultDeps, previous),
+    region ? Promise.resolve([]) : fetchMarkets(),
+  ]);
   const health = feedHealth(cand.statuses);
   return json({
     date,
-    prefs,
+    ...(region ? { region } : { prefs }),
     feeds: {
       ok: health.ok,
       total: health.total,
@@ -217,7 +333,7 @@ async function dryRun(date: string, prefs: Prefs, started: number): Promise<Resp
       };
     }),
     markets,
-    model: activeModel(),
+    model: activeModel(region ? 'region' : 'edition'),
     tts: ttsProvider(),
     ms: Date.now() - started,
   });
@@ -237,11 +353,22 @@ async function runAudioStage(date: string, prefs: Prefs, row: BriefingRow | null
   return respond(makeAudio(date, claimedAt, prefs), { stage: 'audio', date });
 }
 
-async function runUpdateStage(date: string, prefs: Prefs, row: BriefingRow | null, started: number): Promise<Response> {
-  if (!row || row.status !== 'ready') return json({ stage: 'update', date, status: 'no edition yet' }, 409);
-  if (!(await claimUpdateCheck(date, row))) return json({ stage: 'update', date, status: 'busy' }, 409);
-  return respond(checkUpdates(date, prefs, started), { stage: 'update', date });
+/** A "Since this morning" check on an edition; `slot` = the schedule slot it was claimed for. */
+async function runUpdateStage(editionDate: string, prefs: Prefs, started: number, slot?: { date: string; slot: string }): Promise<Response> {
+  const row = await getBriefingRow(editionDate);
+  if (!row || row.status !== 'ready' || !(await claimUpdateCheck(editionDate, row))) {
+    if (slot) await finishSlot(slot.date, slot.slot, false, 'edition busy or missing');
+    return json({ stage: 'update', date: editionDate, status: row?.status === 'ready' ? 'busy' : 'no edition yet' }, 409);
+  }
+  return respond(checkUpdates(editionDate, prefs, started, slot), { stage: 'update', date: editionDate, ...(slot ? { slot: slot.slot } : {}) });
 }
+
+async function runRegionStage(region: LocalRegion, date: string, row: Schedule['regions'][number]['row'], started: number, force: boolean, extra: Record<string, unknown> = {}): Promise<Response> {
+  if (!(await claimRegional(date, region, row, force))) return json({ ...extra, stage: 'region', region, date, status: 'busy' }, 409);
+  return respond(makeRegion(region, date, started), { ...extra, stage: 'region', region, date });
+}
+
+const isLocalRegion = (r: unknown): r is LocalRegion => typeof r === 'string' && REGIONS.some((x) => x.id === r && x.id !== 'WORLD');
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -252,47 +379,67 @@ Deno.serve(async (req) => {
   if (!secret || req.headers.get('x-brewsy-secret') !== secret) return json({ error: 'Unauthorized.' }, 401);
 
   const started = Date.now();
-  const body = await readJsonBody<{ force: boolean; dryRun: boolean; stage: string }>(req);
+  const body = await readJsonBody<{ force: boolean; dryRun: boolean; stage: string; region: string }>(req);
 
   try {
-    const { prefs } = await loadPrefs();
     const now = new Date();
-    const { date } = localParts(now, prefs.timezone);
+    if (body.region !== undefined && !isLocalRegion(body.region)) return json({ error: 'region must be one of IN, CA, US, UK, AU.' }, 400);
+    const region = isLocalRegion(body.region) ? body.region : null;
 
-    if (body.dryRun) return await dryRun(date, prefs, started);
+    // Cheap and per reader: never wait behind the heavy job below.
+    const pushes = body.stage || body.force || body.dryRun ? null : await sendMorningPushes();
+    const budget = body.stage || body.force || body.dryRun ? null : await checkBudgets();
 
-    const row = await getBriefingRow(date);
+    const schedule = await loadSchedule(now);
+    const { prefs, date, world } = schedule;
 
-    if (body.stage === 'audio') return await runAudioStage(date, prefs, row, body.force === true);
+    if (body.dryRun) return await dryRun(date, prefs, started, region);
+
+    if (body.stage === 'audio') return await runAudioStage(date, prefs, world, body.force === true);
     if (body.stage === 'update') {
       // Without force, only when a check is actually due (so a stray call can't spend AI time).
-      const due = decideTick(now, prefs, row).action === 'update';
-      if (!body.force && !due) return json({ stage: 'update', date, status: 'not due (send "force": true to run anyway)' });
-      return await runUpdateStage(date, prefs, row, started);
+      const plan = planTick({ now, owner: prefs, world, latest: schedule.latest, regions: schedule.regions, taken: schedule.taken });
+      if (!schedule.latest) return json({ stage: 'update', status: 'no edition yet' }, 409);
+      if (!body.force && plan.action !== 'refresh') return json({ stage: 'update', status: 'not due (send "force": true to run anyway)' });
+      return await runUpdateStage(schedule.latest.date, prefs, started);
     }
-    if (body.stage) return json({ error: 'stage must be "audio" or "update".' }, 400);
+    if (body.stage === 'region') {
+      if (!region) return json({ error: 'Say which region: {"stage":"region","region":"CA"}.' }, 400);
+      const regionDate = localParts(now, regionTimeZone(region)).date;
+      const row = (await getRegionalRows([{ region, date: regionDate }]))[0] ?? null;
+      const due = regionDue(row, now);
+      if (!body.force && (!due || 'busy' in due)) {
+        return json({ stage: 'region', region, date: regionDate, status: row?.status === 'ready' ? 'already made (send "force": true to redo)' : 'busy' });
+      }
+      return await runRegionStage(region, regionDate, row, started, body.force === true);
+    }
+    if (body.stage) return json({ error: 'stage must be "audio", "update" or "region".' }, 400);
 
     if (body.force) {
-      if (!(await claimGeneration(date, row, true))) return json({ status: 'busy', date }, 409);
+      if (!(await claimGeneration(date, world, true))) return json({ status: 'busy', date }, 409);
       return await respond(generate(date, prefs, started), { action: 'generate', date, forced: true });
     }
 
-    const decision = decideTick(now, prefs, row);
-    const alert = decision.alert === 'late'
-      ? await raiseAlert(date, 'late', `today's edition isn't ready`, `It wasn't ready by your wake time (${prefs.wakeTime}). Status: ${row?.status ?? 'not started'}. Check the pipeline_runs table and the function logs.`)
+    const plan: TickPlan = planTick({ now, owner: prefs, world, latest: schedule.latest, regions: schedule.regions, taken: schedule.taken });
+    const alert = plan.alert === 'late'
+      ? await raiseAlert(date, 'late', `today's edition isn't ready`, `It wasn't ready by your wake time (${prefs.wakeTime}). Status: ${world?.status ?? 'not started'}. Check the pipeline_runs table and the function logs.`)
       : null;
-    const extra = { ...decision, ...(alert ? { alertResult: alert } : {}) };
+    const extra = { ...plan, readers: schedule.readers, ...(pushes ? { pushes } : {}), ...(budget ? { budget } : {}), ...(alert ? { alertResult: alert } : {}) };
 
-    switch (decision.action) {
+    switch (plan.action) {
       case 'generate':
-        if (!(await claimGeneration(date, row))) return json({ ...extra, action: 'wait', reason: 'another run took it' });
+        if (!(await claimGeneration(date, world))) return json({ ...extra, action: 'wait', reason: 'another run took it' });
         return await respond(generate(date, prefs, started), extra);
-      case 'push':
-        return json({ ...extra, result: await pushEdition(date) });
       case 'audio':
-        return await runAudioStage(date, prefs, row, false);
-      case 'update':
-        return await runUpdateStage(date, prefs, row, started);
+        return await runAudioStage(date, prefs, world, false);
+      case 'region': {
+        const entry = schedule.regions.find((r) => r.region === plan.region)!;
+        return await runRegionStage(entry.region, plan.date, entry.row && entry.row.date === plan.date ? entry.row : null, started, false, extra);
+      }
+      case 'refresh': {
+        if (!(await claimSlot(plan.date, plan.slot!))) return json({ ...extra, action: 'wait', reason: 'another run took this check' });
+        return await runUpdateStage(plan.editionDate!, prefs, started, { date: plan.date, slot: plan.slot! });
+      }
       default:
         return json(extra);
     }

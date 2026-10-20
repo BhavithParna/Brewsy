@@ -1,6 +1,7 @@
 // MIRROR of src/data/types.ts (the canonical app contract). Keep the two identical.
 // The app reads exactly these shapes from the `briefings` table and the functions.
 
+import type { LocalRegion } from './sources.ts';
 
 export type Topic =
   | 'ai'
@@ -123,6 +124,10 @@ export type AudioChapter = {
   title: string;
   /** What the narrator says. The app reads it aloud on the device if there's no MP3. */
   script: string;
+  /** The spoken way into this chapter ("Turning to business."). `script` is `lead + ' ' + body`. */
+  lead?: string;
+  /** The chapter without its lead in. With it, the phone builds each reader's own running order. */
+  body?: string;
   /** This chapter on its own, when the server made audio. */
   url: string | null;
   /** Seconds into the combined file where this chapter starts. */
@@ -182,8 +187,27 @@ export type Briefing = {
   coverage?: Coverage;
   /** Listening versions. Stored in `briefings.audio`, made a few minutes after the edition. */
   audio?: BriefingAudio | null;
+  /** The reader's local section, from `regional_editions` (the app adds it; null when there's none). */
+  regional?: RegionalEdition | null;
   /** True for the bundled sample edition used before the backend exists. */
   isSample?: boolean;
+};
+
+/**
+ * A region's short local section, made at 05:00 in that region. Stored in `regional_editions`
+ * (column `data`), one row per date and region; the app shows it on Today under the region's name.
+ */
+export type RegionalEdition = {
+  region: LocalRegion;
+  /** Region's local date, YYYY-MM-DD. */
+  date: string;
+  generatedAt: string;
+  /** e.g. "Canada" (REGIONS label). */
+  label: string;
+  /** 1–2 full local stories, same Story shape; ids prefixed `${region.toLowerCase()}-`. */
+  stories: Story[];
+  /** 4–6 one-line local items, same AlsoItem shape; ids prefixed the same way. */
+  also: AlsoItem[];
 };
 
 /** Layer 3: the on-demand "Go deeper" explainer, written from the story's sources. */

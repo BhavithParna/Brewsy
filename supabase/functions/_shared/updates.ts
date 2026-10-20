@@ -1,4 +1,6 @@
-// "Since this morning": the lighter daytime check (every 2 hours, 7am–10pm).
+// "Since this morning": the lighter daytime check, added to the latest world edition.
+// It runs just before each region's local section is made (so a reader there wakes up to
+// what happened overnight) and twice in the owner's day (prefs.ts planTick).
 //
 // Same feeds, grouping and scoring as the morning run, but only a story that
 // passes the major bar (the must-include rule: 5+ major outlets, or a wire
@@ -115,7 +117,7 @@ export async function checkForUpdates(opts: {
     return topic ? [{ clusterIds: [c.id], topic }] : [];
   });
   const articles = await readArticles(picks, byId, deps);
-  const { drafts } = await writeStories(buildBlocks(picks, byId, articles), { prefs, date, deadlineMs, deps });
+  const { drafts } = await writeStories(buildBlocks(picks, byId, articles), { prefs, date, deadlineMs, deps, purpose: 'refresh' });
   const { stories, contexts } = assembleStories(drafts, byId, articles, usedIds(briefing, updates));
 
   const addedAt = new Date().toISOString();

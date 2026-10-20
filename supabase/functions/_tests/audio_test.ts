@@ -126,6 +126,10 @@ Deno.test('chapters: intro (greeting + 60-second version), one per story, wrap-u
   assertEquals(ch[1].storyId, 'a1');
   assertEquals(ch[1].title, 'Headline a1');
   assert(ch[1].script.startsWith('First: Headline a1.'));
+  // The phone can speak the story without our transition (it adds its own).
+  assertEquals(ch[1].lead, 'First:');
+  assert(ch[1].body!.startsWith('Headline a1.'));
+  assertEquals(ch[1].script, `${ch[1].lead} ${ch[1].body}`);
   assert(ch[2].script.includes('Why it matters'));
   assertEquals(ch[5].script, OUTRO);
   for (let i = 1; i < ch.length; i++) assertEquals(ch[i].start, ch[i - 1].start + ch[i - 1].duration);

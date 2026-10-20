@@ -1,24 +1,62 @@
 // Database operations used by the functions.
 
-import { findStory } from './briefing.ts';
-import { eq, insert, insertIgnore, select, update, upsert } from './db.ts';
-import { type BriefingRow, type DeviceRow, normalizePrefs, type Prefs } from './prefs.ts';
+import { alsoToStory, findStory } from './briefing.ts';
+import { count, eq, insert, insertIgnore, insertReturning, rpc, select, update, upsert } from './db.ts';
+import { ACTIVE_READER_DAYS, type BriefingRow, type DeviceRow, normalizePrefs, type Prefs, type RegionalRow } from './prefs.ts';
 import type { StoryContext } from './pipeline.ts';
-import type { Briefing, BriefingAudio, DeepDive, Story } from './types.ts';
+import type { LocalRegion } from './sources.ts';
+import type { Briefing, BriefingAudio, DeepDive, RegionalEdition, Story } from './types.ts';
 
+const DEVICE_COLUMNS =
+  'device_id,push_token,platform,timezone,wake_time,topics,focus_topics,disabled_sources,morning_push,breaking_push,region,is_owner,updated_at';
+
+export type Readers = {
+  /** The owner's device (the most recently saved one marked is_owner), else the latest-saved device. */
+  owner: DeviceRow | null;
+  /** Devices the app saved in the last ACTIVE_READER_DAYS days (the owner's included). */
+  active: DeviceRow[];
+};
+
+export async function loadReaders(now = new Date()): Promise<Readers> {
+  const since = new Date(now.getTime() - ACTIVE_READER_DAYS * 86_400_000).toISOString();
+  const rows = await select<DeviceRow>(
+    'devices',
+    `select=${DEVICE_COLUMNS}&or=(is_owner.eq.true,updated_at.gte.${encodeURIComponent(since)})&order=updated_at.desc`,
+  );
+  const active = rows.filter((r) => Date.parse(r.updated_at) >= Date.parse(since));
+  // Nobody marked as the owner: the latest-saved device leads, as before there were friends.
+  const owner = rows.find((r) => r.is_owner) ?? rows[0] ??
+    (await select<DeviceRow>('devices', `select=${DEVICE_COLUMNS}&order=updated_at.desc&limit=1`))[0] ?? null;
+  return { owner, active };
+}
+
+/** The owner's prefs (the world edition's timing). */
 export async function loadPrefs(): Promise<{ prefs: Prefs; device: DeviceRow | null }> {
-  const rows = await select<DeviceRow>('devices', 'select=*&order=updated_at.desc&limit=1');
-  return { prefs: normalizePrefs(rows[0]), device: rows[0] ?? null };
+  const { owner } = await loadReaders();
+  return { prefs: normalizePrefs(owner), device: owner };
 }
 
 /**
- * Devices to notify: 'edition' = morning push on, 'breaking' = breaking-news
- * pushes on, 'alert' = every device (problems with the morning run).
+ * Devices to notify: 'breaking' = breaking news on and 07:00–22:00 where the reader is,
+ * 'alert' = the owner's devices (problems with the runs and the AI budget).
  */
-export async function pushTokens(kind: 'edition' | 'breaking' | 'alert' = 'edition'): Promise<string[]> {
-  const filter = kind === 'breaking' ? '&breaking_push=eq.major' : kind === 'edition' ? '&morning_push=eq.true' : '';
-  const rows = await select<{ push_token: string }>('devices', `select=push_token&push_token=not.is.null${filter}`);
+export async function pushTokens(kind: 'breaking' | 'alert'): Promise<string[]> {
+  if (kind === 'breaking') {
+    const rows = await rpc<{ push_token: string }[]>('breaking_push_tokens');
+    return [...new Set((rows ?? []).map((r) => r.push_token).filter(Boolean))];
+  }
+  const owners = await select<{ push_token: string }>('devices', 'select=push_token&push_token=not.is.null&is_owner=eq.true');
+  const rows = owners.length
+    ? owners
+    : await select<{ push_token: string }>('devices', 'select=push_token&push_token=not.is.null&order=updated_at.desc&limit=1');
   return [...new Set(rows.map((r) => r.push_token).filter(Boolean))];
+}
+
+export type DueMorningPush = { device_id: string; push_token: string; edition_date: string; is_owner: boolean };
+
+/** Devices whose morning push is due now, already stamped as sent for their local date. */
+export async function claimMorningPushes(): Promise<DueMorningPush[]> {
+  return (await rpc<DueMorningPush[]>('claim_due_morning_pushes')) ?? [];
 }
 
 export async function clearPushToken(token: string): Promise<void> {
@@ -88,12 +126,6 @@ export async function markError(date: string, message: string): Promise<void> {
   await update('briefings', `date=${eq(date)}&data=is.null`, { status: 'error', error });
 }
 
-/** Sets pushed_at only if it's still empty. Returns true for exactly one caller per date. */
-export async function claimPush(date: string): Promise<boolean> {
-  const rows = await update('briefings', `date=${eq(date)}&status=eq.ready&pushed_at=is.null`, { pushed_at: new Date().toISOString() });
-  return rows.length > 0;
-}
-
 export async function loadBriefing(date: string): Promise<Briefing | null> {
   const rows = await select<{ data: Briefing }>('briefings', `select=data&date=${eq(date)}&status=eq.ready`);
   return rows[0]?.data ?? null;
@@ -117,10 +149,40 @@ export async function loadPreviousBriefing(date: string): Promise<Briefing | nul
   return rows[0]?.data ?? null;
 }
 
-/** Any story of the day: main, daytime update or "Also happening". */
+/** The latest ready world edition (daytime checks add to it; phones show it until the next one). */
+export async function loadLatestReady(): Promise<Pick<BriefingRow, 'date' | 'generated_at' | 'updates_checked_at'> | null> {
+  const rows = await select<Pick<BriefingRow, 'date' | 'generated_at' | 'updates_checked_at'>>(
+    'briefings',
+    'select=date,generated_at,updates_checked_at&status=eq.ready&order=date.desc&limit=1',
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Any story of a date: the world edition's main stories, daytime updates and "Also
+ * happening" first, then the regional sections made for that date (ids like "ca-…").
+ */
 export async function loadStory(date: string, storyId: string): Promise<Story | null> {
   const day = await loadDay(date);
-  return day ? findStory(day.briefing, day.updates, storyId) : null;
+  const world = day ? findStory(day.briefing, day.updates, storyId) : null;
+  return world ?? await loadRegionalStory(date, storyId);
+}
+
+export async function loadRegionalStory(date: string, storyId: string): Promise<Story | null> {
+  const prefix = storyId.match(/^(in|ca|us|uk|au)-/)?.[1]?.toUpperCase();
+  const rows = await select<{ region: string; data: RegionalEdition }>(
+    'regional_editions',
+    `select=region,data&date=${eq(date)}&status=eq.ready`,
+  );
+  // The region the id names first; any other after (ids are only unique within a section).
+  const ordered = [...rows.filter((r) => r.region === prefix), ...rows.filter((r) => r.region !== prefix)];
+  for (const r of ordered) {
+    const main = r.data?.stories?.find((s) => s.id === storyId);
+    if (main) return main;
+    const also = r.data?.also?.find((a) => a.id === storyId);
+    if (also) return alsoToStory(also);
+  }
+  return null;
 }
 
 // ─── Audio stage ───────────────────────────────────────────────────────────
@@ -166,7 +228,7 @@ export async function markAudioError(date: string, claimedAt: string, message: s
 
 // ─── Daytime updates ───────────────────────────────────────────────────────
 
-/** Marks a daytime check as started. True for exactly one caller per slot. */
+/** Marks a daytime check of an edition as started. True for exactly one caller at a time. */
 export async function claimUpdateCheck(date: string, current: BriefingRow): Promise<boolean> {
   const seen = current.updates_checked_at ? `updates_checked_at=${eq(current.updates_checked_at)}` : 'updates_checked_at=is.null';
   const rows = await update('briefings', `date=${eq(date)}&status=eq.ready&${seen}`, { updates_checked_at: new Date().toISOString() });
@@ -199,7 +261,7 @@ export async function claimBreakingPush(date: string, max: number): Promise<bool
 
 export type RunLog = {
   date: string;
-  stage: 'edition' | 'audio' | 'update' | 'push';
+  stage: 'edition' | 'audio' | 'update' | 'push' | 'region';
   ok: boolean;
   ms: number;
   feeds_ok?: number | null;
@@ -240,4 +302,107 @@ export async function saveDeepDive(key: string, date: string, storyId: string, c
 
 export async function logAsk(date: string, storyId: string, question: string, answered: boolean): Promise<void> {
   await insert('ask_log', [{ date, story_id: storyId, question, answered }]);
+}
+
+// ─── Regional sections ─────────────────────────────────────────────────────
+
+/** Rows for each region's local date (one query). */
+export async function getRegionalRows(wanted: { region: LocalRegion; date: string }[]): Promise<RegionalRow[]> {
+  if (!wanted.length) return [];
+  const dates = [...new Set(wanted.map((w) => w.date))].join(',');
+  const rows = await select<RegionalRow>('regional_editions', `select=date,region,status,started_at,attempts&date=in.(${dates})`);
+  return rows.filter((r) => wanted.some((w) => w.region === r.region && w.date === r.date));
+}
+
+/** Takes the lock for a region's section (compare-and-set on what the caller saw). */
+export async function claimRegional(date: string, region: LocalRegion, current: RegionalRow | null, force = false): Promise<boolean> {
+  const now = new Date().toISOString();
+  if (!current) {
+    const rows = await insertIgnore<RegionalRow>('regional_editions', [{ date, region, status: 'generating', started_at: now, attempts: 1 }]);
+    return rows.length > 0;
+  }
+  let filter = `date=${eq(date)}&region=${eq(region)}`;
+  if (!force) {
+    filter += `&status=${eq(current.status)}`;
+    filter += current.started_at ? `&started_at=${eq(current.started_at)}` : '&started_at=is.null';
+  }
+  const rows = await update('regional_editions', filter, { status: 'generating', started_at: now, error: null, attempts: (current.attempts ?? 0) + 1 });
+  return rows.length > 0;
+}
+
+export async function saveRegional(edition: RegionalEdition, contexts: StoryContext[]): Promise<void> {
+  // Context first, so Go deeper works the moment the section becomes visible.
+  if (contexts.length) {
+    await upsert('story_context', contexts.map((c) => ({ date: edition.date, story_id: c.story_id, sources: c.sources })), 'date,story_id');
+  }
+  await update('regional_editions', `date=${eq(edition.date)}&region=${eq(edition.region)}`, {
+    status: 'ready',
+    data: edition,
+    generated_at: edition.generatedAt,
+    error: null,
+  });
+}
+
+/** A failed run. A section that was already made stays up (a forced re-run failed). */
+export async function markRegionalError(date: string, region: LocalRegion, message: string): Promise<void> {
+  const error = message.slice(0, 1000);
+  await update('regional_editions', `date=${eq(date)}&region=${eq(region)}&data=not.is.null`, { status: 'ready', error });
+  await update('regional_editions', `date=${eq(date)}&region=${eq(region)}&data=is.null`, { status: 'error', error });
+}
+
+// ─── Scheduled slots ───────────────────────────────────────────────────────
+
+/** Slots already taken on these dates, as "date|slot". */
+export async function takenSlots(dates: string[]): Promise<Set<string>> {
+  const list = [...new Set(dates)];
+  if (!list.length) return new Set();
+  const rows = await select<{ date: string; slot: string }>('schedule_runs', `select=date,slot&date=in.(${list.join(',')})`);
+  return new Set(rows.map((r) => `${r.date}|${r.slot}`));
+}
+
+/** True for exactly one caller per (date, slot). */
+export async function claimSlot(date: string, slot: string): Promise<boolean> {
+  const rows = await insertIgnore('schedule_runs', [{ date, slot, status: 'running' }]);
+  return rows.length > 0;
+}
+
+export async function finishSlot(date: string, slot: string, ok: boolean, error?: string): Promise<void> {
+  await update('schedule_runs', `date=${eq(date)}&slot=${eq(slot)}`, {
+    status: ok ? 'done' : 'error',
+    finished_at: new Date().toISOString(),
+    error: error?.slice(0, 1000) ?? null,
+  }).catch(() => {});
+}
+
+// ─── Ask and Go deeper caps ────────────────────────────────────────────────
+
+export type AiRequestKind = 'ask' | 'deeper';
+
+/** The device id from the request, if it's a device we know (older apps don't send one). */
+export async function knownDevice(id: string | null): Promise<string | null> {
+  if (!id || !/^[A-Za-z0-9-]{8,128}$/.test(id)) return null;
+  const rows = await select<{ device_id: string }>('devices', `select=device_id&device_id=${eq(id)}&limit=1`);
+  return rows.length ? id : null;
+}
+
+/** Requests in the last 24 hours: this device's (or the shared no-device bucket's) and everyone's. */
+export async function countRequests(kind: AiRequestKind, deviceId: string | null): Promise<{ mine: number; total: number }> {
+  const since = `created_at=gte.${encodeURIComponent(new Date(Date.now() - 24 * 3_600_000).toISOString())}`;
+  const who = deviceId ? `device_id=${eq(deviceId)}` : 'device_id=is.null';
+  const [mine, total] = await Promise.all([
+    count('ai_requests', `kind=eq.${kind}&${who}&${since}`),
+    count('ai_requests', `kind=eq.${kind}&${since}`),
+  ]);
+  return { mine, total };
+}
+
+/** Logged before the AI call, so failed calls count too. Returns the row id. */
+export async function logRequest(kind: AiRequestKind, deviceId: string | null, date: string, storyId: string): Promise<number | null> {
+  const rows = await insertReturning<{ id: number }>('ai_requests', [{ kind, device_id: deviceId, date, story_id: storyId }]);
+  return rows[0]?.id ?? null;
+}
+
+export async function finishRequest(id: number | null, ok: boolean, provider: string | null): Promise<void> {
+  if (id == null) return;
+  await update('ai_requests', `id=eq.${id}`, { ok, provider }).catch(() => {});
 }

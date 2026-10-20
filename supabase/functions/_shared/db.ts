@@ -77,6 +77,16 @@ export function insert(table: string, rows: unknown): Promise<null> {
   return request<null>('POST', table, rows, 'return=minimal');
 }
 
+/** Insert; returns the inserted rows (e.g. to learn a generated id). */
+export function insertReturning<T>(table: string, rows: unknown): Promise<T[]> {
+  return request<T[]>('POST', table, rows, 'return=representation');
+}
+
+/** Calls a SQL function: POST /rest/v1/rpc/<name> with named arguments. */
+export function rpc<T>(name: string, args: Record<string, unknown> = {}): Promise<T> {
+  return request<T>('POST', `rpc/${name}`, args);
+}
+
 /** Exact row count for a filter (uses a HEAD request + Content-Range). */
 export async function count(table: string, filter: string): Promise<number> {
   const res = await fetch(`${baseUrl()}/rest/v1/${table}?select=*&${filter}`, {

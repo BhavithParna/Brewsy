@@ -63,6 +63,12 @@
 // Yonhap, the Korea Herald, Dawn, the Express Tribune, Khaleej Times, Inquirer,
 // Philstar, Malay Mail and Premium Times (mostly K-pop, TV or celebrity gossip).
 // Spanish, French and Italian feeds are left out: grouping matches English words only.
+// Local news, checked Oct 2026: CTV's old feed addresses and CP24 (404), CityNews and the
+// Toronto Star (403), the Financial Post (mostly press releases), The Telegraph (402), ITV
+// (doesn't answer), Sky's and the Independent's politics feeds (empty), news.com.au and The
+// Australian (403 or empty), 9News (404), ABC Australia's politics feed (500), The Age (the
+// same stories as the Sydney Morning Herald), NDTV's India feed (mostly exam notices), and
+// USA Today, CNN's US feed and AP (empty or 404).
 //
 // Plain data only: the app imports this file too, so no Deno/npm imports here.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +80,24 @@ export type TopicHint =
 export type SourceCategory = 'wire' | 'major' | 'tech' | 'specialist' | 'official' | 'safety-net';
 export type Trust = 'high' | 'medium' | 'low';
 
+/**
+ * Where a reader's local news comes from (onboarding and Settings → News from). The world
+ * edition is shared by everyone; each region adds a short local section. WORLD has none.
+ * Plain data: the app imports this file too.
+ */
+export type Region = 'IN' | 'CA' | 'US' | 'UK' | 'AU' | 'WORLD';
+export type LocalRegion = Exclude<Region, 'WORLD'>;
+
+/** In picker order. `timeZone` sets when the region's local section is made (05:00 there). */
+export const REGIONS: { id: Region; label: string; timeZone: string | null }[] = [
+  { id: 'IN', label: 'India', timeZone: 'Asia/Kolkata' },
+  { id: 'US', label: 'United States', timeZone: 'America/New_York' },
+  { id: 'UK', label: 'United Kingdom', timeZone: 'Europe/London' },
+  { id: 'CA', label: 'Canada', timeZone: 'America/Toronto' },
+  { id: 'AU', label: 'Australia', timeZone: 'Australia/Sydney' },
+  { id: 'WORLD', label: 'Just world news', timeZone: null },
+];
+
 export type FeedSource = {
   id: string;
   outlet: string;
@@ -84,6 +108,8 @@ export type FeedSource = {
   trust: Trust;
   /** sec-8k only: the companies whose 8-K filings to watch. */
   companies?: { cik: string; name: string }[];
+  /** Local news: read only for this region's section, kept out of the world edition. */
+  region?: LocalRegion;
 };
 
 const bloomberg = (section: string) => `https://feeds.bloomberg.com/${section}/news.rss`;
@@ -131,9 +157,48 @@ export const SOURCES: FeedSource[] = [
   { id: 'dw', outlet: 'Deutsche Welle', kind: 'rss', topicHint: 'world', category: 'major', trust: 'high', url: 'https://rss.dw.com/rdf/rss-en-all' },
   { id: 'france24', outlet: 'France 24', kind: 'rss', topicHint: 'world', category: 'major', trust: 'high', url: 'https://www.france24.com/en/rss' },
   { id: 'sky-world', outlet: 'Sky News', kind: 'rss', topicHint: 'world', category: 'major', trust: 'high', url: 'https://feeds.skynews.com/feeds/rss/world.xml' },
-  // India (the reader's country): national news, mostly politics and policy.
-  { id: 'hindu-national', outlet: 'The Hindu', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
-  { id: 'indian-express', outlet: 'The Indian Express', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', url: 'https://indianexpress.com/section/india/feed/' },
+
+  // ── Local news: each feeds one region's section only (`region`), never the world edition ──
+  // Topic beats stay global even when they come from one country (cricket, Indian film,
+  // Autocar India): readers anywhere follow those topics, and a short local section has
+  // no room for them.
+  // India: national news, mostly politics and policy
+  { id: 'hindu-national', outlet: 'The Hindu', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'IN', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
+  { id: 'indian-express', outlet: 'The Indian Express', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'IN', url: 'https://indianexpress.com/section/india/feed/' },
+  { id: 'ht-india', outlet: 'Hindustan Times', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'IN', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml' },
+  { id: 'toi-india', outlet: 'The Times of India', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'IN', url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms' },
+  // Canada
+  { id: 'cbc-top', outlet: 'CBC News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://www.cbc.ca/webfeed/rss/rss-topstories' },
+  { id: 'cbc-canada', outlet: 'CBC News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://www.cbc.ca/webfeed/rss/rss-canada' },
+  { id: 'cbc-politics', outlet: 'CBC News', kind: 'rss', topicHint: 'politics', category: 'major', trust: 'high', region: 'CA', url: 'https://www.cbc.ca/webfeed/rss/rss-politics' },
+  { id: 'ctv-canada', outlet: 'CTV News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://www.ctvnews.ca/arc/outboundfeeds/rss/category/canada/?outputType=xml' },
+  { id: 'ctv-politics', outlet: 'CTV News', kind: 'rss', topicHint: 'politics', category: 'major', trust: 'high', region: 'CA', url: 'https://www.ctvnews.ca/arc/outboundfeeds/rss/category/politics/?outputType=xml' },
+  { id: 'global-canada', outlet: 'Global News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://globalnews.ca/canada/feed/' },
+  { id: 'global-politics', outlet: 'Global News', kind: 'rss', topicHint: 'politics', category: 'major', trust: 'high', region: 'CA', url: 'https://globalnews.ca/politics/feed/' },
+  { id: 'globe-canada', outlet: 'The Globe and Mail', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/canada/' },
+  { id: 'globe-politics', outlet: 'The Globe and Mail', kind: 'rss', topicHint: 'politics', category: 'major', trust: 'high', region: 'CA', url: 'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/politics/' },
+  { id: 'national-post', outlet: 'National Post', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'CA', url: 'https://nationalpost.com/category/news/canada/feed' },
+  // United Kingdom (BBC and Guardian politics stay in the world edition, above)
+  { id: 'bbc-uk', outlet: 'BBC News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'UK', url: bbc('news/uk') },
+  { id: 'guardian-uk', outlet: 'The Guardian', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'UK', url: guardian('uk-news') },
+  { id: 'sky-uk', outlet: 'Sky News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'UK', url: 'https://feeds.skynews.com/feeds/rss/uk.xml' },
+  { id: 'independent-uk', outlet: 'The Independent', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'UK', url: 'https://www.independent.co.uk/news/uk/rss' },
+  { id: 'inews', outlet: 'The i Paper', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'medium', region: 'UK', url: 'https://inews.co.uk/feed' },
+  { id: 'standard-uk', outlet: 'Evening Standard', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'medium', region: 'UK', url: 'https://www.standard.co.uk/news/uk/rss' },
+  // Australia
+  { id: 'abc-au', outlet: 'ABC Australia', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'AU', url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
+  { id: 'abc-au-latest', outlet: 'ABC Australia', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'AU', url: 'https://www.abc.net.au/news/feed/45910/rss.xml' },
+  { id: 'smh-national', outlet: 'The Sydney Morning Herald', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'AU', url: 'https://www.smh.com.au/rss/national.xml' },
+  { id: 'smh-politics', outlet: 'The Sydney Morning Herald', kind: 'rss', topicHint: 'politics', category: 'major', trust: 'high', region: 'AU', url: 'https://www.smh.com.au/rss/politics/federal.xml' },
+  { id: 'guardian-au', outlet: 'Guardian Australia', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'AU', url: guardian('australia-news') },
+  { id: 'sbs', outlet: 'SBS News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'AU', url: 'https://www.sbs.com.au/news/topic/latest/feed' },
+  { id: 'afr', outlet: 'Australian Financial Review', kind: 'rss', topicHint: 'business', category: 'major', trust: 'high', region: 'AU', url: 'https://www.afr.com/rss/feed.xml' },
+  // United States: the world edition already reads most US newsrooms; these are their national desks
+  { id: 'nyt-us', outlet: 'New York Times', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'US', url: nyt('US') },
+  { id: 'npr-national', outlet: 'NPR', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'US', url: 'https://feeds.npr.org/1003/rss.xml' },
+  { id: 'cbs-us', outlet: 'CBS News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'US', url: 'https://www.cbsnews.com/latest/rss/us' },
+  { id: 'abc-us', outlet: 'ABC News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'US', url: 'https://abcnews.go.com/abcnews/usheadlines' },
+  { id: 'pbs-nation', outlet: 'PBS News', kind: 'rss', topicHint: 'mixed', category: 'major', trust: 'high', region: 'US', url: 'https://www.pbs.org/newshour/feeds/rss/nation' },
 
   // ── Major outlets, by beat ──
   // Politics
@@ -325,7 +390,7 @@ export const OTHER_MAJOR_OUTLETS: string[] = [
   'CBS News', 'NBC News', 'Fox News', 'Time', 'USA Today', 'Sky News', 'The Times', 'The Telegraph',
   'Nikkei Asia', 'South China Morning Post', 'Deutsche Welle', 'France 24', 'The Hindu', 'Hindustan Times',
   'The Times of India', 'Barron\'s', 'MarketWatch', 'Forbes', 'Fortune', 'Business Insider', 'The Independent',
-  'The Indian Express', 'NDTV', 'ESPN', 'The Athletic',
+  'The Indian Express', 'NDTV', 'ESPN', 'The Athletic', 'Toronto Star', 'The Age', 'The Australian', 'ITV News',
 ];
 
 /**
@@ -460,6 +525,37 @@ export const OUTLET_ALIASES: Record<string, string> = {
   'car and driver': 'Car and Driver',
   'motor1': 'Motor1',
   'motor1.com': 'Motor1',
+  'cbc': 'CBC News',
+  'cbc news': 'CBC News',
+  'cbc.ca': 'CBC News',
+  'ctv news': 'CTV News',
+  'ctvnews.ca': 'CTV News',
+  'global news': 'Global News',
+  'the globe and mail': 'The Globe and Mail',
+  'globe and mail': 'The Globe and Mail',
+  'national post': 'National Post',
+  'toronto star': 'Toronto Star',
+  'the i paper': 'The i Paper',
+  'inews': 'The i Paper',
+  'i news': 'The i Paper',
+  'evening standard': 'Evening Standard',
+  'the standard': 'Evening Standard',
+  'itv news': 'ITV News',
+  'abc australia': 'ABC Australia',
+  'abc news (australia)': 'ABC Australia',
+  'abc (australian broadcasting corporation)': 'ABC Australia',
+  'the sydney morning herald': 'The Sydney Morning Herald',
+  'sydney morning herald': 'The Sydney Morning Herald',
+  'the age': 'The Age',
+  'the australian': 'The Australian',
+  'guardian australia': 'Guardian Australia',
+  'sbs news': 'SBS News',
+  'sbs': 'SBS News',
+  'australian financial review': 'Australian Financial Review',
+  'the australian financial review': 'Australian Financial Review',
+  'afr': 'Australian Financial Review',
+  'pbs news': 'PBS News',
+  'pbs newshour': 'PBS News',
 };
 
 /** Canonical outlet name for a publisher name from any feed. */
@@ -493,6 +589,13 @@ export function isMajorOutlet(outlet: string): boolean {
 
 /** Unique outlet names, in list order (one Settings toggle each). */
 export const OUTLETS: string[] = [...new Set(SOURCES.map((s) => s.outlet))];
+
+/** Outlets that only feed one region's local section (Settings shows them to that region's readers). */
+export const OUTLET_REGION: Record<string, LocalRegion> = Object.fromEntries(
+  SOURCES.flatMap((s) =>
+    s.region && SOURCES.every((o) => o.outlet !== s.outlet || o.region === s.region) ? [[s.outlet, s.region]] : [],
+  ),
+);
 
 export const CATEGORY_LABEL: Record<SourceCategory, string> = {
   wire: 'Wire services',

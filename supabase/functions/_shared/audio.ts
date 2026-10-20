@@ -16,7 +16,7 @@ import { mapLimit } from './pipeline.ts';
 import { SCRIPT_SYSTEM, scriptPrompt, scriptSchema, type ScriptStory } from './prompts.ts';
 import { slugify, wordCount } from './text.ts';
 import { type AudioChapter, type AudioEdition, type Briefing, type BriefingAudio, type ListenMode, type Topic, TOPICS } from './types.ts';
-import { type ScriptDraft, validateScript } from './validate.ts';
+import { joinScript, type ScriptDraft, validateScript } from './validate.ts';
 
 export type AudioDeps = {
   generateJson: (opts: GenerateJsonOptions) => Promise<GenerateJsonResult>;
@@ -90,10 +90,11 @@ function firstSentence(s: string): string {
 export function fallbackScript(mode: ListenMode, b: Briefing, order: Topic[] = TOPICS): ScriptDraft {
   return {
     summary: b.summary.join(' '),
-    stories: storiesInListenOrder(b, order).map((s, i) => ({
-      storyId: s.id,
-      text: `${i === 0 ? 'First' : 'Next'}: ${s.headline}. ${mode === 'quick' ? firstSentence(s.whatHappened) : `${s.whatHappened} Why it matters: ${s.whyItMatters}`}`,
-    })),
+    stories: storiesInListenOrder(b, order).map((s, i) => {
+      const lead = i === 0 ? 'First:' : 'Next:';
+      const body = `${s.headline}. ${mode === 'quick' ? firstSentence(s.whatHappened) : `${s.whatHappened} Why it matters: ${s.whyItMatters}`}`;
+      return { storyId: s.id, lead, body, text: joinScript(lead, body) };
+    }),
   };
 }
 
@@ -107,6 +108,7 @@ async function writeScript(mode: ListenMode, b: Briefing, deps: AudioDeps, order
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await deps.generateJson({
+        purpose: 'script',
         system: SCRIPT_SYSTEM,
         prompt: scriptPrompt(mode, b.summary, input, spokenDate(b.date)) + feedback,
         schema: scriptSchema(),
@@ -125,13 +127,22 @@ async function writeScript(mode: ListenMode, b: Briefing, deps: AudioDeps, order
   return { script: fallbackScript(mode, b, order), ai: false };
 }
 
-/** Chapters with scripts, before any audio. */
+/**
+ * Chapters with scripts, before any audio. Each chapter also keeps its `lead` (the spoken
+ * way in) and `body` apart, so a phone can play its reader's own running order with its
+ * own transitions; `script` is both together, for apps that play the edition as written.
+ */
 export function chaptersFor(b: Briefing, script: ScriptDraft): AudioChapter[] {
   const byId = new Map(b.stories.map((s) => [s.id, s]));
   const estimate = (text: string) => Math.round((wordCount(text) / WORDS_PER_MINUTE) * 60);
+  const intro = { lead: sanitizeScript(greeting(b.date)), body: sanitizeScript(script.summary) };
   const chapters: AudioChapter[] = [
-    { storyId: null, title: 'The 60-second briefing', script: sanitizeScript(`${greeting(b.date)} ${script.summary}`), url: null, start: 0, duration: 0 },
-    ...script.stories.map((s) => ({ storyId: s.storyId, title: byId.get(s.storyId)?.headline ?? 'Story', script: sanitizeScript(s.text), url: null, start: 0, duration: 0 })),
+    { storyId: null, title: 'The 60-second briefing', script: joinScript(intro.lead, intro.body), ...intro, url: null, start: 0, duration: 0 },
+    ...script.stories.map((s) => {
+      const lead = sanitizeScript(s.lead);
+      const body = sanitizeScript(s.body);
+      return { storyId: s.storyId, title: byId.get(s.storyId)?.headline ?? 'Story', script: joinScript(lead, body), lead, body, url: null, start: 0, duration: 0 };
+    }),
     { storyId: null, title: 'Wrap-up', script: OUTRO, url: null, start: 0, duration: 0 },
   ];
   let t = 0;

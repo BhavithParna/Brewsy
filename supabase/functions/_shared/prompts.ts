@@ -3,6 +3,7 @@
 import type { Cluster } from './dedupe.ts';
 import type { JsonSchema } from './llm.ts';
 import type { ClusterScore } from './scoring.ts';
+import { truncate } from './text.ts';
 import type { Topic } from './types.ts';
 
 const TOPIC_GUIDE = `Topics (choose the single best fit for each story):
@@ -150,21 +151,27 @@ export function editorSchema(topics: Topic[]): JsonSchema {
         type: 'array',
         maxItems: 15,
         description: 'Other noteworthy candidates (not additions, not already selected), most important first, spread across the topics.',
-        items: {
-          type: 'object',
-          properties: {
-            clusterIds: { type: 'array', items: { type: 'string' }, description: 'The candidate id(s) for this item.' },
-            topic: { type: 'string', enum: topics },
-            headline: str('The one line: a plain sentence of at most 16 words, no trailing period.'),
-            whatHappened: str('2–3 short sentences with the facts from the headline and teaser.'),
-            whyItMatters: str('One sentence on the consequence if the teaser supports it, otherwise an empty string.'),
-            developing: { type: 'boolean', description: 'True if it is still unfolding.' },
-          },
-          required: ['clusterIds', 'topic', 'headline', 'whatHappened', 'whyItMatters', 'developing'],
-        },
+        items: alsoItemSchema(topics),
       },
     },
     required: ['additions', 'alsoHappening'],
+  };
+}
+
+/** One "Also happening" line (the AlsoItem shape, before ids and sources are added). */
+function alsoItemSchema(topics: Topic[]): JsonSchema {
+  const str = (description: string) => ({ type: 'string', description });
+  return {
+    type: 'object',
+    properties: {
+      clusterIds: { type: 'array', items: { type: 'string' }, description: 'The candidate id(s) for this item.' },
+      topic: { type: 'string', enum: topics },
+      headline: str('The one line: a plain sentence of at most 16 words, no trailing period.'),
+      whatHappened: str('2–3 short sentences with the facts from the headline and teaser.'),
+      whyItMatters: str('One sentence on the consequence if the teaser supports it, otherwise an empty string.'),
+      developing: { type: 'boolean', description: 'True if it is still unfolding.' },
+    },
+    required: ['clusterIds', 'topic', 'headline', 'whatHappened', 'whyItMatters', 'developing'],
   };
 }
 
@@ -367,7 +374,7 @@ Write for the ear, not the eye:
 - Never read out web addresses, symbols, emoji or abbreviations a listener can't hear (write "percent", "dollars", "and").
 - Round numbers and say them naturally: "about one hundred and one dollars a barrel", "nearly two percent", "around three billion dollars".
 - Spell out what a symbol means: "the S&P 500 index", "the 10-year Treasury yield".
-- Start each story after the first with a short, varied transition, like "Next, in tech…", "In business…", "Turning to the world…", "Meanwhile, in AI…".
+- Each story has two parts. "lead" is the short spoken way into it, varied, like "Next, in tech.", "In business.", "Turning to the world.", "Meanwhile, in AI." (an empty string for the first story). "body" is the story itself and must make sense on its own, so it never starts with a transition word like "Meanwhile" or "Next".
 - Calm and neutral. No hype, no opinion, no exclamation marks.`;
 
 export function scriptSchema(): JsonSchema {
@@ -382,9 +389,10 @@ export function scriptSchema(): JsonSchema {
           type: 'object',
           properties: {
             storyId: { type: 'string', description: 'Echo the story id exactly.' },
-            text: { type: 'string', description: 'What the host says for this story.' },
+            lead: { type: 'string', description: 'The short spoken transition into this story ("Next, in tech."); empty for the first story.' },
+            body: { type: 'string', description: 'What the host says about the story, without the transition.' },
           },
-          required: ['storyId', 'text'],
+          required: ['storyId', 'lead', 'body'],
         },
       },
     },
@@ -406,7 +414,7 @@ export function scriptPrompt(mode: 'quick' | 'full', summary: string[], stories:
 
 The host has already said the greeting ("Good morning, it's ${spokenDate}. Here's what you need to know.") and will close with "That's your briefing. You're all caught up." Don't write either.
 - "summary": the 60-second version in spoken form (about ${quick ? '60' : '110'} words), based on the takeaways below.
-- "stories": ${perStory} Keep the order. If a story is still developing, say so plainly ("This story is still developing.").
+- "stories": ${perStory} Keep the order. Put the transition in "lead" and the story in "body". If a story is still developing, say so plainly in its body ("This story is still developing.").
 
 Takeaways:
 ${summary.map((t, i) => `${i + 1}. ${t}`).join('\n')}
@@ -415,6 +423,59 @@ Stories:
 ${stories
     .map((s, i) => `--- ${i + 1}. storyId: ${s.id} · topic: ${s.topic}${s.developing ? ' · DEVELOPING' : ''}\nHeadline: ${s.headline}\nDek: ${s.dek}\nWhat happened: ${s.whatHappened}\nWhy it matters: ${s.whyItMatters}`)
     .join('\n\n')}`;
+}
+
+// ─── Regional sections ─────────────────────────────────────────────────────
+
+/** The local editor: picks the region's 1–2 stories and writes its one-line items. */
+export function regionSystem(label: string): string {
+  return `You are the local editor of Brewsy, a calm morning news briefing. You make the short section of news from ${label} that readers there see under the world news.
+Use ONLY what the candidate headlines and teasers say. Never add facts, numbers or names that aren't there.
+Neutral and calm: no hype, no opinion.
+${TOPIC_GUIDE}`;
+}
+
+export function regionSchema(topics: Topic[]): JsonSchema {
+  return {
+    type: 'object',
+    properties: {
+      stories: {
+        type: 'array',
+        maxItems: 2,
+        items: { type: 'string' },
+        description: 'Candidate ids of the 1–2 most important local stories, most important first. They get a full story.',
+      },
+      also: {
+        type: 'array',
+        maxItems: 6,
+        description: '4–6 other noteworthy local items, one line each, most important first.',
+        items: alsoItemSchema(topics),
+      },
+    },
+    required: ['stories', 'also'],
+  };
+}
+
+/** One candidate per line, as the world editor sees them (`maxChars` drops the weakest). */
+export function regionPrompt(label: string, candidates: ScoredCandidate[], date: string, now: Date, maxChars = Infinity): string {
+  const head = `Date: ${date}. Local news from ${label}, from the last 24 hours, that today's world edition doesn't cover.
+
+1) "stories": choose the 1–2 candidates that matter most to people in ${label}: national politics and policy, the economy and jobs, major events, disasters, big court rulings, things that change daily life. Not sports results unless they are historic, not local crime unless it shook the country.
+2) "also": choose 4–6 other noteworthy candidates and write each as one line plus a short "learn more" text. Spread them over different subjects. Merge candidates about the same event into one item (list all their ids). Never repeat a story from 1).
+Skip junk (deals, promotions, reviews, opinion, listicles, gossip, rumours). If the news is thin, fewer is fine.
+
+Each line: [id] score · outlets that covered it (major ones) · flags · outlets · topic hint · age · headline — teaser
+
+`;
+  const lines: string[] = [];
+  let used = head.length;
+  for (const c of candidates) {
+    const line = candidateLine(c, now);
+    if (used + line.length + 1 > maxChars && lines.length >= 4) break;
+    lines.push(line);
+    used += line.length + 1;
+  }
+  return head + lines.join('\n');
 }
 
 // ─── Layer 3: Go deeper ────────────────────────────────────────────────────
@@ -455,6 +516,33 @@ export type SourceText = { name: string; url: string; title?: string; text: stri
 
 function sourcesBlock(sources: SourceText[]): string {
   return sources.map((s, i) => `[S${i + 1}] ${s.name} — "${s.title ?? ''}"\n${s.text}`).join('\n\n');
+}
+
+/** Below this much text a source isn't worth its place. */
+const MIN_SOURCE_CHARS = 300;
+
+/**
+ * Trims sources so the block fits in `maxChars`, sharing the room fairly: short sources
+ * keep all their text, long ones are cut to an equal share (at most `perSource` each).
+ * Sources left with too little are dropped, though the first one always stays.
+ */
+export function fitSources(sources: SourceText[], maxChars: number, perSource = 6000): SourceText[] {
+  const header = (s: SourceText) => `[S00] ${s.name} — "${s.title ?? ''}"\n\n\n`.length;
+  const keep = [...sources];
+  while (keep.length > 1) {
+    let room = maxChars - keep.reduce((n, s) => n + header(s), 0);
+    const order = keep.map((s, i) => ({ i, len: Math.min(s.text.length, perSource) })).sort((a, b) => a.len - b.len);
+    const allowed: number[] = new Array(keep.length).fill(0);
+    order.forEach((x, k) => {
+      allowed[x.i] = Math.max(0, Math.min(x.len, Math.floor(room / (order.length - k))));
+      room -= allowed[x.i];
+    });
+    const tooSmall = allowed.findLastIndex((a, i) => a < Math.min(MIN_SOURCE_CHARS, keep[i].text.length));
+    // truncate() adds an ellipsis, so cut one character short.
+    if (tooSmall <= 0) return keep.map((s, i) => ({ ...s, text: s.text.length > allowed[i] ? truncate(s.text, Math.max(0, allowed[i] - 1)) : s.text }));
+    keep.splice(tooSmall, 1);
+  }
+  return keep.map((s) => ({ ...s, text: truncate(s.text, Math.max(MIN_SOURCE_CHARS, Math.min(perSource, maxChars - header(s)))) }));
 }
 
 export function deepDivePrompt(story: { headline: string; whatHappened: string; whyItMatters: string; background: string }, sources: SourceText[]): string {

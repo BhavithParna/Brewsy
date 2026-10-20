@@ -13,6 +13,9 @@
 // Topics the reader asked for more of ("focus" topics, `prefs.focusTopics`) get
 // more of everything: more candidates in front of the AI, 4–6 stories where the
 // news supports it, a bigger story target, and more "Also happening" lines.
+// The edition is shared by every reader: `prefs` is the owner's timing plus everyone's
+// topics and stars (prefs.ts editionPrefs). Local feeds (`region` in sources.ts) are
+// left out; they feed the regional sections (region.ts).
 //
 // Network and AI calls are injectable so the whole thing can be tested offline.
 
@@ -20,7 +23,7 @@ import { type ArticleText, fetchArticle } from './articles.ts';
 import { alsoToStory, uniqueId } from './briefing.ts';
 import { type Cluster, clusterAll, spreadAcrossOutlets } from './dedupe.ts';
 import { feedHealth, fetchAllFeeds, isHeadlineOnly, type FeedItem, type FeedStatus } from './feeds.ts';
-import { generateJson, type GenerateJsonOptions, type GenerateJsonResult, LlmError } from './llm.ts';
+import { generateJson, type GenerateJsonOptions, type GenerateJsonResult, LlmError, type Purpose } from './llm.ts';
 import { fetchMarkets } from './markets.ts';
 import { type Prefs, topicOrder } from './prefs.ts';
 import {
@@ -93,8 +96,8 @@ export const FOCUS_MIN_STORIES = 2;
 export const FOCUS_MIN_ALSO = 2;
 /**
  * Hard cap so the writing still fits in one function run: 6 batches of 3, all
- * started at once. With the pick, editor and summary calls that's 9 calls, what
- * two Gemini free-tier models allow in a minute (5 each).
+ * started at once. With the pick, editor and summary calls that's 9 calls, about half
+ * of one SambaNova model's free day (20 requests).
  */
 const MAX_STORIES = 18;
 const STORIES_PER_BATCH = 3;
@@ -113,6 +116,9 @@ const MIN_CALL_MS = 40_000;
 
 // ─── Collect ───────────────────────────────────────────────────────────────
 
+/** Every feed but the local ones. */
+export const WORLD_SOURCES: FeedSource[] = SOURCES.filter((s) => !s.region);
+
 export type Candidates = {
   items: FeedItem[];
   statuses: FeedStatus[];
@@ -130,11 +136,8 @@ export async function collectCandidates(
   /** Yesterday's edition: follow-ups to its stories rank lower than brand-new news. */
   previous?: Briefing | null,
 ): Promise<Candidates> {
-  const sources = SOURCES.filter((s) => !prefs.disabledSources.includes(s.outlet));
-  const fetched = await deps.fetchFeeds(sources, now);
-  // Google News topic items are credited to the real publisher: honour the reader's switches there too.
-  const items = fetched.items.filter((it) => !prefs.disabledSources.includes(it.outlet));
-  const statuses = fetched.statuses;
+  // Muted outlets aren't applied here any more: the edition is shared, and each phone hides its own.
+  const { items, statuses } = await deps.fetchFeeds(WORLD_SOURCES, now);
   const { clusters, total } = clusterAll(items, { now, focus: prefs.focusTopics ?? [] });
   const { ranked, scores } = rankClusters(clusters, { now, previous: previous ? editionTokenSets(previous.stories) : [] });
   return { items, statuses, clusters: ranked, scores, totalClusters: total };
@@ -236,6 +239,7 @@ export async function pickStories(
   for (let attempt = 0; attempt < 2 && !picks; attempt++) {
     try {
       const res = await deps.generateJson({
+        purpose: 'edition',
         system: PICK_SYSTEM,
         prompt: pickPrompt(scored(cand, shown), TOPICS, date, now, target, followed, focus) + feedback,
         schema: pickSchema(TOPICS),
@@ -296,6 +300,7 @@ async function runEditor(
   now: Date,
   deps: PipelineDeps,
   reader: { followed: Topic[]; focus: Topic[] },
+  deadlineMs: number,
 ): Promise<{ editor: EditorResult | null; error?: string }> {
   const taken = new Set(picks.flatMap((p) => p.clusterIds));
   const byId = new Map(cand.clusters.map((c) => [c.id, c]));
@@ -304,13 +309,16 @@ async function runEditor(
   if (!rest.length) return { editor: { additions: [], alsoHappening: [] } };
   try {
     const res = await deps.generateJson({
+      purpose: 'edition',
       system: EDITOR_SYSTEM,
       prompt: editorPrompt(selected, scored(cand, rest), date, now, { topics: TOPICS, followed: reader.followed, more: reader.focus }),
       schema: editorSchema(TOPICS),
       temperature: 0.2,
       maxOutputTokens: 14_000,
       thinking: 'LOW',
-      timeoutMs: 60_000,
+      // Its reply is long (15+ written lines). On the free models that can take over a minute, so it
+      // gets most of what the run has left. If it ends late, its additions stay one-line items.
+      timeoutMs: Math.max(60_000, Math.min(110_000, deadlineMs - Date.now() - 25_000)),
     });
     return { editor: validateEditor(res.data, { known: new Set(rest.map((c) => c.id)), taken, topics: TOPICS }) };
   } catch (e) {
@@ -437,12 +445,14 @@ export function assembleStories(
   byId: Map<string, Cluster>,
   articles: Map<string, ArticleText>,
   used: Set<string> = new Set(),
+  /** e.g. "ca-" for a regional section's stories. */
+  idPrefix = '',
 ): { stories: Story[]; contexts: StoryContext[] } {
   const stories: Story[] = [];
   const contexts: StoryContext[] = [];
   for (const d of drafts) {
     const items = storyItems(d.clusterIds, byId);
-    const id = uniqueId(d.headline, used);
+    const id = uniqueId(d.headline, used, idPrefix);
     const { sources, allSources } = sourceRefs(items);
     const imageUrl =
       items.map((it) => articles.get(it.id)?.ogImage).find(Boolean) ?? items.map((it) => it.imageUrl).find(Boolean) ?? null;
@@ -483,13 +493,14 @@ export function assembleAlso(
   drafts: AlsoDraft[],
   byId: Map<string, Cluster>,
   used: Set<string>,
+  idPrefix = 'also-',
 ): { items: AlsoItem[]; contexts: StoryContext[] } {
   const items: AlsoItem[] = [];
   const contexts: StoryContext[] = [];
   for (const d of drafts) {
     const feed = storyItems(d.clusterIds, byId);
     if (!feed.length) continue;
-    const id = uniqueId(d.headline, used, 'also-');
+    const id = uniqueId(d.headline, used, idPrefix);
     items.push({
       id,
       topic: d.topic,
@@ -540,7 +551,14 @@ export function buildBlocks(picks: Pick[], byId: Map<string, Cluster>, articles:
   });
 }
 
-export type WriteContext = { prefs: Prefs; date: string; deadlineMs: number; deps: PipelineDeps };
+export type WriteContext = {
+  prefs: Prefs;
+  date: string;
+  deadlineMs: number;
+  deps: PipelineDeps;
+  /** Which AI route writes them (default 'edition'). */
+  purpose?: Purpose;
+};
 
 /**
  * Writes stories in parallel batches. A failed batch is retried once (time
@@ -561,6 +579,7 @@ export async function writeStories(blocks: StoryBlock[], ctx: WriteContext): Pro
       attempts++;
       try {
         const res = await ctx.deps.generateJson({
+          purpose: ctx.purpose ?? 'edition',
           system: EDITION_SYSTEM,
           prompt: storiesPrompt(chunk, ctx.date, ctx.prefs.timezone) + feedback,
           schema: storiesSchema(TOPICS, chunk.length),
@@ -595,6 +614,7 @@ async function writeSummary(blocks: StoryBlock[], ctx: WriteContext): Promise<{ 
   const top = blocks.slice(0, 8).map((b) => ({ ...b, articles: b.articles.slice(0, 2).map((a) => ({ ...a, text: truncate(a.text, 1200) })) }));
   try {
     const res = await ctx.deps.generateJson({
+      purpose: ctx.purpose ?? 'edition',
       system: EDITION_SYSTEM,
       prompt: summaryPrompt(top, ctx.date, ctx.prefs.timezone),
       schema: summarySchema(TOPICS),
@@ -658,7 +678,7 @@ export async function buildEdition(opts: {
   const { picks, fallback, model: pickModel, fills, target } = await pickStories(cand, date, now, deps, reader.followed, reader.focus);
 
   // Three things at once: the editor's checklist, the stories, the 60-second version.
-  const editorPromise = runEditor(cand, picks, date, now, deps, reader);
+  const editorPromise = runEditor(cand, picks, date, now, deps, reader, deadlineMs);
   const articles = await readArticles(picks, byId, deps);
   const blocks = buildBlocks(picks, byId, articles);
   const [written, summaryResult, { editor, error: editorError }] = await Promise.all([
