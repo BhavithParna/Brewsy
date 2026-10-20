@@ -48,7 +48,7 @@ export function usePreviewState(): PreviewState {
  *                  (?onboarded=1 without a tour flag also skips the tour, so screenshots stay clear)
  *   ?theme=atlantis   switch theme. Classic: glass | space | atlantis | highlands | alpine.
  *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli.
- *                     Horror: overlook | nosferatu | thering | midsommar.
+ *                     Horror: overlook | nosferatu | thering | midsommar | scream.
  *   ?glass=dark    Glass appearance: light | dark | auto
  *   ?blur=0        draw frosted glass the way Android does: no blur, just the fills (read in GlassCard)
  */

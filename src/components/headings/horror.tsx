@@ -302,12 +302,45 @@ function MidsommarHeading({ label, count }: HeadingProps) {
   );
 }
 
+// ─── Scream: one of the rules, then the topic ────────────────────────────────
+
+/** "Rule #1", "Rule #2"… on a small red tag, the way the rules get listed. */
+function ScreamHeading({ label, count, index }: HeadingProps) {
+  const { theme } = useTheme();
+  const accent = theme.colors.accent;
+  const stories = storiesLabel(count);
+  return (
+    <View style={styles.scream} accessible accessibilityRole="header" accessibilityLabel={a11yLabel(label, count)}>
+      <View style={styles.screamTop}>
+        {index != null ? (
+          <View style={[styles.ruleTag, { backgroundColor: accent }]}>
+            <Txt variant="kicker" color={theme.colors.accentInk} style={styles.ruleText}>
+              {`Rule #${index}`}
+            </Txt>
+          </View>
+        ) : (
+          <View style={[styles.redRule, { backgroundColor: accent }]} />
+        )}
+        {stories && (
+          <Txt variant="caption" color={theme.colors.textTertiary}>
+            {stories}
+          </Txt>
+        )}
+      </View>
+      <Txt variant="displayL" numberOfLines={2}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
 /** Section headings for the horror themes, by theme name. Themes not listed use their built-in `layout.sections` style. */
 export const horrorHeadings: HeadingRegistry = {
   overlook: OverlookHeading,
   nosferatu: NosferatuHeading,
   thering: RingHeading,
   midsommar: MidsommarHeading,
+  scream: ScreamHeading,
 };
 
 const styles = StyleSheet.create({
@@ -380,4 +413,10 @@ const styles = StyleSheet.create({
   midsommarRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   midsommarTitle: { flexShrink: 1 },
   stitchSide: { flex: 1, minWidth: 48, flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  scream: { paddingHorizontal: GUTTER + 2, gap: 8 },
+  screamTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 24 },
+  ruleTag: { height: 24, paddingHorizontal: 9, borderRadius: 2, justifyContent: 'center' },
+  ruleText: { fontFamily: 'Anton_400Regular', fontSize: 13, lineHeight: 18, letterSpacing: 1.6 },
+  redRule: { width: 28, height: 3 },
 });

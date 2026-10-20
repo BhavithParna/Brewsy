@@ -42,7 +42,7 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   reminders, PDF export, past editions, and Help → **Take the tour again**.
 - **First run** — welcome → pick your look → topics (with stars) → wake-up time → notifications,
   then a short tour of Today that points at the real controls (Skip or Android back ends it).
-- **Themes** — eighteen complete looks, each with its own typefaces, shapes, card style, section
+- **Themes** — nineteen complete looks, each with its own typefaces, shapes, card style, section
   headings and cover, in three groups (Settings → Theme, or onboarding):
   - **Classic:** **Glass** (frosted panes on a soft wallpaper, after Apple's Liquid Glass; Light,
     Dark, or Auto = light from 7 am to 7 pm), **Space** (black, monospace details, topics open on
@@ -56,7 +56,8 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
     yellow dress, sections numbered like a programme), **Ghibli** (summer clouds over green hills).
   - **Horror:** **Overlook** (hexagon carpet, brass room plaques), **Nosferatu** (silent film,
     blackletter weekday, intertitle cards), **The Ring** (worn VHS, a PLAY counter on each section),
-    **Midsommar** (endless daylight, embroidered section borders).
+    **Midsommar** (endless daylight, embroidered section borders), **Scream** (a lit house on a
+    quiet street at night, poster capitals, each topic opens with one of the rules).
 
   Defined in `src/theme/themes.ts` (classic) and `src/theme/packs/` (glass, films, horror), with
   per-theme section headings in `src/components/headings/`; covers in `assets/themes/` (photo

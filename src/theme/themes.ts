@@ -29,7 +29,8 @@ export type ThemeName =
   | 'overlook'
   | 'nosferatu'
   | 'thering'
-  | 'midsommar';
+  | 'midsommar'
+  | 'scream';
 
 /** Where a theme sits in the picker. */
 export type ThemeGroup = 'classic' | 'films' | 'horror';

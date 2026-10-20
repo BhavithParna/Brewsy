@@ -1,10 +1,11 @@
-// Horror-inspired themes: Overlook, Nosferatu, The Ring, Midsommar.
+// Horror-inspired themes: Overlook, Nosferatu, The Ring, Midsommar, Scream.
 // Each theme is a whole look (typefaces, shapes, card style, sections), like the ones in ../themes.ts.
 //
 // Atmosphere comes from the cover art, the type and one small detail in each section heading
 // (components/headings/horror.tsx): never gore, never novelty fonts. Reading text always sits on a
-// calm, opaque card. All four covers are original art made for Brewsy.
+// calm, opaque card. All five covers are original art made for Brewsy.
 
+import { Anton_400Regular } from '@expo-google-fonts/anton/400Regular';
 import { ArchivoNarrow_400Regular } from '@expo-google-fonts/archivo-narrow/400Regular';
 import { ArchivoNarrow_600SemiBold } from '@expo-google-fonts/archivo-narrow/600SemiBold';
 import { ArchivoNarrow_700Bold } from '@expo-google-fonts/archivo-narrow/700Bold';
@@ -24,6 +25,8 @@ import { LibreCaslonText_400Regular } from '@expo-google-fonts/libre-caslon-text
 import { LibreCaslonText_400Regular_Italic } from '@expo-google-fonts/libre-caslon-text/400Regular_Italic';
 import { LibreCaslonText_700Bold } from '@expo-google-fonts/libre-caslon-text/700Bold';
 import { Marcellus_400Regular } from '@expo-google-fonts/marcellus/400Regular';
+import { NewsCycle_400Regular } from '@expo-google-fonts/news-cycle/400Regular';
+import { NewsCycle_700Bold } from '@expo-google-fonts/news-cycle/700Bold';
 import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite/400Regular';
 import { UnifrakturMaguntia_400Regular } from '@expo-google-fonts/unifrakturmaguntia/400Regular';
 import { VT323_400Regular } from '@expo-google-fonts/vt323/400Regular';
@@ -276,11 +279,74 @@ const midsommar: Theme = {
   },
 };
 
+// ─── Scream ───────────────────────────────────────────────────────────────────
+// A small town in 1996, the phone ringing after dark: midnight blue, slate cards, one red for the
+// accent. Tall poster capitals (Anton) for the weekday and titles, News Gothic (News Cycle) for
+// reading, like the local paper. Each topic opens with one of the rules ("Rule #3").
+const scream: Theme = {
+  name: 'scream',
+  label: 'Scream',
+  group: 'horror',
+  tagline: 'A ringing phone, a quiet cul-de-sac',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 30,
+  cover: require('../../../assets/themes/scream.jpg'),
+  credit: null,
+  background: ['#0C0F17', '#0A0D14', '#08090F'],
+  // Anton's capitals stand tall on the em, so its lines get extra room.
+  type: {
+    displayXL: { fontFamily: 'Anton_400Regular', fontSize: 62, lineHeight: 82, letterSpacing: 1.5, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'Anton_400Regular', fontSize: 31, lineHeight: 42, letterSpacing: 0.6, textTransform: 'uppercase' },
+    displayM: { fontFamily: 'Anton_400Regular', fontSize: 18.5, lineHeight: 26, letterSpacing: 1, textTransform: 'uppercase' },
+    displayS: { fontFamily: 'Anton_400Regular', fontSize: 24, lineHeight: 33 },
+    stat: { fontFamily: 'Anton_400Regular', fontSize: 52, lineHeight: 70 },
+    mega: { fontFamily: 'Anton_400Regular', fontSize: 88, lineHeight: 116, letterSpacing: 1, textTransform: 'uppercase' },
+    headline: { fontFamily: 'NewsCycle_700Bold', fontSize: 21, lineHeight: 27, letterSpacing: -0.1 },
+    title: { fontFamily: 'NewsCycle_700Bold', fontSize: 17, lineHeight: 22 },
+    reading: { fontFamily: 'NewsCycle_400Regular', fontSize: 16.5, lineHeight: 27 },
+    body: { fontFamily: 'NewsCycle_400Regular', fontSize: 15, lineHeight: 22 },
+    bodySm: { fontFamily: 'NewsCycle_400Regular', fontSize: 13, lineHeight: 19 },
+    label: { fontFamily: 'NewsCycle_700Bold', fontSize: 15, lineHeight: 19, letterSpacing: 0.2 },
+    caption: { fontFamily: 'NewsCycle_400Regular', fontSize: 13, lineHeight: 17 },
+    kicker: { fontFamily: 'NewsCycle_700Bold', fontSize: 12, lineHeight: 15, letterSpacing: 1.8 },
+    spaced: { fontFamily: 'NewsCycle_700Bold', fontSize: 12, lineHeight: 17, letterSpacing: 4, paddingLeft: 4 },
+  },
+  shape: { scale: 0.3, control: 4 },
+  surface: 'solid',
+  layout: { heroAlign: 'left', sections: 'title', capsButtons: true },
+  colors: {
+    bg: '#0C0F17',
+    card: '#131826',
+    cardBorder: 'rgba(205, 214, 235, 0.10)',
+    text: '#EEF1F6',
+    textSecondary: 'rgba(238, 241, 246, 0.76)',
+    textTertiary: 'rgba(238, 241, 246, 0.58)',
+    glassFill: 'rgba(24, 30, 46, 0.62)',
+    glassOverlay: 'rgba(12, 15, 23, 0.48)',
+    glassFillFallback: 'rgba(22, 27, 41, 0.95)',
+    glassOverlayFallback: 'rgba(12, 15, 23, 0.74)',
+    glassBorder: 'rgba(205, 214, 235, 0.16)',
+    onCover: '#F3F5F9',
+    sheet: '#11151F',
+    hairline: 'rgba(205, 214, 235, 0.12)',
+    skeleton: 'rgba(238, 241, 246, 0.06)',
+    skeletonHighlight: 'rgba(238, 241, 246, 0.12)',
+    accent: '#DD3C42',
+    accentInk: '#FFFFFF',
+    up: '#86C99C',
+    down: '#F2877C',
+    inverseBg: '#EEF1F6',
+    inverseText: '#0C0F17',
+  },
+};
+
 /** In picker order. */
-export const horrorThemes: Theme[] = [overlook, nosferatu, thering, midsommar];
+export const horrorThemes: Theme[] = [overlook, nosferatu, thering, midsommar, scream];
 
 /** Every typeface these themes use, by the fontFamily name the themes refer to. */
 export const horrorFonts: Record<string, FontSource> = {
+  Anton_400Regular,
   ArchivoNarrow_400Regular,
   ArchivoNarrow_600SemiBold,
   ArchivoNarrow_700Bold,
@@ -300,6 +366,8 @@ export const horrorFonts: Record<string, FontSource> = {
   LibreCaslonText_400Regular_Italic,
   LibreCaslonText_700Bold,
   Marcellus_400Regular,
+  NewsCycle_400Regular,
+  NewsCycle_700Bold,
   SpecialElite_400Regular,
   UnifrakturMaguntia_400Regular,
   VT323_400Regular,
