@@ -59,18 +59,28 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   headings and cover, in three groups (Settings → Theme, or onboarding):
   - **Classic:** **Glass** (frosted panes on a soft wallpaper, after Apple's Liquid Glass; Light,
     Dark, or Auto = light from 7 am to 7 pm), **Space** (black, monospace details, topics open on
-    photo cards), **Atlantis** (deep-blue gradient, serif, round frosted cards), **Highlands**
-    (forest tiles, bold italics), **Alpine** (white, Swiss red).
+    numbered photo cards), **Atlantis** (deep-blue gradient, serif, round frosted cards, sunken
+    ruins on the cover, a depth gauge that reads deeper with each topic), **Highlands** (forest
+    tiles, bold italics, a misty glen on the cover, each topic opens at a waymarker), **Alpine**
+    (white, Swiss red, a poster peak with a red gondola, topics open on a Swiss grid). The last
+    four also have a few small lines of their own (the end of the edition, empty states).
   - **Films:** **Dune** (sand, thin wide-set capitals, centered), **Matrix** (monospace, sections
-    open on a `> prompt_`), **Tron** (cyan light lines, circuit-trace titles), **Blade Runner**
-    (amber haze, neon pink), **Budapest** (pastel pink, double-bordered cards), **Star Wars**
-    (twin suns, crawl-yellow capitals, sections open as "Episode IV"), **Hogwarts** (candlelit
-    stone, gold and crimson, sections open like book chapters), **La La Land** (magic hour, a
-    yellow dress, sections numbered like a programme), **Ghibli** (summer clouds over green hills).
-  - **Horror:** **Overlook** (hexagon carpet, brass room plaques), **Nosferatu** (silent film,
-    blackletter weekday, intertitle cards), **The Ring** (worn VHS, a PLAY counter on each section),
-    **Midsommar** (endless daylight, embroidered section borders), **Scream** (a lit house on a
-    quiet street at night, poster capitals, each topic opens with one of the rules).
+    open on a `> prompt_`), **Tron** (cyan light lines, light-cycle trails under each title),
+    **Blade Runner** (pyramids in an amber haze, neon pink), **Budapest** (a pink hotel, perfect
+    symmetry, crossed keys over each section), **Star Wars** (twin suns, crawl-yellow capitals,
+    sections open as "Episode IV"), **Hogwarts** (candlelit stone, gold and crimson, sections open
+    like book chapters), **La La Land** (magic hour, a yellow dress, sections numbered like a
+    programme), **Ghibli** (summer clouds over green hills), **Fight Club** (pink soap under a bare
+    bulb, typewriter type, each section a reel with a cue mark in its corner). Each film hides a
+    few nods to itself: its own lines in empty and end-of-edition states, details in its section
+    headings (some only on some days), and something small in its cover.
+  - **Horror:** **Nosferatu** (silent film, blackletter weekday, intertitle cards), **The Ring**
+    (worn VHS, a PLAY counter on each section), **Midsommar** (endless daylight, embroidered
+    section borders), **Scream** (black, white and blood red, a cordless phone ringing in a dark
+    kitchen, sharp serif capitals, each topic opens with one of the rules), **Insidious** (a
+    lamp-lit dark, thin Edwardian capitals, each topic opens under a red door that stands a little
+    further open as you read). Each hides a few nods to its film in its cover, section headings
+    and small lines (the end of the edition, empty states).
 
   Defined in `src/theme/themes.ts` (classic) and `src/theme/packs/` (glass, films, horror), with
   per-theme section headings in `src/components/headings/`; covers in `assets/themes/` (photo

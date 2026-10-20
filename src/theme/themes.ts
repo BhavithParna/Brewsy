@@ -27,7 +27,6 @@ export type ThemeName =
   | 'ghibli'
   | 'fightclub'
   // Horror (packs/horror.ts)
-  | 'overlook'
   | 'nosferatu'
   | 'thering'
   | 'midsommar'
@@ -199,7 +198,8 @@ const BY_SA = (v: string) => `CC BY-SA ${v}`;
 
 // ─── Dune ─────────────────────────────────────────────────────────────────────
 // Sand-colored and light, thin capitals set wide like the film's titles, sharp
-// architectural corners, everything centered. After the travel reference.
+// architectural corners, everything centered. After the travel reference. Section rules carry a
+// little worm sign: the sand lifting over something moving underneath (headings/films.tsx).
 // Centered capitals get a left pad equal to their tracking: letter-spacing adds space after
 // the last letter too, which would otherwise push the text off center.
 const dune: Theme = {
@@ -236,13 +236,18 @@ const dune: Theme = {
   shape: { scale: 0.15, control: 3 },
   surface: 'solid',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  lines: {
+    signOff: 'The spice must flow.',
+    brewing: 'The sleeper must awaken',
+    noResults: 'Not a ripple on the sand',
+  },
   colors: {
     bg: '#E9DAC2',
     card: '#F6EEE1',
     cardBorder: 'rgba(58, 38, 22, 0.10)',
     text: '#2A1C12',
-    textSecondary: 'rgba(42, 28, 18, 0.72)',
-    textTertiary: 'rgba(42, 28, 18, 0.56)',
+    textSecondary: 'rgba(42, 28, 18, 0.74)',
+    textTertiary: 'rgba(42, 28, 18, 0.68)',
     glassFill: 'rgba(246, 238, 225, 0.70)',
     glassOverlay: 'rgba(246, 238, 225, 0.55)',
     glassFillFallback: 'rgba(246, 238, 225, 0.92)',
@@ -253,7 +258,8 @@ const dune: Theme = {
     hairline: 'rgba(58, 38, 22, 0.12)',
     skeleton: 'rgba(58, 38, 22, 0.06)',
     skeletonHighlight: 'rgba(58, 38, 22, 0.11)',
-    accent: '#A94A1C',
+    // Spice rust, deep enough for small labels anywhere on the sand gradient (4.5:1 at its darkest).
+    accent: '#954119',
     accentInk: '#FBF4EA',
     up: '#4A6E35',
     down: '#A23E1C',
@@ -284,7 +290,7 @@ const space: Theme = {
   background: ['#000000'],
   type: {
     displayXL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 62, lineHeight: 74, letterSpacing: -2.4 },
-    displayL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 40, lineHeight: 48, letterSpacing: -1.4 },
+    displayL: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 36, lineHeight: 44, letterSpacing: -1.1 },
     displayM: { fontFamily: 'SpaceGrotesk_500Medium', fontSize: 24, lineHeight: 30, letterSpacing: -0.6 },
     displayS: { fontFamily: 'SpaceMono_400Regular', fontSize: 18, lineHeight: 24 },
     stat: { fontFamily: 'SpaceGrotesk_300Light', fontSize: 46, lineHeight: 56, letterSpacing: -2 },
@@ -299,6 +305,11 @@ const space: Theme = {
   shape: { scale: 0.6, control: 999 },
   surface: 'outline',
   layout: { heroAlign: 'left', sections: 'cover', capsButtons: false },
+  lines: {
+    signOff: 'Mission control, signing off.',
+    brewing: 'Counting down',
+    noResults: 'No signal',
+  },
   colors: {
     bg: '#000000',
     card: '#0B0C0F',
@@ -328,6 +339,7 @@ const space: Theme = {
 // ─── Atlantis ─────────────────────────────────────────────────────────────────
 // Deep-water gradient, an old-world serif, very round frosted shapes.
 // The background is smooth, so frosted cards stay easy to read. After the health reference.
+// Each topic opens with a depth gauge that reads a little deeper as the edition goes on.
 const atlantis: Theme = {
   name: 'atlantis',
   label: 'Atlantis',
@@ -336,20 +348,15 @@ const atlantis: Theme = {
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 30,
+  // Original art: a sunken temple under a rippling, sunlit surface (a trident is cut into its pediment).
   cover: require('../../assets/themes/atlantis.jpg'),
-  credit: {
-    title: 'Isla de Corbera, Santander, España',
-    author: 'Diego Delso',
-    license: BY_SA('4.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:Isla_de_Corbera,_Santander,_Espa%C3%B1a,_2019-08-15,_DD_68.jpg',
-    adapted: true,
-  },
+  credit: null,
   background: ['#0A3850', '#06263B', '#041828', '#020D17'],
   // Cormorant's default numerals are old-style ("II" for 11), so numbers use lining figures.
   type: {
     displayXL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 70, lineHeight: 84, letterSpacing: -1, paddingRight: 8 },
-    displayL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 44, lineHeight: 54, letterSpacing: -0.6, paddingRight: 6 },
-    displayM: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 30, lineHeight: 37, letterSpacing: -0.3 },
+    displayL: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 44, lineHeight: 54, letterSpacing: -0.6, paddingRight: 6, fontVariant: ['lining-nums'] },
+    displayM: { fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 30, lineHeight: 37, letterSpacing: -0.3, fontVariant: ['lining-nums'] },
     displayS: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 28, lineHeight: 34, fontVariant: ['lining-nums'] },
     stat: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 56, lineHeight: 66, letterSpacing: -1, fontVariant: ['lining-nums'] },
     mega: { fontFamily: 'CormorantGaramond_500Medium_Italic', fontSize: 96, lineHeight: 112, paddingRight: 10 },
@@ -360,13 +367,17 @@ const atlantis: Theme = {
   shape: { scale: 1.1, control: 999 },
   surface: 'glass',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    signOff: 'Time to surface.',
+    emptySaved: 'Nothing salvaged yet',
+  },
   colors: {
     bg: '#06263B',
     card: 'rgba(150, 215, 240, 0.09)',
     cardBorder: 'rgba(170, 225, 255, 0.16)',
     text: '#EDF7FB',
-    textSecondary: 'rgba(237, 247, 251, 0.74)',
-    textTertiary: 'rgba(237, 247, 251, 0.56)',
+    textSecondary: 'rgba(237, 247, 251, 0.76)',
+    textTertiary: 'rgba(237, 247, 251, 0.64)',
     glassFill: 'rgba(150, 215, 240, 0.12)',
     glassOverlay: 'rgba(4, 30, 46, 0.40)',
     glassFillFallback: 'rgba(16, 58, 80, 0.94)',
@@ -387,8 +398,8 @@ const atlantis: Theme = {
 };
 
 // ─── Highlands ────────────────────────────────────────────────────────────────
-// Forest greens, bold italic headings, chunky rounded tiles with big numbers.
-// After the hiking reference.
+// Forest greens, bold italic headings, chunky rounded tiles with big italic numbers, one fern-green
+// accent. Each topic opens at a waymarker ("Stage 2"). After the hiking reference.
 const highlands: Theme = {
   name: 'highlands',
   label: 'Highlands',
@@ -397,21 +408,16 @@ const highlands: Theme = {
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 36,
+  // Original art: a glen at first light, with mist, a loch and a cairn on the near ridge.
   cover: require('../../assets/themes/highlands.jpg'),
-  credit: {
-    title: 'Mount Lushan, fog',
-    author: 'pfctdayelise',
-    license: BY_SA('2.5'),
-    url: 'https://commons.wikimedia.org/wiki/File:Mount_Lushan_-_fog.JPG',
-    adapted: true,
-  },
-  background: ['#141B16', '#0F1411'],
+  credit: null,
+  background: ['#121A15', '#0D130F'],
   type: {
     displayXL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 60, lineHeight: 72, letterSpacing: -1.2, paddingRight: 6 },
     displayL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 38, lineHeight: 46, letterSpacing: -0.6, paddingRight: 4 },
     displayM: { fontFamily: 'Barlow_600SemiBold_Italic', fontSize: 26, lineHeight: 32, letterSpacing: -0.3, paddingRight: 3 },
     displayS: { fontFamily: 'Barlow_600SemiBold', fontSize: 24, lineHeight: 30 },
-    stat: { fontFamily: 'Barlow_600SemiBold', fontSize: 52, lineHeight: 62, letterSpacing: -1 },
+    stat: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 56, lineHeight: 66, letterSpacing: -1, paddingRight: 4 },
     mega: { fontFamily: 'Barlow_800ExtraBold_Italic', fontSize: 88, lineHeight: 104, letterSpacing: -2, paddingRight: 10 },
     headline: { fontFamily: 'Barlow_600SemiBold', fontSize: 24, lineHeight: 29, letterSpacing: -0.1 },
     title: { fontFamily: 'Barlow_600SemiBold', fontSize: 18 },
@@ -423,25 +429,29 @@ const highlands: Theme = {
   shape: { scale: 0.9, control: 999 },
   surface: 'solid',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    signOff: 'That’s the summit for today.',
+    emptySaved: 'Your pack is empty',
+  },
   colors: {
-    bg: '#141B16',
-    card: '#1C241E',
-    cardBorder: 'rgba(225, 240, 222, 0.07)',
+    bg: '#121A15',
+    card: '#1B251F',
+    cardBorder: 'rgba(222, 238, 215, 0.08)',
     text: '#EFF3EC',
-    textSecondary: 'rgba(239, 243, 236, 0.72)',
-    textTertiary: 'rgba(239, 243, 236, 0.54)',
+    textSecondary: 'rgba(239, 243, 236, 0.74)',
+    textTertiary: 'rgba(239, 243, 236, 0.58)',
     glassFill: 'rgba(30, 40, 33, 0.62)',
     glassOverlay: 'rgba(16, 22, 18, 0.45)',
     glassFillFallback: 'rgba(28, 36, 30, 0.95)',
     glassOverlayFallback: 'rgba(16, 22, 18, 0.72)',
-    glassBorder: 'rgba(225, 240, 222, 0.12)',
+    glassBorder: 'rgba(222, 238, 215, 0.13)',
     onCover: '#FFFFFF',
-    sheet: '#19211B',
-    hairline: 'rgba(225, 240, 222, 0.09)',
-    skeleton: 'rgba(225, 240, 222, 0.06)',
-    skeletonHighlight: 'rgba(225, 240, 222, 0.12)',
-    accent: '#4C8160',
-    accentInk: '#F2F8F0',
+    sheet: '#18211B',
+    hairline: 'rgba(222, 238, 215, 0.09)',
+    skeleton: 'rgba(222, 238, 215, 0.06)',
+    skeletonHighlight: 'rgba(222, 238, 215, 0.12)',
+    accent: '#A6CF84',
+    accentInk: '#0F1F10',
     up: '#9AD6A4',
     down: '#EBA287',
     inverseBg: '#EFF3EC',
@@ -450,7 +460,8 @@ const highlands: Theme = {
 };
 
 // ─── Alpine ───────────────────────────────────────────────────────────────────
-// Swiss poster style: white cards, heavy tight grotesk, signal red.
+// Swiss poster style: white cards, heavy tight grotesk, signal red, crisp corners. Each topic opens
+// on a grid: a heavy black rule, the section number in red, the topic in bold.
 const alpine: Theme = {
   name: 'alpine',
   label: 'Alpine',
@@ -459,14 +470,9 @@ const alpine: Theme = {
   isDark: false,
   blurTint: 'light',
   blurIntensity: 50,
+  // Original art: a Swiss travel poster of one hooked peak, with a small red gondola on its cable.
   cover: require('../../assets/themes/alpine.jpg'),
-  credit: {
-    title: 'Langkofel group from the Sella pass',
-    author: 'Wolfgang Moroder',
-    license: BY_SA('3.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:Langkofel_group_from_the_Sella_pass_2016.jpg',
-    adapted: true,
-  },
+  credit: null,
   background: ['#EEF0F2'],
   type: {
     displayXL: { fontFamily: 'Inter_700Bold', fontSize: 54, lineHeight: 64, letterSpacing: -2.4 },
@@ -479,16 +485,20 @@ const alpine: Theme = {
     kicker: { fontFamily: 'Inter_700Bold', fontSize: 10.5, lineHeight: 14, letterSpacing: 1.3 },
     spaced: { fontFamily: 'Inter_600SemiBold', fontSize: 11, lineHeight: 14, letterSpacing: 3 },
   },
-  shape: { scale: 0.55, control: 999 },
+  shape: { scale: 0.4, control: 999 },
   surface: 'solid',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    signOff: 'Next departure tomorrow, on the minute.',
+    brewing: 'Arriving on schedule',
+  },
   colors: {
     bg: '#EEF0F2',
     card: '#FFFFFF',
     cardBorder: 'rgba(15, 19, 24, 0.06)',
     text: '#0F1318',
-    textSecondary: 'rgba(15, 19, 24, 0.70)',
-    textTertiary: 'rgba(15, 19, 24, 0.54)',
+    textSecondary: 'rgba(15, 19, 24, 0.72)',
+    textTertiary: 'rgba(15, 19, 24, 0.62)',
     glassFill: 'rgba(255, 255, 255, 0.72)',
     glassOverlay: 'rgba(255, 255, 255, 0.62)',
     glassFillFallback: 'rgba(255, 255, 255, 0.95)',
@@ -499,10 +509,11 @@ const alpine: Theme = {
     hairline: 'rgba(15, 19, 24, 0.08)',
     skeleton: 'rgba(15, 19, 24, 0.06)',
     skeletonHighlight: 'rgba(15, 19, 24, 0.11)',
-    accent: '#E2231A',
+    // Signal red, just deep enough to read as small text on the grey page as well as on white.
+    accent: '#D0221A',
     accentInk: '#FFFFFF',
-    up: '#1F8A55',
-    down: '#D0281E',
+    up: '#157A49',
+    down: '#C8251C',
     inverseBg: '#0F1318',
     inverseText: '#FFFFFF',
   },
@@ -511,6 +522,7 @@ const alpine: Theme = {
 // ─── Matrix ───────────────────────────────────────────────────────────────────
 // A terminal: black, phosphor green, monospace everything, square corners.
 // Sections open on a prompt ("> world_"). Reading text is pale green-white, not pure green.
+// Somewhere in the cover's code there's a white rabbit.
 const matrix: Theme = {
   name: 'matrix',
   label: 'Matrix',
@@ -542,6 +554,11 @@ const matrix: Theme = {
   shape: { scale: 0.08, control: 2 },
   surface: 'outline',
   layout: { heroAlign: 'left', sections: 'prompt', capsButtons: true },
+  lines: {
+    signOff: 'Follow the white rabbit.',
+    brewing: 'Wake up…',
+    noResults: 'There is no spoon',
+  },
   colors: {
     bg: '#000000',
     card: '#030A05',
@@ -570,7 +587,7 @@ const matrix: Theme = {
 
 // ─── Tron ─────────────────────────────────────────────────────────────────────
 // The Grid: black glass, cyan light lines, wide futurist capitals, clipped corners.
-// Sections open on a title over a lit circuit trace.
+// Sections open on a title over a light-cycle trail that turns a hard corner and ends in a disc.
 const tron: Theme = {
   name: 'tron',
   label: 'Tron',
@@ -599,6 +616,11 @@ const tron: Theme = {
   shape: { scale: 0.2, control: 4 },
   surface: 'outline',
   layout: { heroAlign: 'left', sections: 'circuit', capsButtons: true },
+  lines: {
+    signOff: 'End of line.',
+    brewing: 'Greetings, program',
+    emptySaved: 'Your disc is empty',
+  },
   colors: {
     bg: '#03070D',
     card: '#050C15',
@@ -627,7 +649,8 @@ const tron: Theme = {
 
 // ─── Blade Runner ─────────────────────────────────────────────────────────────
 // Amber haze over a dark city: a warm smoky gradient, frosted panels, a squared-off
-// techno face, and one neon pink accent.
+// techno face, and one neon pink accent. The cover is two stepped pyramids in the haze, in the rain;
+// some days an origami unicorn turns up on a section heading (components/headings/films.tsx).
 const bladerunner: Theme = {
   name: 'bladerunner',
   label: 'Blade Runner',
@@ -656,6 +679,11 @@ const bladerunner: Theme = {
   shape: { scale: 0.45, control: 6 },
   surface: 'glass',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    signOff: 'Like tears in rain.',
+    emptySaved: 'No memories yet',
+    noResults: 'Enhance. Still nothing',
+  },
   colors: {
     bg: '#1A0B06',
     card: 'rgba(255, 170, 100, 0.08)',
@@ -684,7 +712,8 @@ const bladerunner: Theme = {
 
 // ─── Budapest ─────────────────────────────────────────────────────────────────
 // A grand pastel hotel: pink and plum, an elegant serif with Futura-style capitals,
-// everything centered and symmetrical, cards with a printed double border.
+// everything centered and symmetrical, cards with a printed double border. Sections open under a
+// concierge's crossed keys (components/headings/films.tsx).
 const budapest: Theme = {
   name: 'budapest',
   label: 'Budapest',
@@ -693,14 +722,9 @@ const budapest: Theme = {
   isDark: false,
   blurTint: 'light',
   blurIntensity: 40,
+  // Original art: a pink hotel dead centre under the Alps, crossed keys in its pediment, a funicular.
   cover: require('../../assets/themes/budapest.jpg'),
-  credit: {
-    title: 'Building back façade, Avenida de Roma, Lisbon',
-    author: 'Jules Verne Times Two',
-    license: BY_SA('4.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:Building_back_fa%C3%A7ade,_Avenida_de_Roma,_Lisbon,_Portugal_julesvernex2.jpg',
-    adapted: true,
-  },
+  credit: null,
   background: ['#F2D6D3', '#EDCBC8'],
   type: {
     displayXL: { fontFamily: 'PlayfairDisplay_500Medium_Italic', fontSize: 50, lineHeight: 64, letterSpacing: -0.5, paddingHorizontal: 4 },
@@ -719,13 +743,19 @@ const budapest: Theme = {
   shape: { scale: 0.25, control: 3 },
   surface: 'framed',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  lines: {
+    signOff: 'With the compliments of the Society of the Crossed Keys.',
+    // Broken by hand: the wide-set capitals would otherwise leave one word on the second line.
+    brewing: 'Still in the oven\nat Mendl’s',
+    noResults: 'No one by that name\nin the register',
+  },
   colors: {
     bg: '#F2D6D3',
     card: '#FBEFEC',
     cardBorder: 'rgba(92, 34, 66, 0.22)',
     text: '#3A1730',
-    textSecondary: 'rgba(58, 23, 48, 0.74)',
-    textTertiary: 'rgba(58, 23, 48, 0.58)',
+    textSecondary: 'rgba(58, 23, 48, 0.76)',
+    textTertiary: 'rgba(58, 23, 48, 0.69)',
     glassFill: 'rgba(251, 239, 236, 0.72)',
     glassOverlay: 'rgba(251, 239, 236, 0.58)',
     glassFillFallback: 'rgba(251, 239, 236, 0.94)',
@@ -793,7 +823,7 @@ export function usePackFonts() {
 }
 
 /** Theme names from before the current themes (saved in older settings). */
-const LEGACY: Record<string, ThemeName> = { dark: 'space', earth: 'highlands', light: 'alpine' };
+const LEGACY: Record<string, ThemeName> = { dark: 'space', earth: 'highlands', light: 'alpine', overlook: 'nosferatu' };
 
 export function resolveThemeName(name: string | null | undefined): ThemeName {
   if (name && name in themes) return name as ThemeName;

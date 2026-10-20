@@ -132,7 +132,8 @@ function Tile({
           <Txt variant="stat" color={ink}>
             {value}
           </Txt>
-          <Txt variant="caption" color={withAlpha(ink.slice(0, 7), 0.72)}>
+          {/* Dimmed only a little: on a bright accent tile, small text needs nearly full contrast. */}
+          <Txt variant="caption" color={withAlpha(ink.slice(0, 7), 0.9)}>
             {unit}
           </Txt>
         </View>

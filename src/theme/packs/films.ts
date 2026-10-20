@@ -1,10 +1,14 @@
-// Film-inspired themes: Star Wars, Hogwarts, La La Land, Ghibli.
+// Film-inspired themes: Star Wars, Hogwarts, La La Land, Ghibli, Fight Club. (Dune, Matrix, Tron,
+// Blade Runner and Budapest sit in the Films group too, but live in ../themes.ts with the classic type.)
 // Each theme is a whole look (typefaces, shapes, card style, sections), like the ones in ../themes.ts.
 // The covers are original artwork made for Brewsy (assets/themes/*.jpg): no stills, logos or characters.
-// Section headings are drawn in components/headings/films.tsx.
+// Section headings are drawn in components/headings/films.tsx. Each film hides a few nods to itself:
+// its `lines`, its section headings and small details in its cover.
 
 import { Cinzel_600SemiBold } from '@expo-google-fonts/cinzel/600SemiBold';
 import { Cinzel_700Bold } from '@expo-google-fonts/cinzel/700Bold';
+import { CourierPrime_400Regular } from '@expo-google-fonts/courier-prime/400Regular';
+import { CourierPrime_700Bold } from '@expo-google-fonts/courier-prime/700Bold';
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display/400Regular';
 import { DMSerifDisplay_400Regular_Italic } from '@expo-google-fonts/dm-serif-display/400Regular_Italic';
 import { EBGaramond_400Regular } from '@expo-google-fonts/eb-garamond/400Regular';
@@ -14,6 +18,8 @@ import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { JosefinSans_600SemiBold } from '@expo-google-fonts/josefin-sans/600SemiBold';
 import { Jost_400Regular } from '@expo-google-fonts/jost/400Regular';
 import { Jost_500Medium } from '@expo-google-fonts/jost/500Medium';
+import { LibreFranklin_400Regular } from '@expo-google-fonts/libre-franklin/400Regular';
+import { LibreFranklin_600SemiBold } from '@expo-google-fonts/libre-franklin/600SemiBold';
 import { NewsCycle_400Regular } from '@expo-google-fonts/news-cycle/400Regular';
 import { NewsCycle_700Bold } from '@expo-google-fonts/news-cycle/700Bold';
 import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
@@ -32,6 +38,7 @@ const ZenMaruGothic_700Bold: FontSource = require('../../../assets/fonts/ZenMaru
 // typeface) sets condensed capitals for titles and labels; stories read in Inter. The crawl's
 // yellow is kept for section titles and the one accent. Outline cards, near-square corners,
 // everything centered like the crawl. Sections open "Episode IV / WORLD" (headings/films.tsx).
+// On the cover's horizon, under the twin suns: a domed homestead and a moisture tower.
 // Centered capitals get a left pad equal to their tracking (letter-spacing also trails the last letter).
 const starwars: Theme = {
   name: 'starwars',
@@ -64,6 +71,10 @@ const starwars: Theme = {
   shape: { scale: 0.1, control: 3 },
   surface: 'outline',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  lines: {
+    signOff: 'May the Force be with you.',
+    noResults: 'These aren’t the stories you’re looking for',
+  },
   colors: {
     bg: '#000000',
     card: '#08090C',
@@ -94,7 +105,8 @@ const starwars: Theme = {
 // A castle at night: ink-blue stone, candlelit parchment-colored type, gold leaf and crimson.
 // Cinzel sets inscription capitals for titles and labels; EB Garamond sets headlines and reading,
 // like a well-made book. Cards are framed twice in gold, like book plates; sections open like
-// chapters ("Chapter four", then the title, then a small ornament). Crimson marks what's selected.
+// chapters ("Chapter four", then the title, then a small ornament; chapter one's ornament has a
+// lightning bolt). Crimson marks what's selected. An owl crosses the moon on the cover.
 // Theme tokens give cards and the page one text color, so the cards are dark vellum rather than
 // light parchment: the parchment is in the type.
 const hogwarts: Theme = {
@@ -129,6 +141,11 @@ const hogwarts: Theme = {
   shape: { scale: 0.2, control: 3 },
   surface: 'framed',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  lines: {
+    signOff: 'Mischief managed.',
+    brewing: 'The owls aren’t in yet',
+    noResults: 'Accio… nothing',
+  },
   colors: {
     bg: '#100F1A',
     card: '#191825',
@@ -159,7 +176,8 @@ const hogwarts: Theme = {
 // Magic hour over the city: an indigo-to-dusky-rose gradient, frosted panes (the gradient is smooth,
 // so text stays crisp), and the yellow of the dress as the one accent. DM Serif Display in italic
 // for titles, Josefin Sans art-deco capitals for small labels, Jost for reading. Sections open
-// like numbers in a musical's program ("Nº 3").
+// like numbers in a musical's program ("Nº 3"). The cover's lamp post and bench are where the
+// dancing happens; the observatory sits on the ridge behind them.
 const lalaland: Theme = {
   name: 'lalaland',
   label: 'La La Land',
@@ -192,13 +210,17 @@ const lalaland: Theme = {
   shape: { scale: 0.75, control: 999 },
   surface: 'glass',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: true },
+  lines: {
+    signOff: 'Here’s to the ones who dream.',
+    brewing: 'Another day of sun',
+  },
   colors: {
     bg: '#1D1A46',
     card: 'rgba(255, 228, 246, 0.08)',
     cardBorder: 'rgba(255, 222, 242, 0.16)',
     text: '#FFF5EE',
     textSecondary: 'rgba(255, 245, 238, 0.76)',
-    textTertiary: 'rgba(255, 245, 238, 0.66)',
+    textTertiary: 'rgba(255, 245, 238, 0.70)',
     glassFill: 'rgba(255, 228, 246, 0.11)',
     glassOverlay: 'rgba(22, 16, 54, 0.40)',
     glassFillFallback: 'rgba(52, 36, 92, 0.95)',
@@ -212,7 +234,7 @@ const lalaland: Theme = {
     accent: '#F6CF48',
     accentInk: '#2A1C04',
     up: '#8EE3C4',
-    down: '#FF9C8A',
+    down: '#FFB09F',
     inverseBg: '#FFF5EE',
     inverseText: '#231B4E',
   },
@@ -222,7 +244,8 @@ const lalaland: Theme = {
 // A summer afternoon: towering clouds, green hills, a morning mist fading to warm cream.
 // White, very round cards on a soft lift; Zen Maru Gothic (rounded) for titles, Nunito for
 // everything else. Meadow green for what's selected, a warm red as the accent.
-// Sections open on a title with a short brushed wave under it (headings/films.tsx).
+// Sections open on a title with a short brushed wave under it (headings/films.tsx); some days a couple
+// of acorns lie at the end of one. A country bus stop waits by the tree on the cover.
 const ghibli: Theme = {
   name: 'ghibli',
   label: 'Ghibli',
@@ -255,13 +278,17 @@ const ghibli: Theme = {
   shape: { scale: 1.3, control: 999 },
   surface: 'solid',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    brewing: 'The cat bus is running late',
+    emptySaved: 'Only soot sprites in here',
+  },
   colors: {
     bg: '#E3ECE6',
     card: '#FFFEFA',
     cardBorder: 'rgba(52, 76, 58, 0.07)',
     text: '#2B3A31',
     textSecondary: 'rgba(43, 58, 49, 0.80)',
-    textTertiary: 'rgba(43, 58, 49, 0.70)',
+    textTertiary: 'rgba(43, 58, 49, 0.74)',
     glassFill: 'rgba(255, 254, 250, 0.72)',
     glassOverlay: 'rgba(255, 254, 250, 0.60)',
     glassFillFallback: 'rgba(255, 254, 250, 0.94)',
@@ -272,17 +299,90 @@ const ghibli: Theme = {
     hairline: 'rgba(52, 76, 58, 0.10)',
     skeleton: 'rgba(52, 76, 58, 0.06)',
     skeletonHighlight: 'rgba(52, 76, 58, 0.11)',
-    accent: '#C4502F',
+    // Deep enough for small labels on the misty page as well as on white cards.
+    accent: '#B0472A',
     accentInk: '#FFFFFF',
     up: '#3C7D46',
-    down: '#C4502F',
+    down: '#B0472A',
     inverseBg: '#3D6B45',
     inverseText: '#FFFFFF',
   },
 };
 
+// ─── Fight Club ───────────────────────────────────────────────────────────────
+// A bar of pink soap under a bare bulb. Grimy green-black, like the film's grade, with off-white
+// type that has a little of the fluorescent green in it and soap pink as the one accent. Courier
+// Prime sets titles, labels and captions like a typewritten report; Libre Franklin, a plain American
+// gothic, sets headlines and reading. Outline cards, near-square corners, controls rounded like a
+// bar of soap. Each section is a reel: "Reel 2" and a reel-change cue mark in its corner, the
+// "cigarette burns" (headings/films.tsx). The lines are the Narrator's.
+const fightclub: Theme = {
+  name: 'fightclub',
+  label: 'Fight Club',
+  group: 'films',
+  tagline: 'Pink soap, a bare bulb, typewriter type',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 30,
+  cover: require('../../../assets/themes/fightclub.jpg'),
+  credit: null,
+  background: ['#151C19', '#141A17', '#121714'],
+  // Courier is wide: titles are set a size smaller than other themes and tracked in a little.
+  type: {
+    displayXL: { fontFamily: 'CourierPrime_700Bold', fontSize: 46, lineHeight: 56, letterSpacing: -1.6 },
+    displayL: { fontFamily: 'CourierPrime_700Bold', fontSize: 27, lineHeight: 34, letterSpacing: -0.8 },
+    displayM: { fontFamily: 'CourierPrime_700Bold', fontSize: 19, lineHeight: 25, letterSpacing: -0.4 },
+    displayS: { fontFamily: 'CourierPrime_700Bold', fontSize: 20, lineHeight: 26, letterSpacing: -0.4 },
+    stat: { fontFamily: 'CourierPrime_400Regular', fontSize: 50, lineHeight: 60, letterSpacing: -2.4 },
+    mega: { fontFamily: 'CourierPrime_700Bold', fontSize: 64, lineHeight: 78, letterSpacing: -2.4 },
+    headline: { fontFamily: 'LibreFranklin_600SemiBold', fontSize: 21.5, lineHeight: 27.5, letterSpacing: -0.3 },
+    title: { fontFamily: 'LibreFranklin_600SemiBold', fontSize: 17, lineHeight: 22.5, letterSpacing: -0.2 },
+    reading: { fontFamily: 'LibreFranklin_400Regular', fontSize: 16.5, lineHeight: 27, letterSpacing: -0.1 },
+    body: { fontFamily: 'LibreFranklin_400Regular', fontSize: 15, lineHeight: 22.5 },
+    bodySm: { fontFamily: 'LibreFranklin_400Regular', fontSize: 13.5, lineHeight: 19.5 },
+    label: { fontFamily: 'CourierPrime_700Bold', fontSize: 14.5, lineHeight: 18 },
+    caption: { fontFamily: 'CourierPrime_400Regular', fontSize: 12.5, lineHeight: 16 },
+    kicker: { fontFamily: 'CourierPrime_700Bold', fontSize: 12, lineHeight: 15, letterSpacing: 1.2 },
+    spaced: { fontFamily: 'CourierPrime_400Regular', fontSize: 12.5, lineHeight: 16, letterSpacing: 3 },
+  },
+  shape: { scale: 0.18, control: 6 },
+  surface: 'outline',
+  layout: { heroAlign: 'left', sections: 'title', capsButtons: true },
+  // Courier is wide, so the longer lines are broken by hand rather than left with one word on the last line.
+  lines: {
+    signOff: 'You met me at a very strange time\nin my life.',
+    brewing: 'I am Jack’s raging impatience',
+    emptySaved: 'You are not\nyour reading list',
+    noResults: 'I am Jack’s complete\nlack of results',
+  },
+  colors: {
+    bg: '#151C19',
+    card: '#1B2420',
+    cardBorder: 'rgba(214, 230, 216, 0.14)',
+    text: '#E8ECE3',
+    textSecondary: 'rgba(232, 236, 227, 0.75)',
+    textTertiary: 'rgba(232, 236, 227, 0.60)',
+    glassFill: 'rgba(30, 40, 35, 0.62)',
+    glassOverlay: 'rgba(10, 14, 12, 0.45)',
+    glassFillFallback: 'rgba(28, 37, 33, 0.95)',
+    glassOverlayFallback: 'rgba(10, 14, 12, 0.72)',
+    glassBorder: 'rgba(214, 230, 216, 0.16)',
+    onCover: '#E8ECE3',
+    sheet: '#18201C',
+    hairline: 'rgba(214, 230, 216, 0.11)',
+    skeleton: 'rgba(214, 230, 216, 0.06)',
+    skeletonHighlight: 'rgba(214, 230, 216, 0.12)',
+    accent: '#F2A3BE',
+    accentInk: '#2A0D18',
+    up: '#A8D9AE',
+    down: '#F49484',
+    inverseBg: '#E8ECE3',
+    inverseText: '#141A17',
+  },
+};
+
 /** In picker order. */
-export const filmThemes: Theme[] = [starwars, hogwarts, lalaland, ghibli];
+export const filmThemes: Theme[] = [starwars, hogwarts, lalaland, ghibli, fightclub];
 
 /** Every typeface these themes use, by the fontFamily name the themes refer to. */
 export const filmFonts: Record<string, FontSource> = {
@@ -302,9 +402,14 @@ export const filmFonts: Record<string, FontSource> = {
   JosefinSans_600SemiBold,
   Jost_400Regular,
   Jost_500Medium,
-  // Ghibli. Zen Maru Gothic carries Japanese too (3.7 MB a weight), so it's one weight, for titles only.
+  // Ghibli. Zen Maru Gothic is one weight, for titles only (a Latin-only copy, see the top of this file).
   ZenMaruGothic_700Bold,
   Nunito_400Regular,
   Nunito_600SemiBold,
   Nunito_700Bold,
+  // Fight Club
+  CourierPrime_400Regular,
+  CourierPrime_700Bold,
+  LibreFranklin_400Regular,
+  LibreFranklin_600SemiBold,
 };

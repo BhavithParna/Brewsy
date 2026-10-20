@@ -1,17 +1,13 @@
-// Horror-inspired themes: Overlook, Nosferatu, The Ring, Midsommar, Scream.
+// Horror-inspired themes: Nosferatu, The Ring, Midsommar, Scream, Insidious.
 // Each theme is a whole look (typefaces, shapes, card style, sections), like the ones in ../themes.ts.
 //
 // Atmosphere comes from the cover art, the type and one small detail in each section heading
 // (components/headings/horror.tsx): never gore, never novelty fonts. Reading text always sits on a
 // calm, opaque card. All five covers are original art made for Brewsy.
 
-import { Anton_400Regular } from '@expo-google-fonts/anton/400Regular';
 import { ArchivoNarrow_400Regular } from '@expo-google-fonts/archivo-narrow/400Regular';
 import { ArchivoNarrow_600SemiBold } from '@expo-google-fonts/archivo-narrow/600SemiBold';
 import { ArchivoNarrow_700Bold } from '@expo-google-fonts/archivo-narrow/700Bold';
-import { BarlowCondensed_500Medium } from '@expo-google-fonts/barlow-condensed/500Medium';
-import { BarlowCondensed_600SemiBold } from '@expo-google-fonts/barlow-condensed/600SemiBold';
-import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700Bold';
 import { Fraunces_300Light } from '@expo-google-fonts/fraunces/300Light';
 import { Fraunces_400Regular } from '@expo-google-fonts/fraunces/400Regular';
 import { Fraunces_400Regular_Italic } from '@expo-google-fonts/fraunces/400Regular_Italic';
@@ -19,86 +15,30 @@ import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
 import { IMFellEnglish_400Regular } from '@expo-google-fonts/im-fell-english/400Regular';
 import { IMFellEnglish_400Regular_Italic } from '@expo-google-fonts/im-fell-english/400Regular_Italic';
 import { IMFellEnglishSC_400Regular } from '@expo-google-fonts/im-fell-english-sc/400Regular';
-import { LibreBaskerville_400Regular } from '@expo-google-fonts/libre-baskerville/400Regular';
-import { LibreBaskerville_700Bold } from '@expo-google-fonts/libre-baskerville/700Bold';
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif/400Regular';
+import { Italiana_400Regular } from '@expo-google-fonts/italiana/400Regular';
 import { LibreCaslonText_400Regular } from '@expo-google-fonts/libre-caslon-text/400Regular';
 import { LibreCaslonText_400Regular_Italic } from '@expo-google-fonts/libre-caslon-text/400Regular_Italic';
 import { LibreCaslonText_700Bold } from '@expo-google-fonts/libre-caslon-text/700Bold';
+import { LibreFranklin_400Regular } from '@expo-google-fonts/libre-franklin/400Regular';
+import { LibreFranklin_600SemiBold } from '@expo-google-fonts/libre-franklin/600SemiBold';
+import { LibreFranklin_700Bold } from '@expo-google-fonts/libre-franklin/700Bold';
 import { Marcellus_400Regular } from '@expo-google-fonts/marcellus/400Regular';
-import { NewsCycle_400Regular } from '@expo-google-fonts/news-cycle/400Regular';
-import { NewsCycle_700Bold } from '@expo-google-fonts/news-cycle/700Bold';
-import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite/400Regular';
+import { Spectral_400Regular } from '@expo-google-fonts/spectral/400Regular';
+import { Spectral_400Regular_Italic } from '@expo-google-fonts/spectral/400Regular_Italic';
+import { Spectral_500Medium } from '@expo-google-fonts/spectral/500Medium';
+import { Spectral_600SemiBold } from '@expo-google-fonts/spectral/600SemiBold';
 import { UnifrakturMaguntia_400Regular } from '@expo-google-fonts/unifrakturmaguntia/400Regular';
 import { VT323_400Regular } from '@expo-google-fonts/vt323/400Regular';
 import type { FontSource } from 'expo-font';
 
 import type { Theme } from '../themes';
 
-// ─── Overlook ─────────────────────────────────────────────────────────────────
-// A mountain hotel after closing day: the hexagon carpet under a lamp, walnut cards trimmed in
-// brass, tall condensed capitals like the film's day cards ("TUESDAY"), typewritten small labels.
-// Each topic opens under a brass room plaque.
-const overlook: Theme = {
-  name: 'overlook',
-  label: 'Overlook',
-  group: 'horror',
-  tagline: 'Hexagon carpet, long quiet corridors',
-  isDark: true,
-  blurTint: 'dark',
-  blurIntensity: 30,
-  cover: require('../../../assets/themes/overlook.jpg'),
-  credit: null,
-  background: ['#1F0B08', '#170806', '#100504'],
-  type: {
-    displayXL: { fontFamily: 'BarlowCondensed_600SemiBold', fontSize: 64, lineHeight: 76, letterSpacing: 3, textTransform: 'uppercase' },
-    displayL: { fontFamily: 'BarlowCondensed_600SemiBold', fontSize: 34, lineHeight: 42, letterSpacing: 1.4, textTransform: 'uppercase' },
-    displayM: { fontFamily: 'LibreBaskerville_700Bold', fontSize: 18.5, lineHeight: 26, letterSpacing: -0.2 },
-    displayS: { fontFamily: 'LibreBaskerville_400Regular', fontSize: 20, lineHeight: 27 },
-    stat: { fontFamily: 'BarlowCondensed_500Medium', fontSize: 54, lineHeight: 64, letterSpacing: 0.5 },
-    mega: { fontFamily: 'BarlowCondensed_700Bold', fontSize: 86, lineHeight: 100, letterSpacing: 2, textTransform: 'uppercase' },
-    headline: { fontFamily: 'LibreBaskerville_700Bold', fontSize: 19.5, lineHeight: 27, letterSpacing: -0.3 },
-    title: { fontFamily: 'LibreBaskerville_700Bold', fontSize: 16, lineHeight: 22, letterSpacing: -0.2 },
-    reading: { fontFamily: 'LibreBaskerville_400Regular', fontSize: 15.5, lineHeight: 27, letterSpacing: -0.1 },
-    body: { fontFamily: 'LibreBaskerville_400Regular', fontSize: 14, lineHeight: 22 },
-    bodySm: { fontFamily: 'LibreBaskerville_400Regular', fontSize: 12.5, lineHeight: 19 },
-    label: { fontFamily: 'BarlowCondensed_600SemiBold', fontSize: 16.5, lineHeight: 20, letterSpacing: 0.5 },
-    caption: { fontFamily: 'SpecialElite_400Regular', fontSize: 12.5, lineHeight: 17, letterSpacing: 0.1 },
-    kicker: { fontFamily: 'SpecialElite_400Regular', fontSize: 12, lineHeight: 15, letterSpacing: 1.6 },
-    spaced: { fontFamily: 'SpecialElite_400Regular', fontSize: 12.5, lineHeight: 17, letterSpacing: 3.6 },
-  },
-  shape: { scale: 0.22, control: 4 },
-  surface: 'outline',
-  layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
-  colors: {
-    bg: '#1F0B08',
-    card: '#2A1410',
-    cardBorder: 'rgba(212, 168, 98, 0.26)',
-    text: '#F4E7D2',
-    textSecondary: 'rgba(244, 231, 210, 0.76)',
-    textTertiary: 'rgba(244, 231, 210, 0.58)',
-    glassFill: 'rgba(54, 26, 18, 0.62)',
-    glassOverlay: 'rgba(31, 11, 8, 0.48)',
-    glassFillFallback: 'rgba(46, 22, 16, 0.95)',
-    glassOverlayFallback: 'rgba(31, 11, 8, 0.74)',
-    glassBorder: 'rgba(212, 168, 98, 0.30)',
-    onCover: '#F7EBD8',
-    sheet: '#25100C',
-    hairline: 'rgba(212, 168, 98, 0.18)',
-    skeleton: 'rgba(244, 231, 210, 0.06)',
-    skeletonHighlight: 'rgba(244, 231, 210, 0.12)',
-    accent: '#E07B3C',
-    accentInk: '#1F0B08',
-    up: '#A7C98F',
-    down: '#F08C6C',
-    inverseBg: '#F4E7D2',
-    inverseText: '#1F0B08',
-  },
-};
-
 // ─── Nosferatu ────────────────────────────────────────────────────────────────
 // A 1922 print: near-black with an amber tint, cream type, old-style faces cut from period books
 // (IM Fell), a blackletter weekday, Caslon for reading. Cards carry a thin double border, and each
-// section opens on an intertitle card numbered by act.
+// section opens on an intertitle card numbered by act. On the cover's stair window, a ship (the
+// Empusa) comes into harbour; its lines mention the coach, the hold and the Book of Vampires.
 const nosferatu: Theme = {
   name: 'nosferatu',
   label: 'Nosferatu',
@@ -130,6 +70,12 @@ const nosferatu: Theme = {
   shape: { scale: 0.1, control: 2 },
   surface: 'framed',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: true },
+  lines: {
+    signOff: 'Until cockcrow.',
+    brewing: 'The coach is on its way',
+    emptySaved: 'Nothing in the hold yet',
+    noResults: 'Not in the Book of Vampires',
+  },
   colors: {
     bg: '#120E0A',
     card: '#1A140E',
@@ -159,7 +105,8 @@ const nosferatu: Theme = {
 // ─── The Ring ─────────────────────────────────────────────────────────────────
 // A worn videotape: cold teal-grey, flat outlined cards like a TV's bezel, the VCR's on-screen
 // lettering (VT323) for the weekday, kickers and times, a plain narrow grotesk for reading.
-// Each topic opens on a PLAY line with a tape counter.
+// Each topic opens on a PLAY line with a tape counter. A fly sits on the cover, the way one sits
+// on the TV glass in the film; the lines rewind, run to static and end on "Seven days."
 const thering: Theme = {
   name: 'thering',
   label: 'The Ring',
@@ -192,6 +139,12 @@ const thering: Theme = {
   shape: { scale: 0.14, control: 3 },
   surface: 'outline',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  lines: {
+    signOff: 'Seven days.',
+    brewing: 'Still rewinding',
+    emptySaved: 'A blank tape',
+    noResults: 'Nothing but static',
+  },
   colors: {
     bg: '#121819',
     card: '#151C1D',
@@ -221,7 +174,8 @@ const thering: Theme = {
 // ─── Midsommar ────────────────────────────────────────────────────────────────
 // Daylight that never ends: sun-bleached cream, white paper cards, ink-blue type, a classical
 // engraved face for titles and a soft old-style serif for reading. Rose for the accent, like the
-// flowers. Everything centered; each section opens between two embroidered borders.
+// flowers. Everything centered; each section opens between two embroidered borders. The cover
+// keeps the little yellow temple and a rune stone at the meadow's edge.
 const midsommar: Theme = {
   name: 'midsommar',
   label: 'Midsommar',
@@ -253,6 +207,12 @@ const midsommar: Theme = {
   shape: { scale: 0.7, control: 999 },
   surface: 'solid',
   layout: { heroAlign: 'center', sections: 'rule', capsButtons: false },
+  lines: {
+    signOff: 'Skål.',
+    brewing: 'The dance isn’t over',
+    emptySaved: 'Nothing held yet',
+    noResults: 'Not in the Rubi Radr',
+  },
   colors: {
     bg: '#F5EFE0',
     card: '#FFFDF7',
@@ -280,79 +240,151 @@ const midsommar: Theme = {
 };
 
 // ─── Scream ───────────────────────────────────────────────────────────────────
-// A small town in 1996, the phone ringing after dark: midnight blue, slate cards, one red for the
-// accent. Tall poster capitals (Anton) for the weekday and titles, News Gothic (News Cycle) for
-// reading, like the local paper. Each topic opens with one of the rules ("Rule #3").
+// Woodsboro, 1996, the phone ringing in an empty kitchen. The poster's language: black, white and
+// one blood red. Tall, sharp serif capitals (Instrument Serif) for the weekday and titles; Franklin
+// Gothic's revival (Libre Franklin) for reading, like the local news. Square corners throughout.
+// Each topic opens with one of Randy's rules ("Rule #3"); the cover hides the Jiffy Pop, the caller
+// ID and someone out in the yard.
 const scream: Theme = {
   name: 'scream',
   label: 'Scream',
   group: 'horror',
-  tagline: 'A ringing phone, a quiet cul-de-sac',
+  tagline: 'Woodsboro, 1996. The phone is ringing',
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 30,
   cover: require('../../../assets/themes/scream.jpg'),
   credit: null,
-  background: ['#0C0F17', '#0A0D14', '#08090F'],
-  // Anton's capitals stand tall on the em, so its lines get extra room.
+  background: ['#0A0A0B', '#08080A', '#060607'],
   type: {
-    displayXL: { fontFamily: 'Anton_400Regular', fontSize: 62, lineHeight: 82, letterSpacing: 1.5, textTransform: 'uppercase' },
-    displayL: { fontFamily: 'Anton_400Regular', fontSize: 31, lineHeight: 42, letterSpacing: 0.6, textTransform: 'uppercase' },
-    displayM: { fontFamily: 'Anton_400Regular', fontSize: 18.5, lineHeight: 26, letterSpacing: 1, textTransform: 'uppercase' },
-    displayS: { fontFamily: 'Anton_400Regular', fontSize: 24, lineHeight: 33 },
-    stat: { fontFamily: 'Anton_400Regular', fontSize: 52, lineHeight: 70 },
-    mega: { fontFamily: 'Anton_400Regular', fontSize: 88, lineHeight: 116, letterSpacing: 1, textTransform: 'uppercase' },
-    headline: { fontFamily: 'NewsCycle_700Bold', fontSize: 21, lineHeight: 27, letterSpacing: -0.1 },
-    title: { fontFamily: 'NewsCycle_700Bold', fontSize: 17, lineHeight: 22 },
-    reading: { fontFamily: 'NewsCycle_400Regular', fontSize: 16.5, lineHeight: 27 },
-    body: { fontFamily: 'NewsCycle_400Regular', fontSize: 15, lineHeight: 22 },
-    bodySm: { fontFamily: 'NewsCycle_400Regular', fontSize: 13, lineHeight: 19 },
-    label: { fontFamily: 'NewsCycle_700Bold', fontSize: 15, lineHeight: 19, letterSpacing: 0.2 },
-    caption: { fontFamily: 'NewsCycle_400Regular', fontSize: 13, lineHeight: 17 },
-    kicker: { fontFamily: 'NewsCycle_700Bold', fontSize: 12, lineHeight: 15, letterSpacing: 1.8 },
-    spaced: { fontFamily: 'NewsCycle_700Bold', fontSize: 12, lineHeight: 17, letterSpacing: 4, paddingLeft: 4 },
+    displayXL: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 66, lineHeight: 78, letterSpacing: 0.6, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 40, lineHeight: 48, letterSpacing: 0.4, textTransform: 'uppercase' },
+    displayM: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 25, lineHeight: 31, letterSpacing: 0.6, textTransform: 'uppercase' },
+    displayS: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, lineHeight: 34 },
+    stat: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 64, lineHeight: 74 },
+    mega: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 96, lineHeight: 112, letterSpacing: 1, textTransform: 'uppercase' },
+    headline: { fontFamily: 'LibreFranklin_700Bold', fontSize: 20.5, lineHeight: 27, letterSpacing: -0.3 },
+    title: { fontFamily: 'LibreFranklin_600SemiBold', fontSize: 16.5, lineHeight: 22, letterSpacing: -0.1 },
+    reading: { fontFamily: 'LibreFranklin_400Regular', fontSize: 16, lineHeight: 27 },
+    body: { fontFamily: 'LibreFranklin_400Regular', fontSize: 14.5, lineHeight: 22 },
+    bodySm: { fontFamily: 'LibreFranklin_400Regular', fontSize: 12.5, lineHeight: 19 },
+    label: { fontFamily: 'LibreFranklin_600SemiBold', fontSize: 14, lineHeight: 19 },
+    caption: { fontFamily: 'LibreFranklin_400Regular', fontSize: 12.5, lineHeight: 17 },
+    kicker: { fontFamily: 'LibreFranklin_700Bold', fontSize: 11, lineHeight: 15, letterSpacing: 1.9 },
+    spaced: { fontFamily: 'LibreFranklin_600SemiBold', fontSize: 11.5, lineHeight: 16, letterSpacing: 4, paddingLeft: 4 },
   },
-  shape: { scale: 0.3, control: 4 },
+  shape: { scale: 0.06, control: 2 },
   surface: 'solid',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: true },
+  lines: {
+    signOff: 'What’s your favorite scary movie?',
+    brewing: 'Still ringing',
+    emptySaved: 'Nothing saved. Nobody’s safe.',
+    noResults: 'Wrong number',
+  },
   colors: {
-    bg: '#0C0F17',
-    card: '#131826',
-    cardBorder: 'rgba(205, 214, 235, 0.10)',
-    text: '#EEF1F6',
-    textSecondary: 'rgba(238, 241, 246, 0.76)',
-    textTertiary: 'rgba(238, 241, 246, 0.58)',
-    glassFill: 'rgba(24, 30, 46, 0.62)',
-    glassOverlay: 'rgba(12, 15, 23, 0.48)',
-    glassFillFallback: 'rgba(22, 27, 41, 0.95)',
-    glassOverlayFallback: 'rgba(12, 15, 23, 0.74)',
-    glassBorder: 'rgba(205, 214, 235, 0.16)',
-    onCover: '#F3F5F9',
-    sheet: '#11151F',
-    hairline: 'rgba(205, 214, 235, 0.12)',
-    skeleton: 'rgba(238, 241, 246, 0.06)',
-    skeletonHighlight: 'rgba(238, 241, 246, 0.12)',
-    accent: '#DD3C42',
-    accentInk: '#FFFFFF',
-    up: '#86C99C',
-    down: '#F2877C',
-    inverseBg: '#EEF1F6',
-    inverseText: '#0C0F17',
+    bg: '#0A0A0B',
+    card: '#141415',
+    cardBorder: 'rgba(245, 243, 239, 0.09)',
+    text: '#F5F3EF',
+    textSecondary: 'rgba(245, 243, 239, 0.76)',
+    textTertiary: 'rgba(245, 243, 239, 0.60)',
+    glassFill: 'rgba(28, 28, 30, 0.66)',
+    glassOverlay: 'rgba(10, 10, 11, 0.50)',
+    glassFillFallback: 'rgba(24, 24, 26, 0.96)',
+    glassOverlayFallback: 'rgba(10, 10, 11, 0.76)',
+    glassBorder: 'rgba(245, 243, 239, 0.16)',
+    onCover: '#F7F5F1',
+    sheet: '#111112',
+    hairline: 'rgba(245, 243, 239, 0.12)',
+    skeleton: 'rgba(245, 243, 239, 0.06)',
+    skeletonHighlight: 'rgba(245, 243, 239, 0.12)',
+    accent: '#F2303C',
+    accentInk: '#0A0A0B',
+    up: '#8ACB98',
+    down: '#FF6B66',
+    inverseBg: '#F5F3EF',
+    inverseText: '#0A0A0B',
+  },
+};
+
+// ─── Insidious ────────────────────────────────────────────────────────────────
+// The Further: a smoky, lamp-lit dark where an old house's red door waits. Cold blue-black, cards
+// edged in warm lamplight, thin Edwardian capitals (Italiana) for the weekday and titles, Spectral
+// for reading. Everything centered, like a doorway. Each topic opens under a small red door that
+// stands a little further open the deeper you read.
+const insidious: Theme = {
+  name: 'insidious',
+  label: 'Insidious',
+  group: 'horror',
+  tagline: 'It’s not the house that’s haunted',
+  isDark: true,
+  blurTint: 'dark',
+  blurIntensity: 30,
+  cover: require('../../../assets/themes/insidious.jpg'),
+  credit: null,
+  background: ['#101316', '#0C0E10', '#08090B'],
+  type: {
+    displayXL: { fontFamily: 'Italiana_400Regular', fontSize: 48, lineHeight: 60, letterSpacing: 6, paddingLeft: 6, textTransform: 'uppercase' },
+    displayL: { fontFamily: 'Italiana_400Regular', fontSize: 34, lineHeight: 44, letterSpacing: 0.6 },
+    displayM: { fontFamily: 'Spectral_400Regular_Italic', fontSize: 21, lineHeight: 28 },
+    // Italiana's figures read as letters (1 like I, 0 like O), so numbers are set in Spectral.
+    displayS: { fontFamily: 'Spectral_400Regular', fontSize: 24, lineHeight: 31, fontVariant: ['lining-nums'] },
+    stat: { fontFamily: 'Spectral_400Regular', fontSize: 50, lineHeight: 62, fontVariant: ['lining-nums'] },
+    mega: { fontFamily: 'Italiana_400Regular', fontSize: 80, lineHeight: 96, letterSpacing: 6, textTransform: 'uppercase' },
+    headline: { fontFamily: 'Spectral_600SemiBold', fontSize: 20.5, lineHeight: 27, letterSpacing: -0.1 },
+    title: { fontFamily: 'Spectral_600SemiBold', fontSize: 17, lineHeight: 23 },
+    reading: { fontFamily: 'Spectral_400Regular', fontSize: 16.5, lineHeight: 28 },
+    body: { fontFamily: 'Spectral_400Regular', fontSize: 15, lineHeight: 23 },
+    bodySm: { fontFamily: 'Spectral_400Regular', fontSize: 13, lineHeight: 19 },
+    label: { fontFamily: 'Spectral_500Medium', fontSize: 14.5, lineHeight: 19 },
+    caption: { fontFamily: 'Spectral_400Regular_Italic', fontSize: 12.5, lineHeight: 17 },
+    kicker: { fontFamily: 'Spectral_600SemiBold', fontSize: 11, lineHeight: 15, letterSpacing: 2.2 },
+    spaced: { fontFamily: 'Spectral_500Medium', fontSize: 11.5, lineHeight: 16, letterSpacing: 4.5, paddingLeft: 4.5 },
+  },
+  shape: { scale: 0.2, control: 4 },
+  surface: 'outline',
+  layout: { heroAlign: 'center', sections: 'rule', capsButtons: false },
+  lines: {
+    signOff: 'Tiptoe through the tulips.',
+    brewing: 'Still in The Further',
+    emptySaved: 'Nothing followed you back',
+    noResults: 'Nothing came through',
+  },
+  colors: {
+    bg: '#101316',
+    card: '#15181B',
+    cardBorder: 'rgba(226, 204, 170, 0.15)',
+    text: '#ECE5DA',
+    textSecondary: 'rgba(236, 229, 218, 0.76)',
+    textTertiary: 'rgba(236, 229, 218, 0.58)',
+    glassFill: 'rgba(30, 34, 38, 0.64)',
+    glassOverlay: 'rgba(16, 19, 22, 0.50)',
+    glassFillFallback: 'rgba(26, 30, 34, 0.95)',
+    glassOverlayFallback: 'rgba(16, 19, 22, 0.76)',
+    glassBorder: 'rgba(226, 204, 170, 0.20)',
+    onCover: '#F0E9DE',
+    sheet: '#13161A',
+    hairline: 'rgba(226, 204, 170, 0.13)',
+    skeleton: 'rgba(236, 229, 218, 0.06)',
+    skeletonHighlight: 'rgba(236, 229, 218, 0.12)',
+    accent: '#E0544A',
+    accentInk: '#120D0C',
+    up: '#9CC9A0',
+    down: '#EE8577',
+    inverseBg: '#ECE5DA',
+    inverseText: '#101316',
   },
 };
 
 /** In picker order. */
-export const horrorThemes: Theme[] = [overlook, nosferatu, thering, midsommar, scream];
+export const horrorThemes: Theme[] = [nosferatu, thering, midsommar, scream, insidious];
 
 /** Every typeface these themes use, by the fontFamily name the themes refer to. */
 export const horrorFonts: Record<string, FontSource> = {
-  Anton_400Regular,
   ArchivoNarrow_400Regular,
   ArchivoNarrow_600SemiBold,
   ArchivoNarrow_700Bold,
-  BarlowCondensed_500Medium,
-  BarlowCondensed_600SemiBold,
-  BarlowCondensed_700Bold,
   Fraunces_300Light,
   Fraunces_400Regular,
   Fraunces_400Regular_Italic,
@@ -360,15 +392,19 @@ export const horrorFonts: Record<string, FontSource> = {
   IMFellEnglish_400Regular,
   IMFellEnglish_400Regular_Italic,
   IMFellEnglishSC_400Regular,
-  LibreBaskerville_400Regular,
-  LibreBaskerville_700Bold,
+  InstrumentSerif_400Regular,
+  Italiana_400Regular,
   LibreCaslonText_400Regular,
   LibreCaslonText_400Regular_Italic,
   LibreCaslonText_700Bold,
+  LibreFranklin_400Regular,
+  LibreFranklin_600SemiBold,
+  LibreFranklin_700Bold,
   Marcellus_400Regular,
-  NewsCycle_400Regular,
-  NewsCycle_700Bold,
-  SpecialElite_400Regular,
+  Spectral_400Regular,
+  Spectral_400Regular_Italic,
+  Spectral_500Medium,
+  Spectral_600SemiBold,
   UnifrakturMaguntia_400Regular,
   VT323_400Regular,
 };

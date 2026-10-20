@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import { Txt } from '../Txt';
 import type { HeadingProps, HeadingRegistry } from './types';
@@ -20,52 +20,6 @@ function labelSeed(label: string): number {
   let h = 0;
   for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) % 997;
   return h;
-}
-
-// ─── Overlook: a brass room plaque over the topic ────────────────────────────
-
-const BRASS = '#C9A15C';
-const BRASS_EDGE = '#8E6B34';
-const BRASS_INK = '#3A2412';
-
-/** A small brass door plate: engraved capitals between two screws. */
-function Plaque({ text }: { text: string }) {
-  return (
-    <View style={styles.plaque}>
-      <View style={styles.plaqueBevel} />
-      <View style={styles.screw} />
-      <Txt variant="label" color={BRASS_INK} style={styles.plaqueText}>
-        {text}
-      </Txt>
-      <View style={styles.screw} />
-    </View>
-  );
-}
-
-/** Topics are rooms down one side of the corridor: 231, 233, 235, 237… */
-function OverlookHeading({ label, count, index }: HeadingProps) {
-  const { theme } = useTheme();
-  const room = index != null ? 229 + index * 2 : null;
-  const stories = storiesLabel(count);
-  return (
-    <View style={styles.overlook} accessible accessibilityRole="header" accessibilityLabel={a11yLabel(label, count)}>
-      <View style={styles.overlookTop}>
-        {room != null ? (
-          <Plaque text={`Room ${room}`} />
-        ) : (
-          <View style={[styles.brassRule, { backgroundColor: withAlpha(BRASS, 0.75) }]} />
-        )}
-        {stories && (
-          <Txt variant="caption" color={theme.colors.textTertiary}>
-            {stories}
-          </Txt>
-        )}
-      </View>
-      <Txt variant="displayL" numberOfLines={2}>
-        {label}
-      </Txt>
-    </View>
-  );
 }
 
 // ─── Nosferatu: a silent-film intertitle card ────────────────────────────────
@@ -302,27 +256,33 @@ function MidsommarHeading({ label, count }: HeadingProps) {
   );
 }
 
-// ─── Scream: one of the rules, then the topic ────────────────────────────────
+// ─── Scream: one of Randy's rules, then the topic ────────────────────────────
 
-/** "Rule #1", "Rule #2"… on a small red tag, the way the rules get listed. */
+/** Rule #3 is the one everyone remembers. */
+const RULE_THREE = 'Never say “I’ll be right back.”';
+
+/**
+ * Each topic is one of the rules ("Rule #1", "Rule #2"…) over the title in poster capitals. Movies is
+ * playing "Stab" instead, the film inside the film; rule #3 gets its words.
+ */
 function ScreamHeading({ label, count, index }: HeadingProps) {
   const { theme } = useTheme();
-  const accent = theme.colors.accent;
+  const red = theme.colors.accent;
   const stories = storiesLabel(count);
+  const kicker = index == null ? null : label === 'Movies' ? 'Now showing: Stab' : `Rule #${index}`;
   return (
     <View style={styles.scream} accessible accessibilityRole="header" accessibilityLabel={a11yLabel(label, count)}>
       <View style={styles.screamTop}>
-        {index != null ? (
-          <View style={[styles.ruleTag, { backgroundColor: accent }]}>
-            <Txt variant="kicker" color={theme.colors.accentInk} style={styles.ruleText}>
-              {`Rule #${index}`}
-            </Txt>
-          </View>
+        {kicker ? (
+          <Txt variant="kicker" color={red}>
+            {kicker}
+          </Txt>
         ) : (
-          <View style={[styles.redRule, { backgroundColor: accent }]} />
+          <View style={[styles.redRule, { backgroundColor: red }]} />
         )}
+        <View style={[styles.flex, styles.screamLine, { backgroundColor: theme.colors.hairline }]} />
         {stories && (
-          <Txt variant="caption" color={theme.colors.textTertiary}>
+          <Txt variant="kicker" tone="tertiary">
             {stories}
           </Txt>
         )}
@@ -330,63 +290,98 @@ function ScreamHeading({ label, count, index }: HeadingProps) {
       <Txt variant="displayL" numberOfLines={2}>
         {label}
       </Txt>
+      {index === 3 && label !== 'Movies' && (
+        <Txt variant="caption" tone="tertiary">
+          {RULE_THREE}
+        </Txt>
+      )}
+    </View>
+  );
+}
+
+// ─── Insidious: a red door, a little further open each time ──────────────────
+
+const DOOR_RED = '#A3221F';
+const DOOR_EDGE = '#6E1513';
+const DOOR_BRASS = '#C9A066';
+const DOOR_W = 20;
+const DOOR_H = 34;
+/** Drawn on a 20 × 34 grid, shown a little larger. */
+const DOOR_SCALE = 1.2;
+
+/**
+ * A four-panel door seen straight on, swinging inward: as it opens, the leaf narrows toward its
+ * hinge and its far edge gets shorter, and the dark beyond shows. `open` runs from 0 (shut) to 1.
+ */
+function RedDoor({ open, frame }: { open: number; frame: string }) {
+  const leaf = DOOR_W * (1 - 0.7 * open);
+  const sink = 2.2 * open; // the free edge recedes, so it looks a little shorter
+  const p = (x: number) => (x / DOOR_W) * leaf; // panel positions follow the leaf
+  const panel = (x0: number, y0: number, x1: number, y1: number) => {
+    const t0 = sink * (p(x0) / leaf);
+    const t1 = sink * (p(x1) / leaf);
+    return `M${p(x0)} ${y0 + t0} L${p(x1)} ${y0 + t1} L${p(x1)} ${y1 - t1} L${p(x0)} ${y1 - t0} Z`;
+  };
+  return (
+    <Svg
+      width={(DOOR_W + 6) * DOOR_SCALE}
+      height={(DOOR_H + 5) * DOOR_SCALE}
+      viewBox={`-3 -3 ${DOOR_W + 6} ${DOOR_H + 5}`}>
+      <Rect x={0} y={0} width={DOOR_W} height={DOOR_H} fill="#050607" />
+      <Path d={`M0 0 L${leaf} ${sink} L${leaf} ${DOOR_H - sink} L0 ${DOOR_H} Z`} fill={DOOR_RED} stroke={DOOR_EDGE} strokeWidth={0.6} />
+      <Path d={panel(3, 3, 9, 18)} fill="none" stroke={DOOR_EDGE} strokeWidth={0.8} />
+      <Path d={panel(11, 3, 17, 18)} fill="none" stroke={DOOR_EDGE} strokeWidth={0.8} />
+      <Path d={panel(3, 21, 9, 31)} fill="none" stroke={DOOR_EDGE} strokeWidth={0.8} />
+      <Path d={panel(11, 21, 17, 31)} fill="none" stroke={DOOR_EDGE} strokeWidth={0.8} />
+      <Circle cx={p(16.6)} cy={DOOR_H * 0.56} r={1.15} fill={DOOR_BRASS} />
+      {/* The frame, and a threshold under it. */}
+      <Path d={`M-1.4 ${DOOR_H + 0.6} V-1.4 H${DOOR_W + 1.4} V${DOOR_H + 0.6}`} fill="none" stroke={frame} strokeWidth={1.2} />
+      <Line x1={-3} y1={DOOR_H + 1.2} x2={DOOR_W + 3} y2={DOOR_H + 1.2} stroke={frame} strokeWidth={1.2} />
+    </Svg>
+  );
+}
+
+/** How far the door stands open for the nth topic: shut for the first, then a little more each time. */
+function doorOpening(index?: number): number {
+  return index == null ? 0 : Math.min(0.8, (index - 1) * 0.16);
+}
+
+function InsidiousHeading({ label, count, index }: HeadingProps) {
+  const { theme } = useTheme();
+  const stories = storiesLabel(count);
+  const sill = withAlpha(theme.colors.text, 0.38);
+  return (
+    <View style={styles.insidious} accessible accessibilityRole="header" accessibilityLabel={a11yLabel(label, count)}>
+      <View style={styles.insidiousRow}>
+        <View style={[styles.insidiousLine, { backgroundColor: theme.colors.hairline }]} />
+        <RedDoor open={doorOpening(index)} frame={sill} />
+        <View style={[styles.insidiousLine, { backgroundColor: theme.colors.hairline }]} />
+      </View>
+      <Txt variant="displayL" align="center" numberOfLines={2}>
+        {label}
+      </Txt>
+      {stories && (
+        <Txt variant="spaced" tone="tertiary" align="center">
+          {stories}
+        </Txt>
+      )}
     </View>
   );
 }
 
 /** Section headings for the horror themes, by theme name. Themes not listed use their built-in `layout.sections` style. */
 export const horrorHeadings: HeadingRegistry = {
-  overlook: OverlookHeading,
   nosferatu: NosferatuHeading,
   thering: RingHeading,
   midsommar: MidsommarHeading,
   scream: ScreamHeading,
+  insidious: InsidiousHeading,
 };
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pad: { paddingHorizontal: GUTTER },
   tabular: { fontVariant: ['tabular-nums'] },
-
-  overlook: { paddingHorizontal: GUTTER + 2, gap: 10 },
-  overlookTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 28 },
-  plaque: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    height: 28,
-    paddingHorizontal: 9,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: BRASS_EDGE,
-    backgroundColor: BRASS,
-    overflow: 'hidden',
-  },
-  // A lighter line along the top edge, so the plate reads as metal rather than paint.
-  plaqueBevel: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 238, 196, 0.55)',
-  },
-  plaqueText: {
-    fontFamily: 'BarlowCondensed_700Bold',
-    fontSize: 14,
-    lineHeight: 17,
-    letterSpacing: 2.4,
-    textTransform: 'uppercase',
-  },
-  screw: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: BRASS_EDGE,
-    borderWidth: 0.5,
-    borderColor: 'rgba(58, 36, 18, 0.6)',
-  },
-  brassRule: { width: 28, height: 2, borderRadius: 1 },
 
   intertitle: { borderWidth: 1, padding: 4, backgroundColor: '#080605' },
   intertitleInner: {
@@ -414,9 +409,12 @@ const styles = StyleSheet.create({
   midsommarTitle: { flexShrink: 1 },
   stitchSide: { flex: 1, minWidth: 48, flexDirection: 'row', alignItems: 'center', gap: 6 },
 
-  scream: { paddingHorizontal: GUTTER + 2, gap: 8 },
-  screamTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 24 },
-  ruleTag: { height: 24, paddingHorizontal: 9, borderRadius: 2, justifyContent: 'center' },
-  ruleText: { fontFamily: 'Anton_400Regular', fontSize: 13, lineHeight: 18, letterSpacing: 1.6 },
+  scream: { paddingHorizontal: GUTTER + 2, gap: 6 },
+  screamTop: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 20 },
+  screamLine: { height: 1 },
   redRule: { width: 28, height: 3 },
+
+  insidious: { paddingHorizontal: GUTTER, gap: 8, alignItems: 'center' },
+  insidiousRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, marginBottom: 2 },
+  insidiousLine: { width: 56, height: 1, marginBottom: 2 },
 });

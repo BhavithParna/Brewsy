@@ -48,8 +48,11 @@ export function usePreviewState(): PreviewState {
  *   ?tour=0        mark the first-run tour as seen     ?tour=1   show it again
  *                  (?onboarded=1 without a tour flag also skips the tour, so screenshots stay clear)
  *   ?theme=atlantis   switch theme. Classic: glass | space | atlantis | highlands | alpine.
- *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli.
- *                     Horror: overlook | nosferatu | thering | midsommar | scream.
+ *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli |
+ *                            fightclub.
+ *                     Horror: nosferatu | thering | midsommar | scream | insidious.
+ *   ?eggs=1        film themes: put every rare section-heading touch (some days only) on every topic at once
+ *                  (read in components/headings/films.tsx)
  *   ?glass=dark    Glass appearance: light | dark | auto
  *   ?blur=0        draw frosted glass the way Android does: no blur, just the fills (read in GlassCard)
  *   ?region=CA     where the local section comes from: IN | CA | US | UK | AU | WORLD
