@@ -25,12 +25,14 @@ export type ThemeName =
   | 'hogwarts'
   | 'lalaland'
   | 'ghibli'
+  | 'fightclub'
   // Horror (packs/horror.ts)
   | 'overlook'
   | 'nosferatu'
   | 'thering'
   | 'midsommar'
-  | 'scream';
+  | 'scream'
+  | 'insidious';
 
 /** Where a theme sits in the picker. */
 export type ThemeGroup = 'classic' | 'films' | 'horror';
@@ -68,6 +70,22 @@ export type PhotoCredit = {
   url: string;
   /** CC BY-SA asks us to say we cropped and recolored it. */
   adapted: boolean;
+};
+
+/**
+ * A theme's own small lines: a nod to its film or place where the app would otherwise say something
+ * plain. Each is optional (the plain line is used without it). Keep them short, and never in place of
+ * something the reader needs: times, counts and how-tos stay as they are.
+ */
+export type ThemeLines = {
+  /** One extra line under "You're all caught up" at the end of today's edition. */
+  signOff?: string;
+  /** Title of the card shown before today's edition is out (instead of "Still brewing"). */
+  brewing?: string;
+  /** Title of the empty Reading List (instead of "Nothing saved yet"). */
+  emptySaved?: string;
+  /** Title when search finds nothing (instead of "No matches"). */
+  noResults?: string;
 };
 
 /** The border colors of a liquid-glass pane, by edge. */
@@ -139,6 +157,8 @@ export type Theme = {
     /** Buttons and chips use small spaced capitals. */
     capsButtons: boolean;
   };
+  /** Small lines of its own (see ThemeLines). */
+  lines?: ThemeLines;
   colors: {
     /** Flat base color (status bar strip, navigation, behind the cover while it loads). */
     bg: string;

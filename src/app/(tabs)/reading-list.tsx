@@ -476,7 +476,7 @@ function EmptyList() {
           <Bookmark size={24} color={theme.colors.text} strokeWidth={1.5} />
         </View>
         <Txt variant="displayM" align="center" accessibilityRole="header">
-          Nothing saved yet
+          {theme.lines?.emptySaved ?? 'Nothing saved yet'}
         </Txt>
         <Txt variant="body" tone="secondary" align="center" style={styles.emptyBody}>
           Tap the bookmark on any story to save it here.

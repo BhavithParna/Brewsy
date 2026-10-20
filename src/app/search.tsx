@@ -221,7 +221,7 @@ export default function SearchScreen() {
             {!loading && hits.length === 0 && (
               <View style={[styles.pad, styles.none]}>
                 <Txt variant="displayM" align="center">
-                  No matches
+                  {theme.lines?.noResults ?? 'No matches'}
                 </Txt>
                 <Txt variant="body" tone="secondary" align="center">
                   {`Nothing in the last two weeks mentions “${settled.trim()}”. Try one word, or a name.`}

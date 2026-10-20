@@ -257,6 +257,11 @@ export function EndOfEdition({
       <Txt variant="body" tone="secondary" align="center">
         {caughtUp ? `See you tomorrow at ${wakeLabel}.` : `You've read the ${dateLabel} edition.`}
       </Txt>
+      {caughtUp && theme.lines?.signOff && (
+        <Txt variant="caption" tone="tertiary" align="center">
+          {theme.lines.signOff}
+        </Txt>
+      )}
       <ReadingTally isToday={isToday} editionDate={editionDate} storyIds={storyIds} />
       <Pill
         label={exporting ? 'Making PDF…' : 'Export as PDF'}

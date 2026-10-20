@@ -32,7 +32,7 @@ export function EmptyState({ wakeTime, isToday, dateLabel }: { wakeTime: string;
   return (
     <StateCard
       icon={<Coffee size={24} color={theme.colors.text} strokeWidth={1.5} />}
-      title={isToday ? 'Still brewing' : 'No edition'}
+      title={isToday ? (theme.lines?.brewing ?? 'Still brewing') : 'No edition'}
       body={
         isToday
           ? `Your briefing arrives at ${wakeTime}. We'll send a notification the moment it's ready.`
