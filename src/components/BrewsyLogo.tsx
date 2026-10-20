@@ -14,7 +14,7 @@ type Props = ViewProps & {
 };
 
 /**
- * The Brewsy lockup: the pour-over mark with the name in the theme's spaced capitals,
+ * The Brewsy lockup: the bean mark with the name in the theme's spaced capitals,
  * so it takes on each theme's typeface (Jost in Dune, Space Mono in Space, Orbitron in Tron...).
  */
 export function BrewsyLogo({ size = 22, color, layout = 'row', style, ...rest }: Props) {

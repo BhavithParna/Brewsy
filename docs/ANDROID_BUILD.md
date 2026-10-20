@@ -50,9 +50,9 @@ cd ~/Documents/"app Recap"/brewsy
 
    The GitHub repo is public, so this file isn't committed: it's kept out locally with
    `echo google-services.json >> .git/info/exclude` (not `.gitignore`, which is part of the
-   app's update fingerprint). EAS Build skips git-ignored files, so before your next
-   `eas build` add an `.easignore` (a copy of `.gitignore`) that doesn't list
-   `google-services.json`. Adding it changes the fingerprint, which a new build needs anyway.
+   app's update fingerprint). EAS Build skips git-ignored files, so the project has an
+   `.easignore` (a copy of `.gitignore`) that doesn't list `google-services.json`; EAS reads it
+   instead of `.gitignore`. Keep the two in step, and remember both are in the fingerprint.
 
 4. Give Expo permission to send through Firebase:
    - Firebase console → ⚙️ **Project settings** → **Service accounts** →

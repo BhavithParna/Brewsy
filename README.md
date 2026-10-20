@@ -62,9 +62,9 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   per-theme section headings in `src/components/headings/`; covers in `assets/themes/` (photo
   credits in Settings → Theme; every cover added since Matrix is original art). Only the current
   theme's typefaces load at startup; the rest load in the background.
-- **Logo** — the mark is a pour-over: a paper filter with a line of type in it, over a cup, drawn
-  in each theme's ink. The matching launcher icon, splash and notification icon are in
-  `assets/brand/` and ship with the next EAS build (icons can't change over the air).
+- **Logo** — a coffee bean with an S-shaped cut, drawn in thin line in each theme's ink. The
+  launcher icon is the same bean, filled: roast brown with an amber cut on espresso. Sources are
+  in `assets/brand/` (icons only change with a new EAS build, not over the air).
 
 ## Run it
 
@@ -99,7 +99,7 @@ src/data/           edition loading + caching, API calls, the sample edition, ty
 src/lib/            notifications, PDF export, formatting, curation (what Today shows), search
 supabase/           the backend: database migrations + edge functions
 plugins/            config plugins (Android home-screen shortcuts)
-assets/brand/       the logo's source SVGs and the icon set for the next native build
+assets/brand/       the logo's source SVGs and the app icon set
 ```
 
 Web preview flags (development): `?onboarded=1` (also skips the tour) · `?tour=0|1` ·
