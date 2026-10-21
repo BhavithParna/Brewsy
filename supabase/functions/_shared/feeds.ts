@@ -595,11 +595,13 @@ export async function fetchAllFeeds(
 
 /**
  * The more specific of two hints for one article that came through two feeds of the same
- * outlet: a section feed (Variety Film) says more than the outlet's main feed (Variety).
+ * outlet: a section feed (Variety Film) says more than the outlet's main feed (Variety),
+ * and an ocean desk (Guardian Oceans) says more than the science or environment feed.
  */
 export function narrowerHint(a: TopicHint, b: TopicHint): TopicHint {
   if (a === 'mixed') return b;
   if (a === 'entertainment' && b === 'movies') return b;
+  if ((a === 'science' || a === 'climate') && b === 'oceans') return b;
   return a;
 }
 

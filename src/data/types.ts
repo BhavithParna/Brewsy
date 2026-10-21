@@ -13,6 +13,7 @@ export type Topic =
   | 'science'
   | 'health'
   | 'climate'
+  | 'oceans'
   | 'autos'
   | 'gaming'
   | 'sports'
@@ -30,6 +31,7 @@ export const TOPICS: Topic[] = [
   'science',
   'health',
   'climate',
+  'oceans',
   'autos',
   'gaming',
   'sports',

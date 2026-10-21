@@ -7,7 +7,7 @@
 //                    the 60-second version
 //     → write the editor's additions → markets → edition
 //
-// One edition covers all 14 topics; the app shows each reader the topics they
+// One edition covers all 15 topics; the app shows each reader the topics they
 // follow. Big topics get several full stories, small beats (games, sport, cars…)
 // one each, and "Also happening" carries the rest of every beat in one line.
 // Topics the reader asked for more of ("focus" topics, `prefs.focusTopics`) get

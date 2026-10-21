@@ -627,6 +627,66 @@
       "imageUrl": "https://ichef.bbci.co.uk/ace/standard/1200/cpsprodpb/3fff/live/a4989950-c237-11f1-be2f-0fbd447d6e43.jpg"
     },
     {
+      "id": "lantern-islands-coral-spawning",
+      "topic": "oceans",
+      "headline": "Corals spawn again across most of a reef bleached last year",
+      "dek": "Divers saw mass spawning at 41 of 52 survey sites around the Lantern Islands, up from 19 after last year’s heatwave.",
+      "whatHappened": "Divers from the Bluewater Reef Trust recorded mass coral spawning at 41 of the 52 reef sites they survey each spring around the Lantern Islands. Last year, after a marine heatwave bleached much of the reef, they saw spawning at only 19 sites. The survey covered the three nights after the October full moon.",
+      "whyItMatters": "Spawning is how a reef makes its next generation of corals. When most colonies spawn again, damaged patches have a better chance of being reseeded instead of being taken over by seaweed.",
+      "explainSimply": "Think of an orchard after a drought. If most of the trees blossom again the next spring, the orchard can recover; if they don’t, there is little fruit and few new trees.",
+      "background": "Bleaching happens when the water stays too warm for weeks and corals lose the tiny algae that feed them. Bleached corals can recover if the water cools in time, but they often skip spawning while they do.\n\nThe Trust has run the same spring survey since 2011, so this year’s count can be compared site by site with earlier years.",
+      "keyPlayers": [
+        {
+          "name": "Bluewater Reef Trust",
+          "role": "Ran the survey with volunteer divers"
+        },
+        {
+          "name": "Reef managers",
+          "role": "Use the count to decide where to focus restoration work"
+        }
+      ],
+      "keyTerms": [
+        {
+          "term": "Mass spawning",
+          "definition": "When many corals release their eggs and sperm into the water on the same few nights each year."
+        },
+        {
+          "term": "Bleaching",
+          "definition": "Corals turning white after losing the algae that feed them, usually because the water is too warm."
+        }
+      ],
+      "whatToWatch": [
+        "How many young corals settle on the reef in the coming months",
+        "Sea temperature forecasts for the summer ahead"
+      ],
+      "readTimeMinutes": 1,
+      "sources": [
+        {
+          "name": "Mongabay",
+          "url": "https://news.mongabay.com/topic/marine/"
+        },
+        {
+          "name": "Oceanographic Magazine",
+          "url": "https://oceanographicmagazine.com/news/"
+        }
+      ],
+      "allSources": [
+        {
+          "name": "Mongabay",
+          "url": "https://news.mongabay.com/topic/marine/"
+        },
+        {
+          "name": "Oceanographic Magazine",
+          "url": "https://oceanographicmagazine.com/news/"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/environment/oceans"
+        }
+      ],
+      "imageUrl": "https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
       "id": "quiet-orbit-opening-weekend",
       "topic": "movies",
       "headline": "‘The Quiet Orbit’ opens to $96 million worldwide",
@@ -816,6 +876,19 @@
           "name": "Reuters",
           "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPX25fMlA3U2pUVm9Ta1Z6WVJKZ0t1TjFsNXh1dGcwSElOV2U2dEFlSXNOR3hwY2MwTmdSRUtheFM1SjRGdGN0N1doM1d4WjBzRWRQSUUyeFA3THRrLVYzSlpmaHJYVG12UmJDd2JOUmZDV1pXYmJjMEUtaEVTYlFzODlDMUljWTVUSU9qOWlhSmVfZmN5UHEzTnZ6aWgwZ3Fn?oc=5",
           "title": "Georgia arrests man over attempted $700,000 uranium sale"
+        }
+      ]
+    },
+    {
+      "id": "also-cape-wren-whale-count",
+      "topic": "oceans",
+      "headline": "Volunteers count the most humpback whales passing Cape Wren in 20 years of surveys",
+      "whatHappened": "Volunteer spotters at Cape Wren counted 3,140 humpback whales on their southward migration this season, the highest total since the counts began. The organisers said calmer weather also meant fewer days were lost to poor visibility.",
+      "whyItMatters": "",
+      "sources": [
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/environment/marine-life"
         }
       ]
     },

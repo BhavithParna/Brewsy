@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THE NEWS SOURCES. Edit this list to add or remove feeds.
 //
-// Brewsy casts a wide net (≈150 feeds across 14 topics), groups articles about
+// Brewsy casts a wide net (≈160 feeds across 15 topics), groups articles about
 // the same event, scores each group, and only then narrows down. Each source has:
 //
 // - `outlet`    What you see in the app (Settings → Sources toggles use it).
@@ -13,9 +13,10 @@
 //                   counted by the must-include rule (5+ of them → always included).
 //     'tech'        Tech and AI press, and the tech aggregators.
 //     'specialist'  Specialist press for one beat: cars, games, sport, film, TV
-//                   and music, crypto, health, climate, science, politics.
+//                   and music, crypto, health, climate, oceans, science, politics.
 //     'official'    Primary sources: company newsrooms, AI lab blogs, the Fed,
-//                   SEC filings, the White House. Adds "impact" to a story.
+//                   SEC filings, the White House, ocean research institutes.
+//                   Adds "impact" to a story.
 //     'safety-net'  Aggregators (Yahoo News). Each item is credited to its real
 //                   publisher (AP, Reuters, AFP…), so they mostly widen the coverage count.
 // - `trust`     How much one article from here counts as coverage:
@@ -69,6 +70,20 @@
 // Australian (403 or empty), 9News (404), ABC Australia's politics feed (500), The Age (the
 // same stories as the Sydney Morning Herald), NDTV's India feed (mostly exam notices), and
 // USA Today, CNN's US feed and AP (empty or 404).
+// Oceans, checked Oct 2026: Hakai Magazine (nothing new since December 2024), Smithsonian Ocean
+// (403), NOAA Fisheries, Down To Earth and ABC Australia's reef and science topics (no working feed;
+// Down To Earth's stories.rss is empty), NOAA's own feeds (a post every few days, mostly weather;
+// Ocean Service news is a week old and Ocean Exploration's items have no dates), Phys.org (no ocean
+// section: its oceanography address serves all Earth news and its ocean tag feeds stopped in
+// February 2026), ScienceDaily's marine biology feed (mostly fossils and land animals), Schmidt
+// Ocean Institute, Oceana, Ocean Conservancy and Mission Blue (expedition blogs, campaigns and press
+// releases, about one a week), Live Science's ocean tags, Science News, Grist, The Conversation and
+// The Independent (ocean topics with a story every week or two, or none), Deep Sea News (silent
+// since 2024), Earth.com and Eos (general science, no ocean feed), Arctic Today, High North News,
+// the Barents Observer and Polar Journal (no feed or an empty one), NSIDC's sea ice news (monthly),
+// Mongabay's oceans topic (it also carries typhoons and climate finance; its marine topic is the
+// same ocean news without them) and The Guardian's whales, sharks, fishing and Great Barrier Reef
+// tags (the same stories as its oceans and marine life feeds).
 //
 // Plain data only: the app imports this file too, so no Deno/npm imports here.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +91,7 @@
 // Same names as `Topic` in types.ts (kept literal: the app imports this file too).
 export type TopicHint =
   | 'ai' | 'tech' | 'business' | 'world' | 'politics' | 'science' | 'health' | 'climate'
-  | 'autos' | 'gaming' | 'sports' | 'entertainment' | 'movies' | 'crypto' | 'mixed';
+  | 'oceans' | 'autos' | 'gaming' | 'sports' | 'entertainment' | 'movies' | 'crypto' | 'mixed';
 export type SourceCategory = 'wire' | 'major' | 'tech' | 'specialist' | 'official' | 'safety-net';
 export type Trust = 'high' | 'medium' | 'low';
 
@@ -333,6 +348,21 @@ export const SOURCES: FeedSource[] = [
   { id: 'decrypt', outlet: 'Decrypt', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'medium', url: 'https://decrypt.co/feed' },
   { id: 'cointelegraph', outlet: 'Cointelegraph', kind: 'rss', topicHint: 'crypto', category: 'specialist', trust: 'low', url: 'https://cointelegraph.com/rss' },
 
+  // ── Oceans: sea life, the deep sea, ocean science, fisheries and the health of the seas ──
+  // The Guardian's ocean desks (the same articles in its environment feed keep this hint, see feeds.ts)
+  { id: 'guardian-oceans', outlet: 'The Guardian', kind: 'rss', topicHint: 'oceans', category: 'major', trust: 'high', url: guardian('environment/oceans') },
+  { id: 'guardian-marine-life', outlet: 'The Guardian', kind: 'rss', topicHint: 'oceans', category: 'major', trust: 'high', url: guardian('environment/marine-life') },
+  // Ocean news: conservation, fisheries, marine protected areas, deep-sea mining, new species
+  { id: 'mongabay-marine', outlet: 'Mongabay', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'medium', url: 'https://news.mongabay.com/topic/marine/feed/' },
+  { id: 'mongabay-india-oceans', outlet: 'Mongabay India', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'medium', url: 'https://india.mongabay.com/topic/oceans/feed/' },
+  { id: 'oceanographic', outlet: 'Oceanographic Magazine', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'medium', url: 'https://oceanographicmagazine.com/news/feed/' },
+  { id: 'inside-climate-oceans', outlet: 'Inside Climate News', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'medium', url: 'https://insideclimatenews.org/topic/oceans/feed/' },
+  // Asia's seas, distant-water fishing and the high seas (a few stories a month)
+  { id: 'dialogue-earth-ocean', outlet: 'Dialogue Earth', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'medium', url: 'https://dialogue.earth/en/ocean/feed/' },
+  // University press releases on ocean science, sea ice and coral (an aggregator, so it counts lightly)
+  { id: 'sciencedaily-oceanography', outlet: 'ScienceDaily', kind: 'rss', topicHint: 'oceans', category: 'specialist', trust: 'low', url: 'https://www.sciencedaily.com/rss/earth_climate/oceanography.xml' },
+  // (The ocean research institutes, WHOI and MBARI, are under Official sources.)
+
   // ── Official sources ──
   { id: 'openai', outlet: 'OpenAI', kind: 'rss', topicHint: 'ai', category: 'official', trust: 'medium', url: 'https://openai.com/news/rss.xml' },
   { id: 'anthropic', outlet: 'Anthropic', kind: 'html-list', topicHint: 'ai', category: 'official', trust: 'medium', url: 'https://www.anthropic.com/news' },
@@ -346,6 +376,9 @@ export const SOURCES: FeedSource[] = [
   { id: 'fed', outlet: 'Federal Reserve', kind: 'rss', topicHint: 'business', category: 'official', trust: 'medium', url: 'https://www.federalreserve.gov/feeds/press_all.xml' },
   { id: 'whitehouse', outlet: 'White House', kind: 'rss', topicHint: 'politics', category: 'official', trust: 'medium', url: 'https://www.whitehouse.gov/news/feed/' },
   { id: 'nasa', outlet: 'NASA', kind: 'rss', topicHint: 'science', category: 'official', trust: 'medium', url: 'https://www.nasa.gov/news-release/feed/' },
+  // Ocean research institutes (Woods Hole, Monterey Bay): deep-sea creatures and expeditions, from the scientists
+  { id: 'whoi', outlet: 'WHOI', kind: 'rss', topicHint: 'oceans', category: 'official', trust: 'medium', url: 'https://www.whoi.edu/feed/?post_type=news_release' },
+  { id: 'mbari', outlet: 'MBARI', kind: 'rss', topicHint: 'oceans', category: 'official', trust: 'medium', url: 'https://www.mbari.org/feed/' },
   {
     id: 'sec-8k', outlet: 'SEC filings', kind: 'sec-8k', topicHint: 'business', category: 'official', trust: 'medium',
     url: 'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=8-K&dateb=&owner=include&count=5&output=atom',
@@ -474,6 +507,18 @@ export const OUTLET_ALIASES: Record<string, string> = {
   'new scientist': 'New Scientist',
   'stat': 'STAT',
   'stat news': 'STAT',
+  'mongabay': 'Mongabay',
+  'mongabay india': 'Mongabay India',
+  'oceanographic': 'Oceanographic Magazine',
+  'oceanographic magazine': 'Oceanographic Magazine',
+  'inside climate news': 'Inside Climate News',
+  'dialogue earth': 'Dialogue Earth',
+  'sciencedaily': 'ScienceDaily',
+  'science daily': 'ScienceDaily',
+  'whoi': 'WHOI',
+  'woods hole oceanographic institution': 'WHOI',
+  'mbari': 'MBARI',
+  'monterey bay aquarium research institute': 'MBARI',
   'variety': 'Variety',
   'the hollywood reporter': 'The Hollywood Reporter',
   'hollywood reporter': 'The Hollywood Reporter',

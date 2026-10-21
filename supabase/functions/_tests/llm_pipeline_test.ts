@@ -337,7 +337,7 @@ Deno.test('pipeline: topics the AI left out get one story each (2+ outlets) and 
     }, seen, () => [...sampleItems(), ...beats()]),
   });
   const pick = seen.find((o) => kindOf(o) === 'pick')!;
-  assert(pick.prompt.includes('gaming, sports, entertainment, movies, crypto'), 'the AI is offered all 14 topics');
+  assert(pick.prompt.includes('climate, oceans, autos, gaming, sports, entertainment, movies, crypto'), 'the AI is offered all 15 topics');
   assert(/IGN, Polygon · hint gaming/.test(pick.prompt), 'the gaming story reaches the AI');
   assertEquals(stats.topicFills, 1, 'gaming (two outlets) gets a full story; the one-outlet cricket story does not');
   const gaming = briefing.stories.filter((s) => s.allSources.some((x) => x.url.includes('ign.example')));

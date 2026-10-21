@@ -12,9 +12,10 @@ const TOPIC_GUIDE = `Topics (choose the single best fit for each story):
 - business: the economy, markets, interest rates, companies, deals, jobs, trade
 - world: international affairs and major events: wars and conflicts, diplomacy, terrorism, natural disasters, big news from other countries
 - politics: elections, governments, parliaments, courts and policy fights, in any country (India and the US included); a war or a diplomatic story is world, not politics
-- science: research and discoveries, space and astronomy, science prizes
+- science: research and discoveries, space and astronomy, science prizes; research about the sea or sea life goes under oceans
 - health: medicine, drugs and vaccines, disease outbreaks, public health, health care
-- climate: climate change, emissions and climate policy, the energy transition, the environment and wildlife
+- climate: climate change, emissions and climate policy, the energy transition, the environment and wildlife; the seas and sea life go under oceans
+- oceans: the oceans and seas and what lives in them: whales, sharks, coral reefs, fish and new species; ocean science and exploration, the deep sea and polar seas; fisheries, ocean pollution, marine protection, sea ice and sea level; a story mainly about the sea or sea life is oceans, not science or climate
 - autos: carmakers, electric vehicles, self-driving cars, car launches, sales and recalls (races and race results are sports)
 - gaming: video games, consoles, game studios and publishers, esports
 - sports: matches, results, tournaments, transfers and players: cricket, football, Formula 1, tennis, the Olympics and more
@@ -106,7 +107,7 @@ ${must.length ? `These are MUST candidates (covered by 5+ major outlets or flagg
 Choose about ${target} stories in total (at least 5 if the news is thin; MUST candidates don't count against the limit).
 Prefer: hard news with real consequences; stories covered by many outlets; brand-new developments over small updates to ongoing stories; major company, policy, economy, AI and science news.
 Skip: shopping deals, product promotions, reviews (except how critics received a major film), opinion columns, listicles, rumours, celebrity gossip, horoscopes, match previews, and local crime unless it is nationally significant.
-Coverage: readers follow different topics, so give every listed topic that has real news today its single most important story. The big general topics (world, politics, business, tech, AI) get more. Gaming, sports, entertainment, movies, autos and crypto get one story each unless something genuinely major happened there. If a topic has no real news, leave it out.${follows}${wantsMore}
+Coverage: readers follow different topics, so give every listed topic that has real news today its single most important story. The big general topics (world, politics, business, tech, AI) get more. Oceans, gaming, sports, entertainment, movies, autos and crypto get one story each unless something genuinely major happened there. If a topic has no real news, leave it out.${follows}${wantsMore}
 If two candidates are the same event, pick one and put the other in alsoClusterIds.
 Rank by importance: the first pick is the top story.
 
@@ -181,11 +182,16 @@ export const ALSO_LINES_FOLLOWED = 2;
 
 /** How the editor should spread the "Also happening" list over the topics. */
 function alsoSpread(topics: Topic[], followed: Topic[], more: Topic[]): string {
-  const glance = followed.includes('movies')
-    ? '\nMovies works well at a glance: box office, release dates, trailers, casting, festival line-ups and awards, from Hollywood, Indian and world cinema.'
-    : '';
+  const glance = [
+    followed.includes('movies')
+      ? '\nMovies works well at a glance: box office, release dates, trailers, casting, festival line-ups and awards, from Hollywood, Indian and world cinema.'
+      : '',
+    followed.includes('oceans')
+      ? '\nOceans works well at a glance: new species, whale and shark sightings, coral reef surveys, deep-sea finds, fishing rules and new marine protected areas.'
+      : '',
+  ].join('');
   if (!more.length && followed.length >= topics.length) {
-    return `Readers follow different topics, so spread the list: where there is real news, give every topic at least one item (including science, health, climate, autos, gaming, sports, entertainment, movies and crypto) before giving any topic a third.${glance}`;
+    return `Readers follow different topics, so spread the list: where there is real news, give every topic at least one item (including science, health, climate, oceans, autos, gaming, sports, entertainment, movies and crypto) before giving any topic a third.${glance}`;
   }
   const others = followed.filter((t) => !more.includes(t));
   const steps = [

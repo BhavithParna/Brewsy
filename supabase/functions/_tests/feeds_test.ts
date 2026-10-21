@@ -219,7 +219,7 @@ Deno.test('fetchAllFeeds: retries a failed feed once; SEC skipped (not failed) w
   }
 });
 
-Deno.test('one article in two feeds of an outlet: kept once, with the narrower topic hint (Variety Film over Variety)', async () => {
+Deno.test('one article in two feeds of an outlet: kept once, with the narrower topic hint (Variety Film over Variety, Guardian Oceans over Environment)', async () => {
   const original = globalThis.fetch;
   const body = (extra: string) => `<rss><channel><item><title>Studio dates its space epic for next summer</title><link>https://variety.example/epic</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate>${extra}</item></channel></rss>`;
   globalThis.fetch = ((input: string | URL | Request) =>
@@ -234,8 +234,26 @@ Deno.test('one article in two feeds of an outlet: kept once, with the narrower t
   } finally {
     globalThis.fetch = original;
   }
+  // The Guardian's environment feed often carries the fuller copy; its ocean desk's hint still wins.
+  globalThis.fetch = ((input: string | URL | Request) =>
+    Promise.resolve(new Response(String(input).includes('oceans') ? body('') : body('<content:encoded>Longer text from the environment feed.</content:encoded>')))) as typeof fetch;
+  try {
+    const { items } = await fetchAllFeeds([
+      src({ id: 'guardian-environment', outlet: 'The Guardian', topicHint: 'climate', category: 'major', trust: 'high', url: 'https://guardian.example/environment/rss' }),
+      src({ id: 'guardian-oceans', outlet: 'The Guardian', topicHint: 'oceans', category: 'major', trust: 'high', url: 'https://guardian.example/environment/oceans/rss' }),
+    ], NOW, 24, { secContact: null, retryDelayMs: 1 });
+    assertEquals(items.length, 1);
+    assertEquals(items[0].topicHint, 'oceans');
+    assert(items[0].content.includes('environment feed'), 'the richer copy is the one kept');
+  } finally {
+    globalThis.fetch = original;
+  }
   assertEquals(narrowerHint('mixed', 'world'), 'world');
   assertEquals(narrowerHint('movies', 'entertainment'), 'movies');
+  assertEquals(narrowerHint('climate', 'oceans'), 'oceans', 'Guardian Oceans over Guardian Environment');
+  assertEquals(narrowerHint('science', 'oceans'), 'oceans');
+  assertEquals(narrowerHint('oceans', 'climate'), 'oceans');
+  assertEquals(narrowerHint('world', 'oceans'), 'world', 'only the science and environment feeds give way');
   assertEquals(narrowerHint('tech', 'ai'), 'tech', 'otherwise the richer copy keeps its own hint');
 });
 
@@ -247,6 +265,7 @@ Deno.test('gossip from film and entertainment desks is dropped; film news and ot
   assert(!isGossip('Drishyam 3 box office collection day 9: crosses ₹150 crore', 'movies'));
   assert(!isGossip('Studio shares first trailer for its animated musical', 'movies'));
   assert(!isGossip('Pregnant women should get the RSV vaccine, panel says', 'health'), 'only film and entertainment feeds');
+  assert(!isGossip('Orca pod spotted off the coast for the first time in decades', 'oceans'));
   const xml = `<rss><channel>
     <item><title>Pregnant star lounges on the beach</title><link>https://film.example/1</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate></item>
     <item><title>Telugu period drama crosses 300 crore worldwide</title><link>https://film.example/2</link><pubDate>Wed, 07 Oct 2026 10:00:00 GMT</pubDate></item>

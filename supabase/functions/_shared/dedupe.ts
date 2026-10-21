@@ -71,7 +71,7 @@ export const MAX_CLUSTERS = 280;
 /** Every topic hint a source can carry, so each beat keeps some candidates. */
 const ALL_HINTS: TopicHint[] = [
   'ai', 'tech', 'business', 'world', 'politics', 'science', 'health', 'climate',
-  'autos', 'gaming', 'sports', 'entertainment', 'movies', 'crypto', 'mixed',
+  'oceans', 'autos', 'gaming', 'sports', 'entertainment', 'movies', 'crypto', 'mixed',
 ];
 
 export function clusterItems(items: FeedItem[], opts: ClusterOptions = {}): Cluster[] {

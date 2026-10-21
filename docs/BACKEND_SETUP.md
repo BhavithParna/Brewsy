@@ -140,7 +140,7 @@ npx supabase db push
 ```
 
 It lists the migrations (`brewsy_schema`, `brewsy_cron`, `brewsy_listen_coverage`, `brewsy_topics_focus`,
-`brewsy_readers`) and asks you to confirm. Type `Y`.
+`brewsy_readers`, `brewsy_oceans`) and asks you to confirm. Type `Y`.
 This creates the tables with their security rules, a public `audio` storage bucket, the run log
 (`pipeline_runs`), `alerts`, the local sections (`regional_editions`), the AI usage counts (`ai_usage`), the
 Ask / Go deeper log (`ai_requests`) and the schedule locks (`schedule_runs`). It turns on `pg_cron` and `pg_net`
@@ -354,7 +354,7 @@ A quiet check costs no AI calls. If a story is very big (7+ major outlets or a w
 breaking pushes on get a push: max 2 per edition, and only while it's 07:00–22:00 where the reader is.
 
 **Settings.** Each reader's wake time, timezone, region, topics and pushes are saved to the `devices` table from the
-app's Settings. Your wake time and timezone time the world edition. Topics: the edition always covers all 14, and
+app's Settings. Your wake time and timezone time the world edition. Topics: the edition always covers all 15, and
 the app shows each reader the ones they follow. The starred topics (**More of this**) that shape the edition are
 yours, topped up to 4 with the topics your friends star most. Muted outlets and muted words are applied on each
 phone, not on the server.
@@ -362,6 +362,9 @@ phone, not on the server.
 > If you set Brewsy up before October 11, run `npx supabase db push` once more. The first schema only accepted
 > 4 topics, so the app's settings saves (wake time, push token, topics) were being refused once a reader
 > followed a newer topic. The `brewsy_topics_focus` migration fixes that and adds `focus_topics`.
+>
+> The Oceans topic (October 21) needs the `brewsy_oceans` migration the same way: run `npx supabase db push`
+> before deploying the functions and the app update, or a reader who switches Oceans on stops saving settings.
 
 ## The free AI budget
 
@@ -472,6 +475,13 @@ Everything is in `supabase/functions/_shared/scoring.ts` (numbers you can tune a
   international desks, Screen Daily and the SCMP. TV, music and celebrities stay under Entertainment. Film and
   entertainment feeds skip celebrity-gossip headlines (holiday photos, outfits, "shares first post"; `GOSSIP_PATTERNS` in `feeds.ts`), and
   every feed skips shopping roundups (`JUNK_PATTERNS`); a plain "deal" in a headline is news and is kept.
+- **Oceans** has its own ocean desks (10 feeds): The Guardian's oceans and marine life pages; Mongabay's marine
+  news and Mongabay India's oceans page (conservation, fisheries, marine protected areas, deep-sea mining, new
+  species); Oceanographic Magazine; Inside Climate News' oceans page; Dialogue Earth's ocean desk (Asia's seas and
+  distant-water fishing); ScienceDaily's oceanography press releases (counted lightly); and the research institutes
+  WHOI and MBARI for ocean science and deep-sea discoveries. When the Guardian or Inside Climate News carry the same
+  article in their science or environment feed, it keeps the oceans hint. Oceans is off for new readers until they
+  switch it on. Most ocean outlets post a few times a week, so a quiet day may bring one story or only a line.
 - **Editor's checklist:** a second AI pass looks at everything that wasn't picked, category by
   category (markets, central banks, economic data, earnings, AI launches, AI policy, deals, politics,
   conflict, disasters, notable deaths, security, science and health, sport, culture). It can add up to
@@ -502,10 +512,11 @@ The list lives in `supabase/functions/_shared/sources.ts`, grouped by category. 
   Variety, Bollywood Hungama, CoinDesk, STAT…). A newsroom's own section feed keeps the newsroom's category
   (The Hindu's cinema desk is still `major`).
 - `trust`: `'high' | 'medium' | 'low'`.
-- `topicHint`: one of the 14 topics (`'ai'`, `'tech'`, `'business'`, `'world'`, `'politics'`, `'science'`,
-  `'health'`, `'climate'`, `'autos'`, `'gaming'`, `'sports'`, `'entertainment'`, `'movies'`, `'crypto'`) or `'mixed'`.
+- `topicHint`: one of the 15 topics (`'ai'`, `'tech'`, `'business'`, `'world'`, `'politics'`, `'science'`,
+  `'health'`, `'climate'`, `'oceans'`, `'autos'`, `'gaming'`, `'sports'`, `'entertainment'`, `'movies'`, `'crypto'`) or `'mixed'`.
   It's a nudge (the AI decides per story), and it keeps each beat's best candidates in front of the AI. When the
-  same article comes through two feeds of one outlet (Variety and Variety Film), the narrower hint wins.
+  same article comes through two feeds of one outlet (Variety and Variety Film, or the Guardian's environment and
+  oceans feeds), the narrower hint wins.
 - `region` (local feeds only): `'IN' | 'US' | 'UK' | 'CA' | 'AU'`. The feed then only feeds that region's local
   section, and Settings → Sources lists it only for that region's readers. Leave it out for everything else.
 
@@ -622,7 +633,7 @@ select * from alerts order by created_at desc limit 10;
 | SEC filings never show up | Set `SEC_CONTACT_EMAIL` (step 4) and re-run step 7. The health check lists it under `skipped` until then. |
 | No edition in the morning | SQL Editor: `select * from cron.job_run_details order by start_time desc limit 5;` (did the timer run?) and `select status_code, content, error_msg from net._http_response order by created desc limit 5;` (what did the function say?). An empty `private.config` means the timer is skipping. Redo step 9. |
 | App still shows the sample edition | Check the two `.env` lines in the project root, then `npx expo start -c`. |
-| Wake time, topics or region changed in the app but the server ignores them | The `devices` row isn't updating. Run `npx supabase db push` (the latest migrations let the table accept all 14 topics, `focus_topics` and `region`), then change any setting in the app to send it again. Check with the readers query under "Checking how the runs went". |
+| Wake time, topics or region changed in the app but the server ignores them | The `devices` row isn't updating. Run `npx supabase db push` (the latest migrations let the table accept all 15 topics, `focus_topics` and `region`), then change any setting in the app to send it again. Check with the readers query under "Checking how the runs went". |
 | "Go deeper" / "Ask" say "Story not found" | The app is showing the built-in sample. These only work on real editions. |
 | "You've used today's questions" / "…deep dives" | A cap was reached (see [Ask and Go deeper caps](#ask-and-go-deeper-caps)); it's a rolling 24 hours. |
 | "Today's free AI allowance is used up" | Every model for Ask or Go deeper is at its daily limit. It works again the next day. |
@@ -675,7 +686,7 @@ sections), `updates.ts` (daytime checks), `audio.ts` + `audio-config.ts` + `tts.
 `llm.ts` (the AI providers, routes and free-tier budgets), `caps.ts` (Ask and Go deeper caps), `prompts.ts`,
 `validate.ts`, `prefs.ts` (readers, regions and the tick planner), `store.ts`, `push.ts`.
 
-Run the backend tests (141 tests, no keys needed):
+Run the backend tests (143 tests, no keys needed):
 
 ```bash
 npx --yes deno@latest test -A --node-modules-dir=none --no-lock supabase/functions/_tests/

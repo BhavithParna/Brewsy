@@ -1,4 +1,4 @@
-// The 14 topics: every beat has sources, reaches the AI, and ends up in the edition somewhere.
+// The 15 topics: every beat has sources, reaches the AI, and ends up in the edition somewhere.
 // "More of this" (focus) topics get more of everything.
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
@@ -114,10 +114,10 @@ Deno.test('clusterAll: the cap keeps a share of every beat, not only the best-co
   assertEquals(count(['movies']), 3);
 });
 
-Deno.test('prompts: all 14 topics are offered; schemas stay within what Gemini accepts; audio length follows the story count', () => {
+Deno.test('prompts: all 15 topics are offered; schemas stay within what Gemini accepts; audio length follows the story count', () => {
   const prompt = pickPrompt([], TOPICS, '2026-10-08', NOW, 12);
-  assert(prompt.includes('Topics to include: ai, tech, business, world, politics, science, health, climate, autos, gaming, sports, entertainment, movies, crypto.'));
-  assert(prompt.includes('Gaming, sports, entertainment, movies, autos and crypto get one story each'));
+  assert(prompt.includes('Topics to include: ai, tech, business, world, politics, science, health, climate, oceans, autos, gaming, sports, entertainment, movies, crypto.'));
+  assert(prompt.includes('Oceans, gaming, sports, entertainment, movies, autos and crypto get one story each'));
   assert(!prompt.includes('asked for more of'), 'no "more of" line without focus topics');
   assert(prompt.includes('its single most important story'));
   assert(!/\bsports, horoscopes\b/.test(prompt), 'sport is a topic now, not junk');
@@ -168,6 +168,58 @@ Deno.test('movies: its own beat, fed by Hollywood trades, world and indie film p
   assert(!isMajorOutlet('The National') && !isMajorOutlet('Daily Sabah'), 'newsrooms we only read for film count as film press');
   assert(PICK_SYSTEM.includes('- movies: films from Hollywood, Bollywood'), 'the AI knows what movies covers');
   assert(PICK_SYSTEM.includes('films go under movies'), 'and that films are not entertainment');
+});
+
+// ─── Oceans ───
+
+Deno.test('oceans: its own beat, fed by a newsroom ocean desk, specialist ocean press and the research institutes', () => {
+  const sea = SOURCES.filter((s) => s.topicHint === 'oceans');
+  assert(sea.length >= 8, `${sea.length} ocean feeds`);
+  const ids = new Set(sea.map((s) => s.id));
+  const beats: Record<string, string[]> = {
+    'a major newsroom': ['guardian-oceans', 'guardian-marine-life'],
+    'conservation, fisheries and marine protection': ['mongabay-marine', 'inside-climate-oceans', 'dialogue-earth-ocean'],
+    'sea life and ocean news': ['oceanographic', 'mongabay-india-oceans'],
+    'ocean science, the deep sea and sea ice': ['sciencedaily-oceanography', 'whoi', 'mbari'],
+  };
+  for (const [beat, list] of Object.entries(beats)) {
+    for (const id of list) assert(ids.has(id), `${id} feeds the oceans beat (${beat})`);
+  }
+  assert(sea.every((s) => !s.region), 'ocean news is a world beat, never one region\'s local section');
+  assert(sea.every((s) => s.kind === 'rss'));
+  assertEquals(outletInfo('The Guardian').category, 'major', 'its ocean desk keeps the newsroom\'s standing');
+  assertEquals(outletInfo('Mongabay').category, 'specialist');
+  assertEquals(outletInfo('ScienceDaily').trust, 'low', 'press-release aggregators count lightly, like Phys.org');
+  assertEquals(outletInfo('WHOI').category, 'official');
+  assert(!isMajorOutlet('Oceanographic Magazine') && !isMajorOutlet('MBARI'));
+  // It's an opt-in topic: in the edition for everyone, but new readers don't start with it.
+  assert(TOPICS.indexOf('oceans') === TOPICS.indexOf('climate') + 1, 'Oceans comes right after Climate on Today');
+  assert(PICK_SYSTEM.includes('- oceans: the oceans and seas and what lives in them: whales, sharks, coral reefs'), 'the AI knows what oceans covers');
+  assert(PICK_SYSTEM.includes('a story mainly about the sea or sea life is oceans, not science or climate'));
+  assert(PICK_SYSTEM.includes('the seas and sea life go under oceans'), 'and the climate line agrees');
+  const editor = editorPrompt([], [], '2026-10-08', NOW, { topics: TOPICS, followed: ['world', 'oceans'], more: [] });
+  assert(editor.includes('Oceans works well at a glance'));
+  assert(!editorPrompt([], [], '2026-10-08', NOW, { topics: TOPICS, followed: ['world', 'movies'], more: [] }).includes('Oceans works well'));
+});
+
+Deno.test('oceans: a quiet beat still gets its one story or line, and a sea story from a science feed can land there', () => {
+  const cand = candidates([
+    cluster('w1', 'world', ['Reuters', 'BBC News']),
+    cluster('o1', 'oceans', ['Mongabay', 'The Guardian'], 'Nations agree to protect a deep-sea ridge from bottom trawling'),
+    cluster('o2', 'oceans', ['Oceanographic Magazine'], 'Rare beaked whale filmed alive for the first time'),
+  ]);
+  const fills = fillTopics([{ clusterIds: ['w1'], topic: 'world' }], cand, 10, { followed: ['world', 'oceans'] });
+  assertEquals(fills.map((p) => [p.topic, p.clusterIds[0]]), [['oceans', 'o1']]);
+  const also = topUpAlso([], new Set<Topic>(['world']), cand, new Set(['w1']));
+  assert(also.some((a) => a.topic === 'oceans' && a.clusterIds[0] === 'o1'), 'and a headline line when it has no story');
+  // The grouping cap keeps a share of the ocean beat too.
+  const items = [
+    ...Array.from({ length: 40 }, (_, k) =>
+      ['Reuters', 'BBC News', 'NPR'].map((outlet, i) =>
+        item({ outlet, topicHint: 'world', title: `${['zephyr', 'quartz', 'nimbus'].map((w) => `${w}${k}x`).join(' ')} update ${i}`, link: `https://w.example/${k}/${i}` }))).flat(),
+    item({ outlet: 'Mongabay', topicHint: 'oceans', title: 'Silky shark numbers fall as longline fleets move west', link: 'https://mongabay.example/1' }),
+  ];
+  assert(clusterAll(items, { now: NOW, maxClusters: 28 }).clusters.some((c) => c.topicHints.includes('oceans')), 'an ocean story survives the cap');
 });
 
 // ─── "More of this" (focus topics) ───
@@ -244,7 +296,7 @@ Deno.test('prompts: focus topics ask for 4–6 stories and more "Also happening"
   assert(editor.includes('2 items for each other topic they follow (ai, tech)'));
   assert(editor.includes('Movies works well at a glance'));
   const everyone = editorPrompt([], [], '2026-10-08', NOW);
-  assert(everyone.includes('give every topic at least one item (including science, health, climate, autos, gaming, sports, entertainment, movies and crypto)'));
+  assert(everyone.includes('give every topic at least one item (including science, health, climate, oceans, autos, gaming, sports, entertainment, movies and crypto)'));
   assert(!everyone.includes('at a glance'));
 });
 
