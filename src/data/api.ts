@@ -198,7 +198,7 @@ export type FeedbackPayload = {
   app_version: string;
 };
 
-/** Settings → Feedback. Readers can send it but never read it back; only the owner's devices can. */
+/** Settings → Feedback. Readers can send it but never read it back; only the owner's paired phone can. */
 export async function sendFeedback(payload: FeedbackPayload): Promise<void> {
   await request<null>('/rest/v1/feedback', {
     method: 'POST',
@@ -229,9 +229,26 @@ export async function logUsage(deviceId: string, day: UsageDay): Promise<void> {
   });
 }
 
-/** Whether this phone is one of the owner's (devices.is_owner, which only the server can set). */
-export async function fetchIsOwner(deviceId: string): Promise<boolean> {
-  return (await request<boolean | null>('/rest/v1/rpc/brewsy_is_owner', { method: 'POST', headers: deviceHeader(deviceId) })) === true;
+/** The owner's calls: this phone's id and its owner key, which the server checks against the paired keys. */
+export type OwnerAuth = { deviceId: string; key: string };
+
+const ownerHeaders = (auth: OwnerAuth): Record<string, string> => ({ 'x-device-id': auth.deviceId, 'x-owner-key': auth.key });
+
+/**
+ * Asks to pair this phone as the owner's. Returns the code to approve in the Supabase dashboard,
+ * 'paired' once approved, or null if the server doesn't know this phone yet.
+ */
+export async function askOwnerPairing(deviceId: string, keyHash: string): Promise<string | null> {
+  return request<string | null>('/rest/v1/rpc/brewsy_owner_ask', {
+    method: 'POST',
+    headers: deviceHeader(deviceId),
+    body: JSON.stringify({ p_key_hash: keyHash }),
+  });
+}
+
+/** Whether this phone is paired as the owner's (approved in the dashboard, never by the app). */
+export async function fetchIsOwner(auth: OwnerAuth): Promise<boolean> {
+  return (await request<boolean | null>('/rest/v1/rpc/brewsy_is_owner', { method: 'POST', headers: ownerHeaders(auth) })) === true;
 }
 
 export type FeedbackEntry = {
@@ -247,20 +264,20 @@ export type FeedbackEntry = {
 };
 
 /** The owner's inbox, newest first (empty for anyone else). */
-export async function fetchOwnerFeedback(deviceId: string): Promise<FeedbackEntry[]> {
+export async function fetchOwnerFeedback(auth: OwnerAuth): Promise<FeedbackEntry[]> {
   const rows = await request<FeedbackEntry[] | null>('/rest/v1/rpc/brewsy_owner_feedback', {
     method: 'POST',
-    headers: deviceHeader(deviceId),
+    headers: ownerHeaders(auth),
     body: JSON.stringify({ p_limit: 300 }),
   });
   return Array.isArray(rows) ? rows : [];
 }
 
-export async function markFeedbackSeen(deviceId: string, ids: number[]): Promise<void> {
+export async function markFeedbackSeen(auth: OwnerAuth, ids: number[]): Promise<void> {
   if (!ids.length) return;
   await request<null>('/rest/v1/rpc/brewsy_owner_mark_feedback_seen', {
     method: 'POST',
-    headers: deviceHeader(deviceId),
+    headers: ownerHeaders(auth),
     body: JSON.stringify({ p_ids: ids }),
   });
 }
@@ -289,6 +306,6 @@ export type OwnerStats = {
 };
 
 /** The owner's usage summary, or null for anyone else. */
-export async function fetchOwnerStats(deviceId: string): Promise<OwnerStats | null> {
-  return request<OwnerStats | null>('/rest/v1/rpc/brewsy_owner_stats', { method: 'POST', headers: deviceHeader(deviceId) });
+export async function fetchOwnerStats(auth: OwnerAuth): Promise<OwnerStats | null> {
+  return request<OwnerStats | null>('/rest/v1/rpc/brewsy_owner_stats', { method: 'POST', headers: ownerHeaders(auth) });
 }

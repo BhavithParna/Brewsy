@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Pill } from '../Pill';
+import { toast } from '../Toast';
 import { Txt } from '../Txt';
 import { Divider, Group, settingsStyles } from './SettingsParts';
 import {
+  ApiError,
+  askOwnerPairing,
   backendConfigured,
   fetchIsOwner,
   fetchOwnerFeedback,
@@ -16,32 +19,37 @@ import {
 } from '@/data/api';
 import { TOPIC_LABEL, type TopicKey } from '@/data/topics';
 import { SAMPLE_FEEDBACK, SAMPLE_STATS, ownerSampleOn } from '@/dev/ownerSample';
-import { deviceId } from '@/lib/device';
+import { ownerAuth, ownerKeyForPairing } from '@/lib/device';
 import { useTheme } from '@/theme/ThemeProvider';
 import { themes, type ThemeName } from '@/theme/themes';
 import { withAlpha } from '@/theme/tokens';
 
-// The owner's pages in Settings: the feedback inbox and usage. Only phones whose device row is
-// marked is_owner (set on the server, never by the app) get anything back from these calls.
+// The owner's pages in Settings: the feedback inbox and usage. Only a phone the owner paired in the
+// Supabase dashboard (private.owner_keys) gets anything back from these calls; other phones don't
+// even make them.
 
 let ownerCache: boolean | null = null;
+const ownerListeners = new Set<(yes: boolean) => void>();
 
-/** Whether this phone is one of the owner's. Asked once per launch; false until known. */
+function setOwnerCache(yes: boolean) {
+  ownerCache = yes;
+  ownerListeners.forEach((l) => l(yes));
+}
+
+/** Whether this phone is paired as the owner's. Asked once per launch; false until known. */
 export function useIsOwner(): boolean {
   const [owner, setOwner] = useState(ownerCache ?? ownerSampleOn());
   useEffect(() => {
-    if (ownerCache !== null || ownerSampleOn() || !backendConfigured) return;
-    let alive = true;
-    deviceId()
-      .then(fetchIsOwner)
-      .then((yes) => {
-        ownerCache = yes;
-        if (alive) setOwner(yes);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
+    ownerListeners.add(setOwner);
+    const stop = () => {
+      ownerListeners.delete(setOwner);
     };
+    if (ownerCache !== null || ownerSampleOn() || !backendConfigured) return stop;
+    ownerAuth()
+      .then((auth) => (auth ? fetchIsOwner(auth) : false))
+      .then(setOwnerCache)
+      .catch(() => {});
+    return stop;
   }, []);
   return owner;
 }
@@ -54,8 +62,8 @@ export function useOwnerStats(enabled: boolean): { stats: OwnerStats | null; err
   useEffect(() => {
     if (!enabled || ownerSampleOn()) return;
     let alive = true;
-    deviceId()
-      .then(fetchOwnerStats)
+    ownerAuth()
+      .then((auth) => (auth ? fetchOwnerStats(auth) : null))
       .then((s) => alive && setStats(s))
       .catch(() => alive && setError(true));
     return () => {
@@ -110,12 +118,12 @@ export function FeedbackInbox() {
     let alive = true;
     (async () => {
       try {
-        const id = await deviceId();
-        const rows = await fetchOwnerFeedback(id);
+        const auth = await ownerAuth();
+        const rows = auth ? await fetchOwnerFeedback(auth) : [];
         if (!alive) return;
         setItems(rows);
         // They stay marked "new" on screen until the next visit.
-        await markFeedbackSeen(id, rows.filter((r) => !r.seen).map((r) => r.id));
+        if (auth) await markFeedbackSeen(auth, rows.filter((r) => !r.seen).map((r) => r.id));
       } catch {
         if (alive) setError(true);
       }
@@ -237,6 +245,104 @@ export function UsageView() {
       <Txt variant="caption" tone="tertiary" align="center">
         {stats.push_ok} of {stats.installs} can get notifications
       </Txt>
+    </>
+  );
+}
+
+/**
+ * Settings → long-press "Connected to your Brewsy backend": pair this phone as the owner's. The phone
+ * gets a code; the owner approves it in Supabase → SQL Editor. Anyone can get a code, but only the
+ * dashboard can approve one.
+ */
+export function OwnerPairing({ onDone }: { onDone: () => void }) {
+  const { theme } = useTheme();
+  const owner = useIsOwner();
+  const [code, setCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const paired = () => {
+    setOwnerCache(true);
+    toast.show('This phone is now the owner’s');
+    onDone();
+  };
+
+  const ask = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const auth = await ownerKeyForPairing();
+      const answer = await askOwnerPairing(auth.deviceId, auth.keyHash);
+      if (answer === 'paired') paired();
+      else if (answer) setCode(answer);
+      else setMessage('The server doesn’t know this phone yet. Close Settings, reopen Brewsy, then try again.');
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : 'Couldn’t get a code. Check your connection.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const check = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const auth = await ownerAuth();
+      if (auth && (await fetchIsOwner(auth))) paired();
+      else setMessage('Not paired yet. Run the line in the SQL Editor, then check again.');
+    } catch {
+      setMessage('Couldn’t reach the server. Check your connection.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (owner) {
+    return (
+      <Group footer="To unpair every phone, run  delete from private.owner_keys;  in the SQL Editor.">
+        <Txt variant="body" tone="secondary" style={styles.para}>
+          This phone is paired as the owner’s, so it can open the feedback inbox and usage. No other phone can.
+        </Txt>
+      </Group>
+    );
+  }
+
+  return (
+    <>
+      <Group footer="Only someone signed in to your Supabase dashboard can pair a phone. A code on its own opens nothing.">
+        <Txt variant="body" tone="secondary" style={styles.para}>
+          The feedback inbox and usage open only on a phone you pair. Get a code, then run the line it gives you in
+          Supabase → SQL Editor. The code works for an hour.
+        </Txt>
+        {code && (
+          <>
+            <Divider />
+            <View style={styles.code}>
+              <Txt variant="displayS" selectable accessibilityLabel={`Code ${code.split('').join(' ')}`}>
+                {`${code.slice(0, 4)} ${code.slice(4)}`}
+              </Txt>
+              <Txt variant="bodySm" tone="secondary" selectable style={styles.mono}>
+                {`select private.brewsy_approve_owner('${code}');`}
+              </Txt>
+            </View>
+          </>
+        )}
+      </Group>
+      <View style={styles.retry}>
+        {code ? (
+          <View style={styles.buttons}>
+            <Pill label={busy ? 'Checking…' : 'Check again'} size="md" variant="glass" color={theme.colors.inverseBg} onPress={busy ? undefined : check} />
+            <Pill label="New code" size="md" variant="outline" onPress={busy ? undefined : ask} />
+          </View>
+        ) : (
+          <Pill label={busy ? 'Asking…' : 'Get a code'} size="md" variant="glass" color={theme.colors.inverseBg} onPress={busy ? undefined : ask} />
+        )}
+        {message && (
+          <Txt variant="bodySm" tone="secondary" align="center">
+            {message}
+          </Txt>
+        )}
+      </View>
     </>
   );
 }
@@ -393,6 +499,10 @@ const styles = StyleSheet.create({
   lead: { paddingHorizontal: 6 },
   note: { paddingVertical: 20 },
   retry: { alignItems: 'center', gap: 12, paddingVertical: 20 },
+  para: { paddingVertical: 14 },
+  buttons: { flexDirection: 'row', gap: 10 },
+  code: { paddingVertical: 16, gap: 8, alignItems: 'center' },
+  mono: { fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }), textAlign: 'center' },
   entry: { paddingVertical: 14, gap: 6 },
   entryHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   newDot: { width: 8, height: 8, borderRadius: 4 },

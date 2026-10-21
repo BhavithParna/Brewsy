@@ -4,11 +4,12 @@ import { getCalendars } from 'expo-localization';
 import { Platform } from 'react-native';
 
 import { appVersion } from './appVersion';
-import { ApiError, backendConfigured, upsertDevice, type DevicePayload } from '@/data/api';
+import { ApiError, backendConfigured, upsertDevice, type DevicePayload, type OwnerAuth } from '@/data/api';
 import type { Settings } from '@/state/settings';
 
 const ID_KEY = 'brewsy:device-id';
 const TOKEN_KEY = 'brewsy:push-token';
+const OWNER_KEY = 'brewsy:owner-key';
 
 /** This phone's random id: the server knows a device by it (no accounts). */
 export async function deviceId(): Promise<string> {
@@ -17,6 +18,27 @@ export async function deviceId(): Promise<string> {
   const id = Crypto.randomUUID();
   await AsyncStorage.setItem(ID_KEY, id);
   return id;
+}
+
+/**
+ * What the owner's calls send, once this phone has asked to be paired as the owner's; null on every
+ * other phone. The key only works after the owner approves it in the Supabase dashboard.
+ */
+export async function ownerAuth(): Promise<OwnerAuth | null> {
+  const key = await AsyncStorage.getItem(OWNER_KEY);
+  return key ? { deviceId: await deviceId(), key } : null;
+}
+
+/** For pairing: this phone's owner key (made on first use) and its SHA-256, the only part the server keeps. */
+export async function ownerKeyForPairing(): Promise<OwnerAuth & { keyHash: string }> {
+  let key = await AsyncStorage.getItem(OWNER_KEY);
+  if (!key) {
+    const bytes = await Crypto.getRandomBytesAsync(32);
+    key = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    await AsyncStorage.setItem(OWNER_KEY, key);
+  }
+  const keyHash = (await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, key)).toLowerCase();
+  return { deviceId: await deviceId(), key, keyHash };
 }
 
 export function timeZone(): string {

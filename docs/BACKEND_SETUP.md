@@ -264,9 +264,20 @@ saved device is used, which is fine while you're the only reader but not once fr
 or tablet of yours the same way (the most recently saved owner device sets the timing). To unmark one:
 `update devices set is_owner = false where device_id = '…';`.
 
-Owner phones also get **Feedback inbox** and **Usage** in Settings (reopen Settings after marking). The
-`brewsy_owner_*` functions check `is_owner` on the server, so no one else can read feedback or usage.
 Reinstalling the app gives the phone a new device id: mark the new one.
+
+**Feedback inbox and Usage** open only on a phone you pair, not on every `is_owner` device. On your phone,
+open Settings, long-press **Connected to your Brewsy backend** at the bottom, tap **Get a code**, and run
+the line it shows in the SQL Editor:
+
+```sql
+select private.brewsy_approve_owner('AB12CD34');
+```
+
+Then tap **Check again** on the phone. The phone keeps a random key and the server only its SHA-256
+(`private.owner_keys`); the `brewsy_owner_*` functions answer only to that key from that phone. Pairing
+also leaves the paired phones as the only `is_owner` devices. Pair each phone of yours the same way, and
+again after a reinstall. To unpair every phone: `delete from private.owner_keys;`.
 
 ## 13. Alerts (optional email)
 

@@ -14,8 +14,8 @@ const WHATS_NEW =
 /** What leaves the phone, in plain words. */
 const SENT: [string, string][] = [
   ['Your settings', 'Wake-up time, topics, starred topics, sources you turned off, where your news comes from, notification choices and your theme, so your edition and notifications fit you.'],
-  ['How the app is used', 'Counts per day: times opened, which sections of Today you reached, how many stories you opened by topic, plays, saves and shares. Never which stories, and nothing you type.'],
-  ['Feedback you send', 'Your note, and your name only if you add it.'],
+  ['How the app is used', 'Counts per day: times opened, which sections of Today you reached, how many stories you opened by topic, plays, saves and shares. Never which stories, and nothing you type. Only Brewsy’s owner sees the totals.'],
+  ['Feedback you send', 'Your note, and your name only if you add it. Only Brewsy’s owner can read it.'],
   ['Who you are', 'Nothing. There are no accounts: your phone is a random number to the server.'],
 ];
 

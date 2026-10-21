@@ -59,8 +59,9 @@ gaming, sports, entertainment, movies and crypto), explained simply, with as muc
   with an optional name. It goes to the owner's inbox (Supabase `feedback`, at most 20 a phone a
   day) with the theme, phone type and app version. After an update, readers who've had the tour
   see a one-time note pointing at it (`WHATS_NEW_VERSION` in `src/components/tour/steps.ts`).
-- **For the owner** — phones marked `is_owner` in the `devices` table (set in Supabase, never by
-  the app) get two more rows in Settings: **Feedback inbox** (with a "new" count) and **Usage**
+- **For the owner** — a phone paired in the Supabase dashboard (Settings → long-press the line at
+  the bottom → Get a code → `select private.brewsy_approve_owner('…')` in the SQL Editor; see
+  docs/BACKEND_SETUP.md step 12) gets two more rows in Settings: **Feedback inbox** (with a "new" count) and **Usage**
   (phones active today / this week / 30 days, a 14-day chart, totals, themes, topics reached and
   opened, versions). Each phone sends anonymous daily counts (`usage_days`): opens, which sections
   of Today it reached, stories opened by topic, plays, saves, shares; never which stories, and

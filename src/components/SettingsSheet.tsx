@@ -13,7 +13,7 @@ import {
   Sunrise,
 } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { REGIONS } from '../../supabase/functions/_shared/sources';
@@ -22,7 +22,7 @@ import { HelpSettings } from './settings/HelpSettings';
 import { ListeningSettings, listeningSummary } from './settings/ListeningSettings';
 import { MorningSettings } from './settings/MorningSettings';
 import { NotificationSettings, notificationSummary } from './settings/NotificationSettings';
-import { FeedbackInbox, UsageView, useIsOwner, useOwnerStats } from './settings/OwnerSettings';
+import { FeedbackInbox, OwnerPairing, UsageView, useIsOwner, useOwnerStats } from './settings/OwnerSettings';
 import { ReadingSettings, TEXT_SIZES } from './settings/ReadingSettings';
 import { Divider, Group, LinkRow, settingsStyles } from './settings/SettingsParts';
 import { SourceSettings, sourceSummary } from './settings/SourceSettings';
@@ -50,7 +50,8 @@ export type SettingsPage =
   | 'listening'
   | 'help'
   | 'inbox'
-  | 'usage';
+  | 'usage'
+  | 'pair';
 
 const PAGE_TITLE: Record<SettingsPage, string> = {
   feedback: 'Send feedback',
@@ -63,6 +64,7 @@ const PAGE_TITLE: Record<SettingsPage, string> = {
   help: 'Help',
   inbox: 'Feedback inbox',
   usage: 'Usage',
+  pair: 'Owner’s phone',
 };
 
 type Props = {
@@ -176,6 +178,8 @@ function PageBody({ page, onDone }: { page: SettingsPage; onDone: () => void }):
       return <FeedbackInbox />;
     case 'usage':
       return <UsageView />;
+    case 'pair':
+      return <OwnerPairing onDone={onDone} />;
   }
 }
 
@@ -271,7 +275,7 @@ function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
       </Group>
 
       {owner && (
-        <Group title="Only you can see this" footer="Shown only on your own phone (marked as the owner’s on the server).">
+        <Group title="Only you can see this" footer="Shown only on this phone: you paired it as the owner’s in your Supabase dashboard.">
           <LinkRow
             title="Feedback inbox"
             subtitle={stats ? `${stats.feedback_total} ${stats.feedback_total === 1 ? 'note' : 'notes'} so far` : 'Everything readers sent'}
@@ -289,11 +293,14 @@ function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
         </Group>
       )}
 
-      <Txt variant="caption" tone="tertiary" align="center" style={styles.about}>
-        {backendConfigured
-          ? 'Connected to your Brewsy backend'
-          : 'Showing the sample edition · set up the backend with docs/BACKEND_SETUP.md'}
-      </Txt>
+      {/* Long-press: pair this phone as the owner's (approved in the Supabase dashboard). */}
+      <Pressable onLongPress={backendConfigured ? () => onOpen('pair') : undefined} delayLongPress={700}>
+        <Txt variant="caption" tone="tertiary" align="center" style={styles.about}>
+          {backendConfigured
+            ? 'Connected to your Brewsy backend'
+            : 'Showing the sample edition · set up the backend with docs/BACKEND_SETUP.md'}
+        </Txt>
+      </Pressable>
     </>
   );
 }
