@@ -1,5 +1,6 @@
 // Whales: a sunlit sea, with a few whales drifting slowly behind the page.
-// A whole look like the ones in ../themes.ts, in the Classic group.
+// A whole look like the ones in ../themes.ts, in its own Custom group (made for Brewsy, not after a
+// place or a film).
 //
 // The sea is a wallpaper fixed behind every screen (original art, assets/themes/whales-sea.jpg):
 // pale where the light comes in at the surface, deepening to open-water blue. The whales swim over it
@@ -25,7 +26,7 @@ const SEA = require('../../../assets/themes/whales-sea.jpg');
 export const whales: Theme = {
   name: 'whales',
   label: 'Whales',
-  group: 'classic',
+  group: 'custom',
   tagline: 'A sunlit sea, whales drifting by',
   isDark: false,
   blurTint: 'light',

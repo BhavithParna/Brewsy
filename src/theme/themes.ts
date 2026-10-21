@@ -37,12 +37,14 @@ export type ThemeName =
   | 'insidious';
 
 /** Where a theme sits in the picker. */
-export type ThemeGroup = 'classic' | 'films' | 'horror';
+export type ThemeGroup = 'classic' | 'films' | 'horror' | 'custom';
 
 export const THEME_GROUPS: { id: ThemeGroup; label: string }[] = [
   { id: 'classic', label: 'Classic' },
   { id: 'films', label: 'Films' },
   { id: 'horror', label: 'Horror' },
+  // Looks made for Brewsy rather than after a place or a film (Whales).
+  { id: 'custom', label: 'Custom' },
 ];
 
 /** Text roles every screen uses; each theme restyles them (see Txt). */
@@ -203,6 +205,7 @@ export type Theme = {
 };
 
 const BY_SA = (v: string) => `CC BY-SA ${v}`;
+const BY = (v: string) => `CC BY ${v}`;
 
 // ─── Dune ─────────────────────────────────────────────────────────────────────
 // Sand-colored and light, thin capitals set wide like the film's titles, sharp
@@ -552,18 +555,24 @@ const alpine: Theme = {
 
 // ─── Matrix ───────────────────────────────────────────────────────────────────
 // A terminal: black, phosphor green, monospace everything, square corners.
+// The cover is a real DEC VT100's screen, its directory listing turned phosphor green.
 // Sections open on a prompt ("> world_"). Reading text is pale green-white, not pure green.
-// Somewhere in the cover's code there's a white rabbit.
 const matrix: Theme = {
   name: 'matrix',
   label: 'Matrix',
   group: 'films',
-  tagline: 'Falling code, terminal type',
+  tagline: 'Green phosphor, terminal type',
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 30,
   cover: require('../../assets/themes/matrix.jpg'),
-  credit: null,
+  credit: {
+    title: 'DEC VT100 terminal',
+    author: 'Jason Scott',
+    license: BY('2.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal.jpg',
+    adapted: true,
+  },
   background: ['#000000'],
   type: {
     displayXL: { fontFamily: 'ShareTechMono_400Regular', fontSize: 46, lineHeight: 56, letterSpacing: 1, textTransform: 'uppercase' },
@@ -617,7 +626,8 @@ const matrix: Theme = {
 };
 
 // ─── Tron ─────────────────────────────────────────────────────────────────────
-// The Grid: black glass, cyan light lines, wide futurist capitals, clipped corners.
+// The Grid: black glass, cyan light lines, wide futurist capitals, clipped corners. The cover is a
+// highway interchange at night seen from above, its traffic turned to cyan light trails.
 // Sections open on a title over a light-cycle trail that turns a hard corner and ends in a disc.
 const tron: Theme = {
   name: 'tron',
@@ -628,7 +638,13 @@ const tron: Theme = {
   blurTint: 'dark',
   blurIntensity: 30,
   cover: require('../../assets/themes/tron.jpg'),
-  credit: null,
+  credit: {
+    title: 'Waru Interchange, Surabaya, at night',
+    author: 'consigliere ivan',
+    license: BY('2.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:Waru_Interchange_and_City_of_Tomorrow_Superblocks,_bordering_with_Surabaya_and_Sidoarjo_(July_2018)..jpg',
+    adapted: true,
+  },
   background: ['#03070D', '#010205'],
   type: {
     displayXL: { fontFamily: 'Orbitron_700Bold', fontSize: 38, lineHeight: 48, letterSpacing: 4, textTransform: 'uppercase' },
@@ -680,8 +696,9 @@ const tron: Theme = {
 
 // ─── Blade Runner ─────────────────────────────────────────────────────────────
 // Amber haze over a dark city: a warm smoky gradient, frosted panels, a squared-off
-// techno face, and one neon pink accent. The cover is two stepped pyramids in the haze, in the rain;
-// some days an origami unicorn turns up on a section heading (components/headings/films.tsx).
+// techno face, and one neon pink accent. The cover is a Tokyo alley on a wet night, lanterns and
+// signs glowing over the umbrellas; some days an origami unicorn turns up on a section heading
+// (components/headings/films.tsx).
 const bladerunner: Theme = {
   name: 'bladerunner',
   label: 'Blade Runner',
@@ -691,7 +708,13 @@ const bladerunner: Theme = {
   blurTint: 'dark',
   blurIntensity: 34,
   cover: require('../../assets/themes/bladerunner.jpg'),
-  credit: null,
+  credit: {
+    title: 'A Tokyo alley in the rain',
+    author: 'Toomore Chiang',
+    license: BY('2.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:2%E7%95%AA%E7%9B%AE%E3%81%AB_(22035861012).jpg',
+    adapted: true,
+  },
   background: ['#2B1309', '#1A0B06', '#0D0604'],
   type: {
     displayXL: { fontFamily: 'Oxanium_300Light', fontSize: 58, lineHeight: 70, letterSpacing: -1 },
@@ -743,8 +766,9 @@ const bladerunner: Theme = {
 
 // ─── Budapest ─────────────────────────────────────────────────────────────────
 // A grand pastel hotel: pink and plum, an elegant serif with Futura-style capitals,
-// everything centered and symmetrical, cards with a printed double border. Sections open under a
-// concierge's crossed keys (components/headings/films.tsx).
+// everything centered and symmetrical, cards with a printed double border. The cover is the
+// Grandhotel Pupp in Karlovy Vary, the film's model, its cream stone washed pastel pink under a deep
+// blue sky. Sections open under a concierge's crossed keys (components/headings/films.tsx).
 const budapest: Theme = {
   name: 'budapest',
   label: 'Budapest',
@@ -753,9 +777,14 @@ const budapest: Theme = {
   isDark: false,
   blurTint: 'light',
   blurIntensity: 40,
-  // Original art: a pink hotel dead centre under the Alps, crossed keys in its pediment, a funicular.
   cover: require('../../assets/themes/budapest.jpg'),
-  credit: null,
+  credit: {
+    title: 'Grandhotel Pupp, Karlovy Vary',
+    author: 'Manecke',
+    license: BY_SA('3.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:Grandhotel_Pupp_(3).JPG',
+    adapted: true,
+  },
   background: ['#F2D6D3', '#EDCBC8'],
   type: {
     displayXL: { fontFamily: 'PlayfairDisplay_500Medium_Italic', fontSize: 50, lineHeight: 64, letterSpacing: -0.5, paddingHorizontal: 4 },
@@ -824,7 +853,7 @@ const ORDERED: Theme[] = [
 
 export const themes = Object.fromEntries(ORDERED.map((t) => [t.name, t])) as Record<ThemeName, Theme>;
 
-/** Picker order: Classic, then Films, then Horror. */
+/** Picker order: Classic, then Films, then Horror, then Custom. */
 export const THEME_ORDER: ThemeName[] = THEME_GROUPS.flatMap((g) =>
   ORDERED.filter((t) => t.group === g.id).map((t) => t.name),
 );

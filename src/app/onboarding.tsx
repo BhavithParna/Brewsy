@@ -226,7 +226,7 @@ const APPEARANCES: { id: Settings['glassAppearance']; label: string }[] = [
 ];
 
 /**
- * Themes are a whole look, so the first choice is the look itself: Classic, Films and Horror,
+ * Themes are a whole look, so the first choice is the look itself: Classic, Films, Horror and Custom,
  * each a grid of tiles drawn in that theme's own cover, type and colors. Choosing one restyles
  * the rest of onboarding straight away.
  */

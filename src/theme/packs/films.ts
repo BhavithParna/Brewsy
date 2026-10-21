@@ -1,9 +1,10 @@
 // Film-inspired themes: Star Wars, Hogwarts, La La Land, Ghibli, Fight Club. (Dune, Matrix, Tron,
 // Blade Runner and Budapest sit in the Films group too, but live in ../themes.ts with the classic type.)
 // Each theme is a whole look (typefaces, shapes, card style, sections), like the ones in ../themes.ts.
-// The covers are original artwork made for Brewsy (assets/themes/*.jpg): no stills, logos or characters.
-// Section headings are drawn in components/headings/films.tsx. Each film hides a few nods to itself:
-// its `lines`, its section headings and small details in its cover.
+// The covers are real photographs of places and things that recall each film (Wikimedia Commons,
+// credited in Settings → Theme), cropped and graded to the theme: never stills, logos or characters.
+// Section headings are drawn in components/headings/films.tsx. Each film hides a few nods to itself
+// in its `lines` and its section headings.
 
 import { Cinzel_600SemiBold } from '@expo-google-fonts/cinzel/600SemiBold';
 import { Cinzel_700Bold } from '@expo-google-fonts/cinzel/700Bold';
@@ -38,18 +39,25 @@ const ZenMaruGothic_700Bold: FontSource = require('../../../assets/fonts/ZenMaru
 // typeface) sets condensed capitals for titles and labels; stories read in Inter. The crawl's
 // yellow is kept for section titles and the one accent. Outline cards, near-square corners,
 // everything centered like the crawl. Sections open "Episode IV / WORLD" (headings/films.tsx).
-// On the cover's horizon, under the twin suns: a domed homestead and a moisture tower.
+// The cover is the Chott el Djerid salt flat in Tunisia, where the homestead scenes were filmed, at
+// sunset, the sky darkening to space above the horizon.
 // Centered capitals get a left pad equal to their tracking (letter-spacing also trails the last letter).
 const starwars: Theme = {
   name: 'starwars',
   label: 'Star Wars',
   group: 'films',
-  tagline: 'Twin suns, crawl-yellow capitals',
+  tagline: 'Desert dusk, crawl-yellow capitals',
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 30,
   cover: require('../../../assets/themes/starwars.jpg'),
-  credit: null,
+  credit: {
+    title: 'Salt pan at sunset in Chott el Djerid, Tunisia',
+    author: 'Josep M. Gracia',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:CHO_-_Salt_pan_at_sunset_in_Chott_el_Djerid,_Tunisia,_2023.jpg',
+    adapted: true,
+  },
   background: ['#000000'],
   type: {
     displayXL: { fontFamily: 'NewsCycle_700Bold', fontSize: 50, lineHeight: 62, letterSpacing: 6, paddingLeft: 6, textTransform: 'uppercase' },
@@ -102,11 +110,12 @@ const starwars: Theme = {
 };
 
 // ─── Hogwarts ─────────────────────────────────────────────────────────────────
-// A castle at night: ink-blue stone, candlelit parchment-colored type, gold leaf and crimson.
+// Candlelit stone: warm dark stone, parchment-colored type, gold leaf and crimson. The cover is the
+// fan-vaulted cloisters of Gloucester Cathedral, which played the school's corridors.
 // Cinzel sets inscription capitals for titles and labels; EB Garamond sets headlines and reading,
 // like a well-made book. Cards are framed twice in gold, like book plates; sections open like
 // chapters ("Chapter four", then the title, then a small ornament; chapter one's ornament has a
-// lightning bolt). Crimson marks what's selected. An owl crosses the moon on the cover.
+// lightning bolt). Crimson marks what's selected.
 // Theme tokens give cards and the page one text color, so the cards are dark vellum rather than
 // light parchment: the parchment is in the type.
 const hogwarts: Theme = {
@@ -118,8 +127,14 @@ const hogwarts: Theme = {
   blurTint: 'dark',
   blurIntensity: 32,
   cover: require('../../../assets/themes/hogwarts.jpg'),
-  credit: null,
-  background: ['#100F1A', '#100F1A', '#100F1A', '#0C0B14'],
+  credit: {
+    title: 'The Cloisters of Gloucester Cathedral',
+    author: 'Saffron Blaze',
+    license: 'CC BY-SA 3.0',
+    url: 'https://commons.wikimedia.org/wiki/File:The_Cloisters_of_Gloucester_Cathedral.jpg',
+    adapted: true,
+  },
+  background: ['#15110C', '#15110C', '#15110C', '#100D09'],
   type: {
     displayXL: { fontFamily: 'Cinzel_600SemiBold', fontSize: 44, lineHeight: 58, letterSpacing: 4, paddingLeft: 4 },
     displayL: { fontFamily: 'EBGaramond_400Regular_Italic', fontSize: 37, lineHeight: 48, paddingRight: 4 },
@@ -147,19 +162,19 @@ const hogwarts: Theme = {
     noResults: 'Accio… nothing',
   },
   colors: {
-    bg: '#100F1A',
-    card: '#191825',
+    bg: '#15110C',
+    card: '#1E1913',
     cardBorder: 'rgba(212, 176, 98, 0.34)',
     text: '#F1E7CF',
     textSecondary: 'rgba(241, 231, 207, 0.76)',
     textTertiary: 'rgba(241, 231, 207, 0.58)',
-    glassFill: 'rgba(30, 29, 44, 0.62)',
-    glassOverlay: 'rgba(10, 10, 20, 0.45)',
-    glassFillFallback: 'rgba(26, 25, 38, 0.95)',
-    glassOverlayFallback: 'rgba(10, 10, 20, 0.72)',
+    glassFill: 'rgba(44, 36, 26, 0.62)',
+    glassOverlay: 'rgba(16, 12, 8, 0.45)',
+    glassFillFallback: 'rgba(38, 31, 23, 0.95)',
+    glassOverlayFallback: 'rgba(16, 12, 8, 0.72)',
     glassBorder: 'rgba(212, 176, 98, 0.30)',
     onCover: '#F1E7CF',
-    sheet: '#15141F',
+    sheet: '#1A1610',
     hairline: 'rgba(212, 176, 98, 0.20)',
     skeleton: 'rgba(241, 231, 207, 0.06)',
     skeletonHighlight: 'rgba(241, 231, 207, 0.12)',
@@ -176,8 +191,8 @@ const hogwarts: Theme = {
 // Magic hour over the city: an indigo-to-dusky-rose gradient, frosted panes (the gradient is smooth,
 // so text stays crisp), and the yellow of the dress as the one accent. DM Serif Display in italic
 // for titles, Josefin Sans art-deco capitals for small labels, Jost for reading. Sections open
-// like numbers in a musical's program ("Nº 3"). The cover's lamp post and bench are where the
-// dancing happens; the observatory sits on the ridge behind them.
+// like numbers in a musical's program ("Nº 3"). The cover is Griffith Observatory at dusk, where the
+// two of them dance among the stars.
 const lalaland: Theme = {
   name: 'lalaland',
   label: 'La La Land',
@@ -187,7 +202,13 @@ const lalaland: Theme = {
   blurTint: 'dark',
   blurIntensity: 34,
   cover: require('../../../assets/themes/lalaland.jpg'),
-  credit: null,
+  credit: {
+    title: 'Griffith Observatory at dusk',
+    author: 'Jeremye77',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Griffith_Observatory_-_Dusk.jpg',
+    adapted: true,
+  },
   // The cover fades into the first color at ~60% of the screen; the dusk gradient starts below it.
   background: ['#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#221B4B', '#2F1F57', '#43275E', '#5A3063'],
   type: {
@@ -245,7 +266,7 @@ const lalaland: Theme = {
 // White, very round cards on a soft lift; Zen Maru Gothic (rounded) for titles, Nunito for
 // everything else. Meadow green for what's selected, a warm red as the accent.
 // Sections open on a title with a short brushed wave under it (headings/films.tsx); some days a couple
-// of acorns lie at the end of one. A country bus stop waits by the tree on the cover.
+// of acorns lie at the end of one. The cover is the hills of Biei, Hokkaido, under summer clouds.
 const ghibli: Theme = {
   name: 'ghibli',
   label: 'Ghibli',
@@ -255,7 +276,13 @@ const ghibli: Theme = {
   blurTint: 'light',
   blurIntensity: 44,
   cover: require('../../../assets/themes/ghibli.jpg'),
-  credit: null,
+  credit: {
+    title: 'The hills of Northwest Outlook Park, Biei',
+    author: 't-konno',
+    license: 'CC BY-SA 3.0',
+    url: 'https://commons.wikimedia.org/wiki/File:%E5%8C%97%E8%A5%BF%E3%81%AE%E4%B8%98%E5%B1%95%E6%9C%9B%E5%8F%B0%EF%BC%88The_hills_of_northwest_Outlook_park%EF%BC%89_-_panoramio.jpg',
+    adapted: true,
+  },
   // Mist through the cover's height (it fades into the first color), warming to cream below.
   background: ['#E3ECE6', '#E3ECE6', '#E3ECE6', '#E6EDE5', '#EEEFE4', '#F4EFE2'],
   type: {
@@ -310,7 +337,7 @@ const ghibli: Theme = {
 };
 
 // ─── Fight Club ───────────────────────────────────────────────────────────────
-// A bar of pink soap under a bare bulb. Grimy green-black, like the film's grade, with off-white
+// A bare bulb in a dark basement. Grimy green-black, like the film's grade, with off-white
 // type that has a little of the fluorescent green in it and soap pink as the one accent. Courier
 // Prime sets titles, labels and captions like a typewritten report; Libre Franklin, a plain American
 // gothic, sets headlines and reading. Outline cards, near-square corners, controls rounded like a
@@ -325,7 +352,13 @@ const fightclub: Theme = {
   blurTint: 'dark',
   blurIntensity: 30,
   cover: require('../../../assets/themes/fightclub.jpg'),
-  credit: null,
+  credit: {
+    title: 'Filament bulb',
+    author: 'Subasis Mahat',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Filament_bulb.jpg',
+    adapted: true,
+  },
   background: ['#151C19', '#141A17', '#121714'],
   // Courier is wide: titles are set a size smaller than other themes and tracked in a little.
   type: {

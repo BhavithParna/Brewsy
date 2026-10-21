@@ -27,7 +27,7 @@ const APPEARANCES: { id: Settings['glassAppearance']; label: string }[] = [
 ];
 
 /**
- * Classic · Films · Horror, a row of cover tiles for the chosen group, and the credit for the
+ * Classic · Films · Horror · Custom, a row of cover tiles for the chosen group, and the credit for the
  * chosen cover. Opens on the group of the current theme. Glass adds its light / dark / auto choice.
  */
 export function ThemePicker() {
@@ -95,7 +95,7 @@ export function ThemePicker() {
   );
 }
 
-/** Classic · Films · Horror, as a segmented control in the theme's shape. */
+/** Classic · Films · Horror · Custom, as a segmented control in the theme's shape. */
 export function GroupSwitch({ value, onChange }: { value: ThemeGroup; onChange: (g: ThemeGroup) => void }) {
   const { theme } = useTheme();
   const control = theme.shape.control;
@@ -130,7 +130,7 @@ export function GroupSwitch({ value, onChange }: { value: ThemeGroup; onChange: 
               variant="label"
               tone={active ? 'inverse' : 'secondary'}
               numberOfLines={1}
-              style={theme.layout.capsButtons && capsLabel}>
+              style={theme.layout.capsButtons && [capsLabel, styles.capsTight]}>
               {g.label}
             </Txt>
           </PressableScale>
@@ -253,7 +253,9 @@ function GlassAppearance() {
 const styles = StyleSheet.create({
   wrap: { gap: 8, paddingVertical: 16 },
   segments: { flexDirection: 'row', padding: 3, gap: 2, borderWidth: 1, marginBottom: 8 },
-  segment: { flex: 1, height: SEGMENT_H, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  // Each tab as wide as its label (then sharing what's left), so four still fit in wide capitals.
+  segment: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', height: SEGMENT_H, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  capsTight: { letterSpacing: 1 },
   bleed: { marginHorizontal: -CARD_PAD, marginBottom: 6 },
   row: { gap: TILE_GAP, paddingHorizontal: CARD_PAD },
   tile: {

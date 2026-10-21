@@ -57,28 +57,29 @@ gaming, sports, entertainment, movies and crypto), explained simply, with as muc
   timezone, then its region setting) → topics (with stars) → wake-up time → notifications,
   then a short tour of Today that points at the real controls (Skip or Android back ends it).
 - **Themes** — twenty complete looks, each with its own typefaces, shapes, card style, section
-  headings and cover, in three groups (Settings → Theme, or onboarding):
+  headings and cover, in four groups (Settings → Theme, or onboarding):
   - **Classic:** **Glass** (frosted panes on a soft wallpaper, after Apple's Liquid Glass; Light,
-    Dark, or Auto = light from 7 am to 7 pm), **Whales** (a sunlit sea with a small pod of whales
-    drifting slowly behind the page, round Fredoka titles, white cards, a coral accent; the whales
-    hold still when the phone asks for less motion), **Space** (black, monospace details, Earthset
-    on the cover, topics open on numbered photo cards), **Atlantis** (deep-blue gradient, serif,
-    round frosted cards, a kelp forest on the cover, a depth gauge that reads deeper with each
-    topic), **Highlands** (forest tiles, bold italics, Buachaille Etive Mòr on the cover, each topic
-    opens at a waymarker), **Alpine** (white, Swiss red, the Matterhorn on the cover, topics open on
-    a Swiss grid). Their accents stay small: the stories tile is a card with its count in the
-    accent (Alpine keeps its red block, Highlands and Whales use a deep tile of their own). Each
-    also has a few small lines of its own (the end of the edition, empty states).
-  - **Films:** **Dune** (sand, thin wide-set capitals, centered), **Matrix** (monospace, sections
-    open on a `> prompt_`), **Tron** (cyan light lines, light-cycle trails under each title),
-    **Blade Runner** (pyramids in an amber haze, neon pink), **Budapest** (a pink hotel, perfect
-    symmetry, crossed keys over each section), **Star Wars** (twin suns, crawl-yellow capitals,
-    sections open as "Episode IV"), **Hogwarts** (candlelit stone, gold and crimson, sections open
-    like book chapters), **La La Land** (magic hour, a yellow dress, sections numbered like a
-    programme), **Ghibli** (summer clouds over green hills), **Fight Club** (pink soap under a bare
-    bulb, typewriter type, each section a reel with a cue mark in its corner). Each film hides a
-    few nods to itself: its own lines in empty and end-of-edition states, details in its section
-    headings (some only on some days), and something small in its cover.
+    Dark, or Auto = light from 7 am to 7 pm), **Space** (black, monospace details, Earthset on the
+    cover, topics open on numbered photo cards), **Atlantis** (deep-blue gradient, serif, round
+    frosted cards, a kelp forest on the cover, a depth gauge that reads deeper with each topic),
+    **Highlands** (forest tiles, bold italics, Buachaille Etive Mòr on the cover, each topic opens at
+    a waymarker), **Alpine** (white, Swiss red, the Matterhorn on the cover, topics open on a Swiss
+    grid). Their accents stay small: the stories tile is a card with its count in the accent
+    (Alpine keeps its red block, Highlands uses a deep moss). Each also has a few small lines of its
+    own (the end of the edition, empty states).
+  - **Films:** each cover is a real photograph of a place or thing that recalls the film, graded to
+    the theme. **Dune** (the dunes of Sossusvlei, thin wide-set capitals, centered), **Matrix** (a
+    VT100's screen in phosphor green, monospace, sections open on a `> prompt_`), **Tron** (a night
+    interchange in cyan light trails, light-cycle trails under each title), **Blade Runner** (a
+    rainy, lantern-lit Tokyo alley, amber haze, neon pink), **Budapest** (the Grandhotel Pupp washed
+    pastel pink, perfect symmetry, crossed keys over each section), **Star Wars** (the Tunisian salt
+    flat where Tatooine was filmed, at dusk, crawl-yellow capitals, sections open as "Episode IV"),
+    **Hogwarts** (Gloucester Cathedral's candlelit cloisters, warm stone, gold and crimson, sections
+    open like book chapters), **La La Land** (Griffith Observatory at magic hour, a yellow accent,
+    sections numbered like a programme), **Ghibli** (summer clouds over the hills of Biei), **Fight
+    Club** (a bare bulb in the dark, typewriter type, each section a reel with a cue mark in its
+    corner). Each film hides a few nods to itself: its own lines in empty and end-of-edition
+    states, and details in its section headings (some only on some days).
   - **Horror:** **Nosferatu** (silent film, blackletter weekday, intertitle cards), **The Ring**
     (worn VHS, a PLAY counter on each section), **Midsommar** (endless daylight, embroidered
     section borders), **Scream** (black, white and blood red, a cordless phone ringing in a dark
@@ -86,11 +87,14 @@ gaming, sports, entertainment, movies and crypto), explained simply, with as muc
     lamp-lit dark, thin Edwardian capitals, each topic opens under a red door that stands a little
     further open as you read). Each hides a few nods to its film in its cover, section headings
     and small lines (the end of the edition, empty states).
+  - **Custom:** **Whales** (a sunlit sea with a small pod of whales drifting slowly behind the
+    page, round Fredoka titles, white cards, a coral accent, a deep navy stories tile; the whales
+    hold still when the phone asks for less motion).
 
   Defined in `src/theme/themes.ts` (classic) and `src/theme/packs/` (glass, whales, films, horror),
   with per-theme section headings in `src/components/headings/` and the Whales pod in
-  `src/components/ambient/`; covers in `assets/themes/` (Space, Atlantis, Highlands, Alpine and
-  Dune are photographs, credited in Settings → Theme; the rest are original art). Only the current
+  `src/components/ambient/`; covers in `assets/themes/` (the classic and film covers are
+  photographs, credited in Settings → Theme; the horror, Glass and Whales covers are original art). Only the current
   theme's typefaces load at startup; the rest load in the background.
 - **Logo** — a coffee bean with an S-shaped cut, drawn in thin line in each theme's ink. The
   launcher icon is the same bean, filled: roast brown with an amber cut on espresso. Sources are
