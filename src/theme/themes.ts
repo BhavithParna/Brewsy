@@ -76,6 +76,16 @@ export type PhotoCredit = {
   adapted: boolean;
 };
 
+/** A cover that is a frame from the film itself (shown in Settings → Theme as "Still from …"). */
+export type StillCredit = {
+  /** Title and year, as it reads after "Still from": "The Matrix (1999)". */
+  film: string;
+  /** Who holds the rights, after "©". */
+  owner: string;
+  /** Where the frame came from. */
+  url: string;
+};
+
 /**
  * A theme's own small lines: a nod to its film or place where the app would otherwise say something
  * plain. Each is optional (the plain line is used without it). Keep them short, and never in place of
@@ -111,7 +121,7 @@ export type Theme = {
   /** Photo at the top of Today and the Reading List. It fades into the background before any text. */
   cover: ImageSourcePropType;
   /** null when the cover is original art made for Brewsy. */
-  credit: PhotoCredit | null;
+  credit: PhotoCredit | StillCredit | null;
   /** Behind everything below the cover: one color, or a slow top-to-bottom gradient. */
   background: [string, ...string[]];
   /**
@@ -205,12 +215,12 @@ export type Theme = {
 };
 
 const BY_SA = (v: string) => `CC BY-SA ${v}`;
-const BY = (v: string) => `CC BY ${v}`;
 
 // ─── Dune ─────────────────────────────────────────────────────────────────────
 // Sand-colored and light, thin capitals set wide like the film's titles, sharp
 // architectural corners, everything centered. After the travel reference. Section rules carry a
 // little worm sign: the sand lifting over something moving underneath (headings/films.tsx).
+// The cover is from Dune: Part Two: Paul standing on a sandworm's back, his cloak in the wind.
 // Centered capitals get a left pad equal to their tracking: letter-spacing adds space after
 // the last letter too, which would otherwise push the text off center.
 const dune: Theme = {
@@ -223,11 +233,9 @@ const dune: Theme = {
   blurIntensity: 40,
   cover: require('../../assets/themes/dune.jpg'),
   credit: {
-    title: 'Dune 45 in Sossusvlei at sunrise',
-    author: 'Giles Laurent',
-    license: BY_SA('4.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:006_Dune_45_in_Sossusvlei_at_sunrise_Photo_by_Giles_Laurent.jpg',
-    adapted: true,
+    film: 'Dune: Part Two (2024)',
+    owner: 'Warner Bros. and Legendary',
+    url: 'https://www.themoviedb.org/movie/693134-dune-part-two/images/backdrops',
   },
   background: ['#E9DAC2', '#E2CFB1'],
   type: {
@@ -352,8 +360,9 @@ const space: Theme = {
 // ─── Atlantis ─────────────────────────────────────────────────────────────────
 // Deep-water gradient, an old-world serif, very round frosted shapes.
 // The background is smooth, so frosted cards stay easy to read. After the health reference.
-// The cover looks up through a kelp forest at the sun; each topic opens with a depth gauge that reads
-// a little deeper as the edition goes on.
+// The cover looks up between two great squared stones of the Yonaguni Monument, off Japan, toward the
+// light on the surface; each topic opens with a depth gauge that reads a little deeper as the edition
+// goes on.
 const atlantis: Theme = {
   name: 'atlantis',
   label: 'Atlantis',
@@ -364,10 +373,10 @@ const atlantis: Theme = {
   blurIntensity: 30,
   cover: require('../../assets/themes/atlantis.jpg'),
   credit: {
-    title: 'Kelp forest, Channel Islands NMS',
-    author: 'NOAA Photo Library',
-    license: 'Public domain',
-    url: 'https://commons.wikimedia.org/wiki/File:Kelp_forest,_Channel_Islands_NMS.jpg',
+    title: 'Yonaguni Monument Twin Megaliths up Close',
+    author: 'Melkov',
+    license: 'CC0',
+    url: 'https://commons.wikimedia.org/wiki/File:Yonaguni_Monument_Twin_Megaliths_up_Close.jpg',
     adapted: true,
   },
   background: ['#0A3850', '#06263B', '#041828', '#020D17'],
@@ -555,7 +564,7 @@ const alpine: Theme = {
 
 // ─── Matrix ───────────────────────────────────────────────────────────────────
 // A terminal: black, phosphor green, monospace everything, square corners.
-// The cover is a real DEC VT100's screen, its directory listing turned phosphor green.
+// The cover is the film's last act: a corridor and three agents seen as falling code.
 // Sections open on a prompt ("> world_"). Reading text is pale green-white, not pure green.
 const matrix: Theme = {
   name: 'matrix',
@@ -567,11 +576,9 @@ const matrix: Theme = {
   blurIntensity: 30,
   cover: require('../../assets/themes/matrix.jpg'),
   credit: {
-    title: 'DEC VT100 terminal',
-    author: 'Jason Scott',
-    license: BY('2.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal.jpg',
-    adapted: true,
+    film: 'The Matrix (1999)',
+    owner: 'Warner Bros.',
+    url: 'https://www.themoviedb.org/movie/603-the-matrix/images/backdrops',
   },
   background: ['#000000'],
   type: {
@@ -627,7 +634,7 @@ const matrix: Theme = {
 
 // ─── Tron ─────────────────────────────────────────────────────────────────────
 // The Grid: black glass, cyan light lines, wide futurist capitals, clipped corners. The cover is a
-// highway interchange at night seen from above, its traffic turned to cyan light trails.
+// light cycle from Tron: Legacy, its wheels lit cyan on the black floor of the Grid.
 // Sections open on a title over a light-cycle trail that turns a hard corner and ends in a disc.
 const tron: Theme = {
   name: 'tron',
@@ -639,11 +646,9 @@ const tron: Theme = {
   blurIntensity: 30,
   cover: require('../../assets/themes/tron.jpg'),
   credit: {
-    title: 'Waru Interchange, Surabaya, at night',
-    author: 'consigliere ivan',
-    license: BY('2.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:Waru_Interchange_and_City_of_Tomorrow_Superblocks,_bordering_with_Surabaya_and_Sidoarjo_(July_2018)..jpg',
-    adapted: true,
+    film: 'Tron: Legacy (2010)',
+    owner: 'Disney',
+    url: 'https://www.themoviedb.org/movie/20526-tron-legacy/images/backdrops',
   },
   background: ['#03070D', '#010205'],
   type: {
@@ -696,8 +701,8 @@ const tron: Theme = {
 
 // ─── Blade Runner ─────────────────────────────────────────────────────────────
 // Amber haze over a dark city: a warm smoky gradient, frosted panels, a squared-off
-// techno face, and one neon pink accent. The cover is a Tokyo alley on a wet night, lanterns and
-// signs glowing over the umbrellas; some days an origami unicorn turns up on a section heading
+// techno face, and one neon pink accent. The cover is a spinner flying in over the Tyrell
+// pyramid through the amber haze; some days an origami unicorn turns up on a section heading
 // (components/headings/films.tsx).
 const bladerunner: Theme = {
   name: 'bladerunner',
@@ -709,11 +714,9 @@ const bladerunner: Theme = {
   blurIntensity: 34,
   cover: require('../../assets/themes/bladerunner.jpg'),
   credit: {
-    title: 'A Tokyo alley in the rain',
-    author: 'Toomore Chiang',
-    license: BY('2.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:2%E7%95%AA%E7%9B%AE%E3%81%AB_(22035861012).jpg',
-    adapted: true,
+    film: 'Blade Runner (1982)',
+    owner: 'Warner Bros.',
+    url: 'https://www.themoviedb.org/movie/78-blade-runner/images/backdrops',
   },
   background: ['#2B1309', '#1A0B06', '#0D0604'],
   type: {
@@ -767,8 +770,8 @@ const bladerunner: Theme = {
 // ─── Budapest ─────────────────────────────────────────────────────────────────
 // A grand pastel hotel: pink and plum, an elegant serif with Futura-style capitals,
 // everything centered and symmetrical, cards with a printed double border. The cover is the
-// Grandhotel Pupp in Karlovy Vary, the film's model, its cream stone washed pastel pink under a deep
-// blue sky. Sections open under a concierge's crossed keys (components/headings/films.tsx).
+// hotel itself, pink against its painted mountains. Sections open under a concierge's crossed keys
+// (components/headings/films.tsx).
 const budapest: Theme = {
   name: 'budapest',
   label: 'Budapest',
@@ -779,11 +782,9 @@ const budapest: Theme = {
   blurIntensity: 40,
   cover: require('../../assets/themes/budapest.jpg'),
   credit: {
-    title: 'Grandhotel Pupp, Karlovy Vary',
-    author: 'Manecke',
-    license: BY_SA('3.0'),
-    url: 'https://commons.wikimedia.org/wiki/File:Grandhotel_Pupp_(3).JPG',
-    adapted: true,
+    film: 'The Grand Budapest Hotel (2014)',
+    owner: 'Searchlight Pictures',
+    url: 'https://www.themoviedb.org/movie/120467-the-grand-budapest-hotel/images/backdrops',
   },
   background: ['#F2D6D3', '#EDCBC8'],
   type: {

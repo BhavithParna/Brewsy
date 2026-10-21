@@ -1,8 +1,8 @@
 // Film-inspired themes: Star Wars, Hogwarts, La La Land, Ghibli, Fight Club. (Dune, Matrix, Tron,
 // Blade Runner and Budapest sit in the Films group too, but live in ../themes.ts with the classic type.)
 // Each theme is a whole look (typefaces, shapes, card style, sections), like the ones in ../themes.ts.
-// The covers are real photographs of places and things that recall each film (Wikimedia Commons,
-// credited in Settings → Theme), cropped and graded to the theme: never stills, logos or characters.
+// Each cover is a well-known frame from the film itself, cropped to a portrait and otherwise left as
+// the film has it (credited in Settings → Theme). Ghibli's is one Studio Ghibli shares for free use.
 // Section headings are drawn in components/headings/films.tsx. Each film hides a few nods to itself
 // in its `lines` and its section headings.
 
@@ -39,8 +39,7 @@ const ZenMaruGothic_700Bold: FontSource = require('../../../assets/fonts/ZenMaru
 // typeface) sets condensed capitals for titles and labels; stories read in Inter. The crawl's
 // yellow is kept for section titles and the one accent. Outline cards, near-square corners,
 // everything centered like the crawl. Sections open "Episode IV / WORLD" (headings/films.tsx).
-// The cover is the Chott el Djerid salt flat in Tunisia, where the homestead scenes were filmed, at
-// sunset, the sky darkening to space above the horizon.
+// The cover is the binary sunset: Luke at the edge of the homestead, watching both suns go down.
 // Centered capitals get a left pad equal to their tracking (letter-spacing also trails the last letter).
 const starwars: Theme = {
   name: 'starwars',
@@ -52,11 +51,9 @@ const starwars: Theme = {
   blurIntensity: 30,
   cover: require('../../../assets/themes/starwars.jpg'),
   credit: {
-    title: 'Salt pan at sunset in Chott el Djerid, Tunisia',
-    author: 'Josep M. Gracia',
-    license: 'CC BY-SA 4.0',
-    url: 'https://commons.wikimedia.org/wiki/File:CHO_-_Salt_pan_at_sunset_in_Chott_el_Djerid,_Tunisia,_2023.jpg',
-    adapted: true,
+    film: 'Star Wars (1977)',
+    owner: 'Lucasfilm',
+    url: 'https://www.themoviedb.org/movie/11-star-wars/images/backdrops',
   },
   background: ['#000000'],
   type: {
@@ -111,7 +108,7 @@ const starwars: Theme = {
 
 // ─── Hogwarts ─────────────────────────────────────────────────────────────────
 // Candlelit stone: warm dark stone, parchment-colored type, gold leaf and crimson. The cover is the
-// fan-vaulted cloisters of Gloucester Cathedral, which played the school's corridors.
+// first sight of the castle, lit up on its cliff over the lake as the boats cross.
 // Cinzel sets inscription capitals for titles and labels; EB Garamond sets headlines and reading,
 // like a well-made book. Cards are framed twice in gold, like book plates; sections open like
 // chapters ("Chapter four", then the title, then a small ornament; chapter one's ornament has a
@@ -128,11 +125,9 @@ const hogwarts: Theme = {
   blurIntensity: 32,
   cover: require('../../../assets/themes/hogwarts.jpg'),
   credit: {
-    title: 'The Cloisters of Gloucester Cathedral',
-    author: 'Saffron Blaze',
-    license: 'CC BY-SA 3.0',
-    url: 'https://commons.wikimedia.org/wiki/File:The_Cloisters_of_Gloucester_Cathedral.jpg',
-    adapted: true,
+    film: 'Harry Potter and the Philosopher’s Stone (2001)',
+    owner: 'Warner Bros.',
+    url: 'https://www.themoviedb.org/movie/671-harry-potter-and-the-philosopher-s-stone/images/backdrops',
   },
   background: ['#15110C', '#15110C', '#15110C', '#100D09'],
   type: {
@@ -191,8 +186,8 @@ const hogwarts: Theme = {
 // Magic hour over the city: an indigo-to-dusky-rose gradient, frosted panes (the gradient is smooth,
 // so text stays crisp), and the yellow of the dress as the one accent. DM Serif Display in italic
 // for titles, Josefin Sans art-deco capitals for small labels, Jost for reading. Sections open
-// like numbers in a musical's program ("Nº 3"). The cover is Griffith Observatory at dusk, where the
-// two of them dance among the stars.
+// like numbers in a musical's program ("Nº 3"). The cover is "A Lovely Night": the two of them
+// dancing above the city lights at dusk.
 const lalaland: Theme = {
   name: 'lalaland',
   label: 'La La Land',
@@ -203,11 +198,9 @@ const lalaland: Theme = {
   blurIntensity: 34,
   cover: require('../../../assets/themes/lalaland.jpg'),
   credit: {
-    title: 'Griffith Observatory at dusk',
-    author: 'Jeremye77',
-    license: 'CC BY-SA 4.0',
-    url: 'https://commons.wikimedia.org/wiki/File:Griffith_Observatory_-_Dusk.jpg',
-    adapted: true,
+    film: 'La La Land (2016)',
+    owner: 'Lionsgate',
+    url: 'https://www.themoviedb.org/movie/313369-la-la-land/images/backdrops',
   },
   // The cover fades into the first color at ~60% of the screen; the dusk gradient starts below it.
   background: ['#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#1D1A46', '#221B4B', '#2F1F57', '#43275E', '#5A3063'],
@@ -266,7 +259,8 @@ const lalaland: Theme = {
 // White, very round cards on a soft lift; Zen Maru Gothic (rounded) for titles, Nunito for
 // everything else. Meadow green for what's selected, a warm red as the accent.
 // Sections open on a title with a short brushed wave under it (headings/films.tsx); some days a couple
-// of acorns lie at the end of one. The cover is the hills of Biei, Hokkaido, under summer clouds.
+// of acorns lie at the end of one. The cover is the Catbus and Totoro waiting on the treetops under a
+// summer sky (from the stills Studio Ghibli shares for free use).
 const ghibli: Theme = {
   name: 'ghibli',
   label: 'Ghibli',
@@ -277,11 +271,9 @@ const ghibli: Theme = {
   blurIntensity: 44,
   cover: require('../../../assets/themes/ghibli.jpg'),
   credit: {
-    title: 'The hills of Northwest Outlook Park, Biei',
-    author: 't-konno',
-    license: 'CC BY-SA 3.0',
-    url: 'https://commons.wikimedia.org/wiki/File:%E5%8C%97%E8%A5%BF%E3%81%AE%E4%B8%98%E5%B1%95%E6%9C%9B%E5%8F%B0%EF%BC%88The_hills_of_northwest_Outlook_park%EF%BC%89_-_panoramio.jpg',
-    adapted: true,
+    film: 'My Neighbor Totoro (1988)',
+    owner: 'Studio Ghibli',
+    url: 'https://www.ghibli.jp/works/totoro/',
   },
   // Mist through the cover's height (it fades into the first color), warming to cream below.
   background: ['#E3ECE6', '#E3ECE6', '#E3ECE6', '#E6EDE5', '#EEEFE4', '#F4EFE2'],
@@ -342,7 +334,8 @@ const ghibli: Theme = {
 // Prime sets titles, labels and captions like a typewritten report; Libre Franklin, a plain American
 // gothic, sets headlines and reading. Outline cards, near-square corners, controls rounded like a
 // bar of soap. Each section is a reel: "Reel 2" and a reel-change cue mark in its corner, the
-// "cigarette burns" (headings/films.tsx). The lines are the Narrator's.
+// "cigarette burns" (headings/films.tsx). The lines are the Narrator's. The cover is the last
+// scene: the two of them hand in hand at the window, the skyline lit up beyond.
 const fightclub: Theme = {
   name: 'fightclub',
   label: 'Fight Club',
@@ -353,11 +346,9 @@ const fightclub: Theme = {
   blurIntensity: 30,
   cover: require('../../../assets/themes/fightclub.jpg'),
   credit: {
-    title: 'Filament bulb',
-    author: 'Subasis Mahat',
-    license: 'CC BY-SA 4.0',
-    url: 'https://commons.wikimedia.org/wiki/File:Filament_bulb.jpg',
-    adapted: true,
+    film: 'Fight Club (1999)',
+    owner: '20th Century Studios',
+    url: 'https://www.themoviedb.org/movie/550-fight-club/images/backdrops',
   },
   background: ['#151C19', '#141A17', '#121714'],
   // Courier is wide: titles are set a size smaller than other themes and tracked in a little.

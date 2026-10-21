@@ -80,8 +80,14 @@ export function ThemePicker() {
       {credit ? (
         <Pressable onPress={() => openLink(credit.url)} accessibilityRole="link" hitSlop={6}>
           <Txt variant="caption" tone="tertiary">
-            Photo: “{credit.title}” by {credit.author} · {credit.license}
-            {credit.adapted ? ' · cropped and recolored' : ''}
+            {'film' in credit ? (
+              `Still from ${credit.film} · © ${credit.owner}`
+            ) : (
+              <>
+                Photo: “{credit.title}” by {credit.author} · {credit.license}
+                {credit.adapted ? ' · cropped and recolored' : ''}
+              </>
+            )}
           </Txt>
         </Pressable>
       ) : (
