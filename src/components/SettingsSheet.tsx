@@ -12,8 +12,8 @@ import {
   Newspaper,
   Sunrise,
 } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Keyboard, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { REGIONS } from '../../supabase/functions/_shared/sources';
@@ -83,6 +83,43 @@ export function SettingsSheet({ visible, onClose, onOpenPastEditions, initialPag
     if (visible) setPage(initialPage);
   }
 
+  const pageScroll = useRef<ScrollView>(null);
+  const pageY = useRef(0);
+  useEffect(() => {
+    pageY.current = 0;
+  }, [page]);
+
+  // The keyboard shrinks the sheet; then bring the field being typed in back into view.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      clearTimeout(timer);
+      // A beat for the sheet to finish resizing.
+      timer = setTimeout(() => {
+        const input = TextInput.State.currentlyFocusedInput();
+        const scroll = pageScroll.current;
+        const frame = scroll?.getNativeScrollRef();
+        if (!input || !scroll || !frame) return;
+        input.measureInWindow((_ix, iy, _iw, ih) => {
+          frame.measureInWindow((_sx, sy, _sw, sh) => {
+            const top = iy - sy;
+            // The first few lines of a tall box are enough.
+            const shown = Math.min(ih, 140);
+            let delta = 0;
+            if (top < 12) delta = top - 12;
+            else if (top + shown > sh - 12) delta = top + shown - (sh - 12);
+            if (delta) scroll.scrollTo({ y: Math.max(0, pageY.current + delta), animated: true });
+          });
+        });
+      }, 120);
+    });
+    return () => {
+      clearTimeout(timer);
+      sub.remove();
+    };
+  }, []);
+
   return (
     <Sheet
       visible={visible}
@@ -101,6 +138,11 @@ export function SettingsSheet({ visible, onClose, onOpenPastEditions, initialPag
       {page && (
         <Animated.View key={page} entering={FadeIn.duration(180)} style={styles.flex}>
           <ScrollView
+            ref={pageScroll}
+            onScroll={(e) => {
+              pageY.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={32}
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">

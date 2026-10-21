@@ -137,7 +137,7 @@ export function FeedbackSettings({ onDone }: { onDone: () => void }) {
         <TextInput
           value={feedbackName}
           onChangeText={(t) => updateSettings({ feedbackName: t.slice(0, 60) })}
-          placeholder="Your name (optional, if you’d like a reply)"
+          placeholder="Your name (optional)"
           placeholderTextColor={theme.colors.textTertiary}
           maxLength={60}
           autoComplete="name"
@@ -178,7 +178,8 @@ const PLACEHOLDER: Record<FeedbackKind, string> = {
 const styles = StyleSheet.create({
   ...settingsStyles,
   // position: relative keeps the fields above the card's layers on web.
-  message: { position: 'relative', minHeight: 150, fontSize: 16, lineHeight: 23, paddingTop: 14, paddingBottom: 12 },
+  // Grows to a point, then scrolls inside, so what's being typed stays above the keyboard.
+  message: { position: 'relative', minHeight: 130, maxHeight: 190, fontSize: 16, lineHeight: 23, paddingTop: 14, paddingBottom: 12 },
   count: { alignSelf: 'flex-end', paddingBottom: 8 },
   name: { position: 'relative', minHeight: TAP + 8, fontSize: 16 },
   sendRow: { alignItems: 'center' },
