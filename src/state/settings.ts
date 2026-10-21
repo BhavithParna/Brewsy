@@ -22,6 +22,10 @@ export type Settings = {
   textScale: number;
   /** The first-run tour of Today has been shown (or skipped). */
   tourDone: boolean;
+  /** The latest "what's new" note shown over Today (WHATS_NEW_VERSION in tour/WhatsNewTour.tsx). */
+  whatsNewSeen: number;
+  /** Name to sign feedback with (optional, remembered between notes). */
+  feedbackName: string;
   /** Glass theme: always light, always dark, or light by day and dark at night. */
   glassAppearance: 'auto' | 'light' | 'dark';
   /** Outlet names (from supabase/functions/_shared/sources.ts) to skip. */
@@ -58,6 +62,8 @@ export const DEFAULT_SETTINGS: Settings = {
   mutedWords: [],
   textScale: 1,
   tourDone: false,
+  whatsNewSeen: 0,
+  feedbackName: '',
   glassAppearance: 'auto',
   disabledOutlets: [],
   // Onboarding starts from where the phone seems to be; saves from before regions get the same guess.
@@ -97,6 +103,8 @@ function sanitize(s: Settings): Settings {
     glassAppearance: s.glassAppearance === 'light' || s.glassAppearance === 'dark' ? s.glassAppearance : 'auto',
     disabledOutlets: list(s.disabledOutlets),
     region: isRegion(s.region) ? s.region : guessRegion(),
+    whatsNewSeen: typeof s.whatsNewSeen === 'number' ? s.whatsNewSeen : 0,
+    feedbackName: typeof s.feedbackName === 'string' ? s.feedbackName.slice(0, 60) : '',
   };
 }
 

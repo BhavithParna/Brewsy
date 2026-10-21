@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
@@ -20,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Txt } from './Txt';
 import { useTheme } from '@/theme/ThemeProvider';
-import { GUTTER, radii, springs } from '@/theme/tokens';
+import { GUTTER, TAP, radii, springs } from '@/theme/tokens';
 
 type Props = {
   visible: boolean;
@@ -28,13 +29,19 @@ type Props = {
   title?: string;
   /** Tall sheets (Settings) take up to 90% of the screen and scroll inside. */
   tall?: boolean;
+  /**
+   * On a page inside the sheet (Settings → Topics): a back button beside the title, and Android's
+   * back button goes back a page instead of closing the sheet.
+   */
+  onBack?: () => void;
+  backLabel?: string;
   children: ReactNode;
 };
 
 const CLOSE_MS = 220;
 
 /** Frosted bottom sheet that slides up, dims the page, and drags down to close. */
-export function Sheet({ visible, onClose, title, tall = false, children }: Props) {
+export function Sheet({ visible, onClose, title, tall = false, onBack, backLabel = 'Back', children }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -85,7 +92,7 @@ export function Sheet({ visible, onClose, title, tall = false, children }: Props
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
-      onRequestClose={onClose}>
+      onRequestClose={onBack ?? onClose}>
       <GestureHandlerRootView style={styles.flex}>
         <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
           <Pressable style={styles.flex} onPress={onClose} accessibilityLabel="Close" accessibilityRole="button" />
@@ -117,6 +124,16 @@ export function Sheet({ visible, onClose, title, tall = false, children }: Props
                     {title}
                   </Txt>
                 )}
+                {onBack && (
+                  <Pressable
+                    onPress={onBack}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={backLabel}
+                    style={styles.back}>
+                    <ChevronLeft size={24} color={theme.colors.text} strokeWidth={2} />
+                  </Pressable>
+                )}
               </View>
             </GestureDetector>
             {children}
@@ -141,5 +158,15 @@ const styles = StyleSheet.create({
   },
   grab: { paddingTop: 10, paddingBottom: 6, paddingHorizontal: GUTTER, alignItems: 'center' },
   handle: { width: 40, height: 5, borderRadius: 3, opacity: 0.6 },
-  title: { marginTop: 14 },
+  // Side room for the back button, so a long page title never runs under it.
+  title: { marginTop: 14, paddingHorizontal: TAP },
+  back: {
+    position: 'absolute',
+    left: GUTTER - 10,
+    bottom: 0,
+    width: TAP,
+    height: TAP,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

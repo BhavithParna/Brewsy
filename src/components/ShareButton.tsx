@@ -7,6 +7,7 @@ import { toast } from './Toast';
 import type { Story } from '@/data/types';
 import { shareStory } from '@/lib/share';
 import { markRead } from '@/state/reads';
+import { noteStoryOpened } from '@/state/usage';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TAP, radii } from '@/theme/tokens';
 
@@ -15,6 +16,7 @@ const SIZE = 40;
 /** Shares the story through the phone's share sheet: headline, one line and the main source. */
 export async function shareAndConfirm(story: Story, editionDate: string) {
   const result = await shareStory(story);
+  if (result === 'shared' || result === 'copied') noteStoryOpened(story, editionDate, 'share');
   if (result === 'shared') markRead(editionDate, story.id);
   else if (result === 'copied') toast.show('Copied, ready to paste');
   else if (result === 'failed') toast.show("Couldn't open sharing. Try again.");

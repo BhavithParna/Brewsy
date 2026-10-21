@@ -48,11 +48,23 @@ gaming, sports, entertainment, movies and crypto), explained simply, with as muc
   gets at least one full story. During the day Brewsy checks every 2 hours and adds **Since this
   morning** at the top, with an optional breaking-news push (at most 2 a day). **How this briefing
   was made** at the bottom shows what was scanned.
-- **Settings** — the gear on Today and the Reading List (also in the pinned bar): theme, topics
-  and stars, reading (text size, hidden words), wake-up time, **news from** (your local section),
-  breaking news, listening, sources (world outlets plus your region's; turning one off drops its
-  links, and any story only it reported), reminders, PDF export, past editions, and Help →
-  **Take the tour again**.
+- **Settings** — the gear on Today and the Reading List (also in the pinned bar). Themes sit at
+  the top so switching is one tap; under them, **Send feedback**, then one row per page, each
+  showing what's set: **Your edition** (Topics and stars · Morning edition: wake-up time and
+  **news from** · Reading: text size, hidden words · Sources: world outlets plus your region's;
+  turning one off drops its links, and any story only it reported), **Alerts and audio**
+  (Notifications: morning, breaking news, reminders · Listening), **Editions** (PDF export, past
+  editions) and **Help** (Take the tour again, what's new, what Brewsy sends).
+- **Feedback** — Settings → Send feedback: an idea, a problem, something you like, or anything,
+  with an optional name. It goes to the owner's inbox (Supabase `feedback`, at most 20 a phone a
+  day) with the theme, phone type and app version. After an update, readers who've had the tour
+  see a one-time note pointing at it (`WHATS_NEW_VERSION` in `src/components/tour/steps.ts`).
+- **For the owner** — phones marked `is_owner` in the `devices` table (set in Supabase, never by
+  the app) get two more rows in Settings: **Feedback inbox** (with a "new" count) and **Usage**
+  (phones active today / this week / 30 days, a 14-day chart, totals, themes, topics reached and
+  opened, versions). Each phone sends anonymous daily counts (`usage_days`): opens, which sections
+  of Today it reached, stories opened by topic, plays, saves, shares; never which stories, and
+  nothing typed. Only the owner's functions can read them.
 - **First run** — welcome → pick your look → where your news comes from (picked from the phone's
   timezone, then its region setting) → topics (with stars) → wake-up time → notifications,
   then a short tour of Today that points at the real controls (Skip or Android back ends it).
@@ -136,7 +148,9 @@ plugins/            config plugins (Android home-screen shortcuts)
 assets/brand/       the logo's source SVGs and the app icon set
 ```
 
-Web preview flags (development): `?onboarded=1` (also skips the tour) · `?tour=0|1` ·
+Web preview flags (development): `?onboarded=1` (also skips the tour and the what's-new note) ·
+`?tour=0|1` · `?whatsnew=1|0` · `?owner=sample` (Settings as the owner sees it, with made-up
+feedback and usage) ·
 `?theme=<name>` · `?glass=light|dark|auto` · `?blur=0` (draws glass the way Android does) ·
 `?seed=1` (sample Reading List) · `?preview=loading|empty|error` ·
 `?region=IN|CA|US|UK|AU|WORLD` · `?local=sample` (a sample local section) · `?fallback=1`

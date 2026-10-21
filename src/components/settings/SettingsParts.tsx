@@ -9,12 +9,15 @@ import { TAP, radii } from '@/theme/tokens';
 
 // The building blocks of the Settings sheet, shared by its sections (settings/*.tsx).
 
-export function Group({ title, footer, children }: { title: string; footer?: string; children: ReactNode }) {
+/** A card of rows, with an optional small heading above it and a note below. */
+export function Group({ title, footer, children }: { title?: string; footer?: string; children: ReactNode }) {
   return (
     <View style={settingsStyles.group}>
-      <Txt variant="kicker" tone="tertiary" style={settingsStyles.groupTitle} accessibilityRole="header">
-        {title}
-      </Txt>
+      {title && (
+        <Txt variant="kicker" tone="tertiary" style={settingsStyles.groupTitle} accessibilityRole="header">
+          {title}
+        </Txt>
+      )}
       <GlassCard radius={radii.lg} style={settingsStyles.card}>
         {children}
       </GlassCard>
@@ -73,16 +76,23 @@ export function LinkRow({
   title,
   subtitle,
   icon,
+  badge,
   onPress,
 }: {
   title: string;
   subtitle?: string;
   icon?: ReactNode;
+  /** A small count in the accent before the chevron ("3 new"). */
+  badge?: string;
   onPress?: () => void;
 }) {
   const { theme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={settingsStyles.row}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={[title, badge, subtitle].filter(Boolean).join('. ')}
+      style={settingsStyles.row}>
       {icon && <View>{icon}</View>}
       <View style={settingsStyles.flex}>
         <Txt variant="label">{title}</Txt>
@@ -92,6 +102,13 @@ export function LinkRow({
           </Txt>
         )}
       </View>
+      {badge && (
+        <View style={[settingsStyles.badge, { backgroundColor: theme.colors.accent, borderRadius: Math.min(999, theme.shape.control * 4) }]}>
+          <Txt variant="caption" style={{ color: theme.colors.accentInk }}>
+            {badge}
+          </Txt>
+        </View>
+      )}
       <View>
         <ChevronRight size={18} color={theme.colors.textTertiary} />
       </View>
@@ -111,4 +128,5 @@ export const settingsStyles = StyleSheet.create({
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   padded: { paddingVertical: 16, minHeight: TAP },
   divider: { height: 1 },
+  badge: { paddingHorizontal: 8, paddingVertical: 2 },
 });

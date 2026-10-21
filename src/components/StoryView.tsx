@@ -17,6 +17,7 @@ import { usePlayer, usePlayingKey } from '@/audio/store';
 import type { Story } from '@/data/types';
 import { storyKey } from '@/state/readingList';
 import { markRead, useIsRead } from '@/state/reads';
+import { noteStoryOpened } from '@/state/usage';
 import { useRadius, useTheme } from '@/theme/ThemeProvider';
 import { TOPIC_LABEL } from '@/theme/themes';
 import { TAP, capsLabel, radii, withAlpha } from '@/theme/tokens';
@@ -73,8 +74,10 @@ export function StoryView({
 
   // Hearing a story read aloud counts as reading it.
   useEffect(() => {
-    if (nowPlaying && playing) markRead(editionDate, story.id);
-  }, [nowPlaying, playing, editionDate, story.id]);
+    if (!nowPlaying || !playing) return;
+    markRead(editionDate, story.id);
+    noteStoryOpened(story, editionDate, 'listen');
+  }, [nowPlaying, playing, editionDate, story]);
 
   return (
     <Animated.View layout={storyLayout} onLayout={onLayout} style={style}>

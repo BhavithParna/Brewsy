@@ -36,7 +36,7 @@ function stepOf(scale: number): number {
 export function ReadingSettings() {
   return (
     <>
-      <Group title="Reading">
+      <Group>
         <TextSizeControl />
       </Group>
       <HiddenWords />

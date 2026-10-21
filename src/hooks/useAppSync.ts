@@ -22,7 +22,7 @@ import { focusStory } from '@/state/storyFocus';
 /**
  * Background jobs that follow the app's state:
  * - re-plans reading reminders when the Reading List or reminder settings change
- * - sends wake-up time, topics, sources and region to the backend when they change
+ * - sends wake-up time, topics, sources, region and theme to the backend when they change
  * - opens the right screen when a notification is tapped
  */
 export function useAppSync() {
@@ -56,6 +56,7 @@ export function useAppSync() {
     settings.region,
     settings.morningPush,
     settings.breakingPush,
+    settings.theme,
   ]);
 
   useEffect(() => {

@@ -74,11 +74,32 @@ export function todaySteps({ hasStory, isPinned, statusTop }: Options): TourStep
     {
       id: 'bar',
       title: 'Always in reach',
-      body: 'Topics, search and settings stay at the top while you read. Settings holds themes, text size and your topics.',
+      body: 'Topics, search and settings stay at the top while you read. Settings holds themes, your topics, and Send feedback.',
       // Once the page has scrolled, the pinned bar; otherwise settings on the cover.
       target: () =>
         isPinned()
           ? { ref: navTargets.pinnedBar, scroll: 'stay', shape: 'bar', trimTop: statusTop }
+          : { ref: navTargets.settings, scroll: 'top', shape: 'control' },
+    },
+  ];
+}
+
+/**
+ * Bumped when there's something new worth pointing out to readers who already took the tour.
+ * Readers who finish the first-run tour count as having seen it.
+ */
+export const WHATS_NEW_VERSION = 1;
+
+/** The note readers see once after an update: where the new Feedback button lives. */
+export function whatsNewSteps({ isPinned }: Pick<Options, 'isPinned'>): TourStep[] {
+  return [
+    {
+      id: 'feedback',
+      title: 'Tell us what you think',
+      body: 'We added a Feedback button in Settings. Ideas, problems, things you like: feel free to send them, it helps a lot. Settings is tidier now too.',
+      target: () =>
+        isPinned()
+          ? { ref: navTargets.pinnedSettings, scroll: 'stay', shape: 'control' }
           : { ref: navTargets.settings, scroll: 'top', shape: 'control' },
     },
   ];

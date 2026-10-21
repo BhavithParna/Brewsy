@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
+import { WHATS_NEW_VERSION } from '@/components/tour/steps';
 import sample from '@/data/mock-briefing.json';
 import type { Briefing } from '@/data/types';
 import { isRegion } from '@/lib/region';
@@ -47,6 +48,9 @@ export function usePreviewState(): PreviewState {
  *   ?seed=1        fill the Reading List with sample stories
  *   ?tour=0        mark the first-run tour as seen     ?tour=1   show it again
  *                  (?onboarded=1 without a tour flag also skips the tour, so screenshots stay clear)
+ *   ?whatsnew=1    show the what's-new note again   ?whatsnew=0   mark it seen
+ *                  (?onboarded=1 without it also marks it seen)
+ *   ?owner=sample  Settings as the owner sees it, with made-up feedback and usage (dev/ownerSample.ts)
  *   ?theme=atlantis   switch theme. Classic: glass | whales | space | atlantis | highlands | alpine.
  *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli |
  *                            fightclub.
@@ -66,6 +70,9 @@ export function applyDevUrlFlags() {
   const tour = params.get('tour');
   if (tour != null) updateSettings({ tourDone: tour === '0' });
   else if (onboarded === '1') updateSettings({ tourDone: true });
+  const whatsNew = params.get('whatsnew');
+  if (whatsNew != null) updateSettings({ whatsNewSeen: whatsNew === '1' ? 0 : WHATS_NEW_VERSION });
+  else if (onboarded === '1') updateSettings({ whatsNewSeen: WHATS_NEW_VERSION });
   const theme = params.get('theme');
   if (theme && theme in themes) updateSettings({ theme: theme as ThemeName });
   const region = params.get('region');

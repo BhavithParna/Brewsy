@@ -264,6 +264,10 @@ saved device is used, which is fine while you're the only reader but not once fr
 or tablet of yours the same way (the most recently saved owner device sets the timing). To unmark one:
 `update devices set is_owner = false where device_id = '…';`.
 
+Owner phones also get **Feedback inbox** and **Usage** in Settings (reopen Settings after marking). The
+`brewsy_owner_*` functions check `is_owner` on the server, so no one else can read feedback or usage.
+Reinstalling the app gives the phone a new device id: mark the new one.
+
 ## 13. Alerts (optional email)
 
 Alerts go to the owner's devices only. You're told when:

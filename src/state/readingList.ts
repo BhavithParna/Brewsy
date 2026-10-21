@@ -1,5 +1,6 @@
 import type { DeepDive, Story } from '@/data/types';
 import { createPersistedStore, useStore } from '@/lib/persisted';
+import { noteSave } from '@/state/usage';
 
 export type Bucket = 'tonight' | 'weekend' | 'week' | 'norush';
 
@@ -57,6 +58,7 @@ export function saveStory(input: {
   deepDive?: DeepDive;
 }) {
   const key = storyKey(input.editionDate, input.story.id);
+  if (!readingListStore.get().items.some((i) => i.key === key)) noteSave();
   updateItems((items) => {
     const existing = items.find((i) => i.key === key);
     if (existing) {

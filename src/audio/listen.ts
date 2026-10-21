@@ -7,9 +7,11 @@ import { fetchAndCacheEdition, readCachedEdition } from '@/data/editions';
 import type { Briefing, ListenMode } from '@/data/types';
 import type { SavedItem } from '@/state/readingList';
 import { settingsStore, updateSettings } from '@/state/settings';
+import { noteListen } from '@/state/usage';
 
 /** Plays an edition, from where you stopped or from one story. */
 export async function listenToEdition(b: Briefing, opts: { mode?: ListenMode; storyId?: string } = {}) {
+  noteListen();
   const settings = settingsStore.get();
   const mode = opts.mode ?? settings.listenMode;
   if (opts.mode && opts.mode !== settings.listenMode) updateSettings({ listenMode: opts.mode });

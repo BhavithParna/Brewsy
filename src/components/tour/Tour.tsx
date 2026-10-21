@@ -14,10 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BAR_HEIGHT } from '../JumpBar';
+import { useSheets } from '../SheetHost';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 import { Spotlight, type Hole, type Rect } from './Spotlight';
-import { todaySteps, type TourStep, type TourTarget } from './steps';
-import { TourCard } from './TourCard';
+import { WHATS_NEW_VERSION, todaySteps, whatsNewSteps, type TourStep, type TourTarget } from './steps';
+import { TourCard, type TourLabels } from './TourCard';
 import { updateSettings, useSettings } from '@/state/settings';
 import { useStoryFocus } from '@/state/storyFocus';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -87,7 +88,8 @@ export function TodayTour({ ready, hasStory, scrollRef, scrollY, isPinned }: Tod
       scrollTo={(y, animated) => scrollRef.current?.scrollTo({ y: Math.max(0, y), animated })}
       scrollY={() => scrollY.get()}
       onClose={() => {
-        updateSettings({ tourDone: true });
+        // The tour already shows where everything is, so nothing's "new" to this reader.
+        updateSettings({ tourDone: true, whatsNewSeen: WHATS_NEW_VERSION });
         setOpen(false);
         // Back to the top of the edition, ready to read.
         scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion });
@@ -96,8 +98,57 @@ export function TodayTour({ ready, hasStory, scrollRef, scrollY, isPinned }: Tod
   );
 }
 
+type WhatsNewTourProps = Pick<TodayTourProps, 'ready' | 'scrollRef' | 'scrollY' | 'isPinned'>;
+
+/**
+ * A one-step note after an update, for readers who've already had the tour: points at Settings
+ * and offers to open Send feedback. Shown once per WHATS_NEW_VERSION; either button marks it seen.
+ */
+export function WhatsNewTour({ ready, scrollRef, scrollY, isPinned }: WhatsNewTourProps) {
+  const { tourDone, whatsNewSeen } = useSettings();
+  const { openSettings } = useSheets();
+  const focused = useIsFocused();
+  const [open, setOpen] = useState(false);
+  // Opened to read a particular story: leave it for the next launch.
+  const opening = useStoryFocus() != null;
+  const [deferred, setDeferred] = useState(false);
+  if (opening && !deferred && !open) setDeferred(true);
+  const due = tourDone && whatsNewSeen < WHATS_NEW_VERSION;
+
+  useEffect(() => {
+    if (!ready || !due || !focused || deferred || open) return;
+    const timer = setTimeout(() => setOpen(true), START_DELAY);
+    return () => clearTimeout(timer);
+  }, [ready, due, focused, deferred, open]);
+
+  const steps = useMemo(
+    () => (open ? whatsNewSteps({ isPinned }).filter((s) => s.target() != null) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open],
+  );
+
+  if (!open || !steps.length) return null;
+
+  return (
+    <Tour
+      steps={steps}
+      labels={WHATS_NEW_LABELS}
+      scrollTo={(y, animated) => scrollRef.current?.scrollTo({ y: Math.max(0, y), animated })}
+      scrollY={() => scrollY.get()}
+      onClose={(finished) => {
+        updateSettings({ whatsNewSeen: WHATS_NEW_VERSION });
+        setOpen(false);
+        if (finished) openSettings('feedback');
+      }}
+    />
+  );
+}
+
+const WHATS_NEW_LABELS: TourLabels = { finish: 'Send feedback', skip: 'Not now', eyebrow: 'New' };
+
 type TourProps = {
   steps: TourStep[];
+  labels?: TourLabels;
   /** Scrolls the page to a content offset. */
   scrollTo: (y: number, animated: boolean) => void;
   /** The page's current scroll offset. */
@@ -114,7 +165,7 @@ type Shown = { index: number; hole: Hole };
  * and a small note explains it. The page scrolls each element into view before it's measured.
  * Skip is always there, and Android's back button skips too.
  */
-export function Tour({ steps, scrollTo, scrollY, onClose }: TourProps) {
+export function Tour({ steps, labels, scrollTo, scrollY, onClose }: TourProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
@@ -275,6 +326,7 @@ export function Tour({ steps, scrollTo, scrollY, onClose }: TourProps) {
               onBack={shown.index > 0 ? () => go(-1) : undefined}
               onNext={() => go(1)}
               onSkip={() => close(false)}
+              labels={labels}
               onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}
             />
           </Animated.View>

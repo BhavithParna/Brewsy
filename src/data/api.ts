@@ -170,6 +170,10 @@ export type DevicePayload = {
   morning_push: boolean;
   /** 'off' | 'major': breaking-news pushes (at most 2 a day). */
   breaking_push: 'off' | 'major';
+  /** The theme in use, for the owner's usage view. Left out for older backends. */
+  theme?: string;
+  /** appVersion(): which update the phone runs. Left out for older backends. */
+  app_version?: string;
 };
 
 /** Tells the backend this device's preferences (and push token, if any). */
@@ -180,4 +184,111 @@ export async function upsertDevice(payload: DevicePayload): Promise<void> {
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal', 'x-device-id': payload.device_id },
     body: JSON.stringify(payload),
   });
+}
+
+export type FeedbackKind = 'idea' | 'problem' | 'praise' | 'other';
+
+export type FeedbackPayload = {
+  device_id: string;
+  kind: FeedbackKind;
+  message: string;
+  name: string | null;
+  theme: string;
+  platform: string;
+  app_version: string;
+};
+
+/** Settings → Feedback. Readers can send it but never read it back; only the owner's devices can. */
+export async function sendFeedback(payload: FeedbackPayload): Promise<void> {
+  await request<null>('/rest/v1/feedback', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal', 'x-device-id': payload.device_id },
+    body: JSON.stringify(payload),
+  });
+}
+
+/** One local day of use, as totals so far that day (the server keeps the larger of each count). */
+export type UsageDay = {
+  p_day: string;
+  p_opens: number;
+  p_theme: string;
+  p_topics: string[];
+  /** Stories opened (Learn more, read aloud, shared), by topic. */
+  p_opened: Record<string, number>;
+  p_listens: number;
+  p_saves: number;
+  p_shares: number;
+  p_app_version: string;
+};
+
+export async function logUsage(deviceId: string, day: UsageDay): Promise<void> {
+  await request<null>('/rest/v1/rpc/brewsy_log_usage', {
+    method: 'POST',
+    headers: deviceHeader(deviceId),
+    body: JSON.stringify(day),
+  });
+}
+
+/** Whether this phone is one of the owner's (devices.is_owner, which only the server can set). */
+export async function fetchIsOwner(deviceId: string): Promise<boolean> {
+  return (await request<boolean | null>('/rest/v1/rpc/brewsy_is_owner', { method: 'POST', headers: deviceHeader(deviceId) })) === true;
+}
+
+export type FeedbackEntry = {
+  id: number;
+  created_at: string;
+  kind: FeedbackKind;
+  message: string;
+  name: string | null;
+  theme: string | null;
+  platform: string | null;
+  app_version: string | null;
+  seen: boolean;
+};
+
+/** The owner's inbox, newest first (empty for anyone else). */
+export async function fetchOwnerFeedback(deviceId: string): Promise<FeedbackEntry[]> {
+  const rows = await request<FeedbackEntry[] | null>('/rest/v1/rpc/brewsy_owner_feedback', {
+    method: 'POST',
+    headers: deviceHeader(deviceId),
+    body: JSON.stringify({ p_limit: 300 }),
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function markFeedbackSeen(deviceId: string, ids: number[]): Promise<void> {
+  if (!ids.length) return;
+  await request<null>('/rest/v1/rpc/brewsy_owner_mark_feedback_seen', {
+    method: 'POST',
+    headers: deviceHeader(deviceId),
+    body: JSON.stringify({ p_ids: ids }),
+  });
+}
+
+type Count = { name: string; n: number };
+
+export type OwnerStats = {
+  generated_at: string;
+  installs: number;
+  push_ok: number;
+  seen_7d: number;
+  active_today: number;
+  active_7d: number;
+  active_30d: number;
+  totals_30d: { opens: number; listens: number; saves: number; shares: number; stories_opened: number };
+  daily: { day: string; phones: number; opens: number }[];
+  themes: Count[];
+  topics_seen: Count[];
+  topics_opened: Count[];
+  topics_followed: Count[];
+  regions: Count[];
+  versions: Count[];
+  platforms: Count[];
+  feedback_new: number;
+  feedback_total: number;
+};
+
+/** The owner's usage summary, or null for anyone else. */
+export async function fetchOwnerStats(deviceId: string): Promise<OwnerStats | null> {
+  return request<OwnerStats | null>('/rest/v1/rpc/brewsy_owner_stats', { method: 'POST', headers: deviceHeader(deviceId) });
 }

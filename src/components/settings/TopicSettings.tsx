@@ -148,7 +148,7 @@ export function TopicSettings() {
   const { topics, focusTopics, toggleFollow, toggleFocus } = useTopicChoices();
 
   return (
-    <Group title="Topics" footer={`Star up to ${MAX_FOCUS_TOPICS} topics to get more stories on them, shown first on Today.`}>
+    <Group footer={`Star up to ${MAX_FOCUS_TOPICS} topics to get more stories on them, shown first on Today.`}>
       {TOPICS.map((t, i) => (
         <Fragment key={t}>
           {i > 0 && <Divider />}

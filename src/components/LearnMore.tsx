@@ -12,6 +12,7 @@ import type { KeyPlayer, Story } from '@/data/types';
 import { formatShortDate, paragraphs } from '@/lib/format';
 import { isProperName, plainName, relatedStories, type RelatedStory } from '@/lib/search';
 import { markRead } from '@/state/reads';
+import { noteStoryOpened } from '@/state/usage';
 import { focusStory } from '@/state/storyFocus';
 import { useRadius, useTheme } from '@/theme/ThemeProvider';
 import { TAP, fonts, radii } from '@/theme/tokens';
@@ -33,7 +34,8 @@ export function LearnMore({
   // Opening a story counts as reading it (for the read mark and the end-of-edition tally).
   useEffect(() => {
     markRead(editionDate, story.id);
-  }, [editionDate, story.id]);
+    noteStoryOpened(story, editionDate, 'more');
+  }, [editionDate, story]);
 
   return (
     <View style={[styles.wrap, { borderTopColor: theme.colors.hairline }]}>

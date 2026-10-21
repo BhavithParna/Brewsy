@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { getCalendars } from 'expo-localization';
 import { Platform } from 'react-native';
 
+import { appVersion } from './appVersion';
 import { ApiError, backendConfigured, upsertDevice, type DevicePayload } from '@/data/api';
 import type { Settings } from '@/state/settings';
 
@@ -36,7 +37,7 @@ export function wakeTimeString(s: Settings): string {
 }
 
 /** Columns an older backend may not have yet: left out (one at a time) if the server rejects them. */
-const OPTIONAL_COLUMNS = ['region', 'focus_topics'] as const;
+const OPTIONAL_COLUMNS = ['region', 'focus_topics', 'theme', 'app_version'] as const;
 
 /**
  * Sends this device's preferences to the backend, which uses them to decide which local section
@@ -56,6 +57,8 @@ export async function syncDevice(settings: Settings): Promise<void> {
     region: settings.region,
     morning_push: settings.morningPush,
     breaking_push: settings.breakingPush,
+    theme: settings.theme,
+    app_version: appVersion(),
   };
   let body = payload;
   for (;;) {

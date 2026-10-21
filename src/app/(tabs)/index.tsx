@@ -42,7 +42,7 @@ import { useTabBarClearance } from '@/components/TabBar';
 import { toast } from '@/components/Toast';
 import { TopicRail, type NavSection } from '@/components/TopicRail';
 import { tourTargets } from '@/components/tour/targets';
-import { TodayTour } from '@/components/tour/Tour';
+import { TodayTour, WhatsNewTour } from '@/components/tour/Tour';
 import { Txt } from '@/components/Txt';
 import { shiftDate, todayKey } from '@/data/editions';
 import type { Briefing, Story, Topic } from '@/data/types';
@@ -62,6 +62,7 @@ import { setSelectedEdition, useSelectedEdition } from '@/state/editionNav';
 import { isNew } from '@/state/seen';
 import { useSettings } from '@/state/settings';
 import { clearStoryFocus, useStoryFocus } from '@/state/storyFocus';
+import { noteSection } from '@/state/usage';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TOPIC_LABEL } from '@/theme/themes';
 import { GUTTER, TAP } from '@/theme/tokens';
@@ -102,6 +103,15 @@ export default function TodayScreen() {
   // Where a section or story lands when we scroll to it: just under the pinned bar.
   const topClear = insets.top + BAR_HEIGHT + 12;
   const spy = useSectionSpy(chrome, { ids: sectionIds, lineTop: topClear + 12, lineBottom: clearance });
+  // Which sections people scroll to, for the owner's usage view (counts only, kept per day).
+  useEffect(
+    () =>
+      spy.store.subscribe(() => {
+        const { active } = spy.store.get();
+        if (active) noteSection(active);
+      }),
+    [spy],
+  );
 
   // Where the edition starts inside the scroll content, and where the rail sits inside the edition.
   const editionOffset = useRef(0);
@@ -284,6 +294,13 @@ export default function TodayScreen() {
       <TodayTour
         ready={!!curated && sections.length > 0 && preview === 'live'}
         hasStory={!!curated && (curated.updates.length > 0 || curated.groups.some((g) => g.stories.length > 0))}
+        scrollRef={scrollRef}
+        scrollY={scrollY}
+        isPinned={() => spy.store.get().pinned}
+      />
+      {/* After an update: a note about what's new, for readers who've had the tour. */}
+      <WhatsNewTour
+        ready={!!curated && sections.length > 0 && preview === 'live'}
         scrollRef={scrollRef}
         scrollY={scrollY}
         isPinned={() => spy.store.get().pinned}
@@ -666,7 +683,7 @@ function Edition({
       {hidden > 0 && (
         <Animated.View layout={storyLayout}>
           <Pressable
-            onPress={openSettings}
+            onPress={() => openSettings()}
             accessibilityRole="button"
             accessibilityLabel={`${storiesLabel(hidden)} left out because of your hidden words. Edit hidden words`}
             style={styles.hiddenLine}>

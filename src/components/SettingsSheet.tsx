@@ -1,90 +1,158 @@
-import { Check, ChevronDown, ChevronUp, FileDown, History, Volume2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ALargeSmall,
+  Bell,
+  ChartColumn,
+  FileDown,
+  Headphones,
+  History,
+  Inbox,
+  LayoutGrid,
+  LifeBuoy,
+  MessageCircleHeart,
+  Newspaper,
+  Sunrise,
+} from 'lucide-react-native';
+import { useState, type ReactNode } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { OUTLET_REGION, REGIONS, SOURCE_GROUPS } from '../../supabase/functions/_shared/sources';
-import { Pill } from './Pill';
+import { REGIONS } from '../../supabase/functions/_shared/sources';
+import { FeedbackSettings } from './settings/FeedbackSettings';
 import { HelpSettings } from './settings/HelpSettings';
-import { ReadingSettings } from './settings/ReadingSettings';
-import { Divider, Group, LinkRow, ToggleRow, settingsStyles } from './settings/SettingsParts';
+import { ListeningSettings, listeningSummary } from './settings/ListeningSettings';
+import { MorningSettings } from './settings/MorningSettings';
+import { NotificationSettings, notificationSummary } from './settings/NotificationSettings';
+import { FeedbackInbox, UsageView, useIsOwner, useOwnerStats } from './settings/OwnerSettings';
+import { ReadingSettings, TEXT_SIZES } from './settings/ReadingSettings';
+import { Divider, Group, LinkRow, settingsStyles } from './settings/SettingsParts';
+import { SourceSettings, sourceSummary } from './settings/SourceSettings';
 import { TopicSettings } from './settings/TopicSettings';
 import { Sheet } from './Sheet';
 import { toast } from './Toast';
 import { ThemePicker } from './ThemePicker';
 import { Txt } from './Txt';
-import { WakeTimePicker } from './WakeTimePicker';
-import { pause } from '@/audio/engine';
-import { playerStore } from '@/audio/store';
-import { deviceVoices, previewVoice, type DeviceVoice } from '@/audio/voice';
 import { backendConfigured } from '@/data/api';
 import { fetchAndCacheEdition, readCachedEdition, todayKey } from '@/data/editions';
-import { rememberPushToken } from '@/lib/device';
 import { formatWakeTime } from '@/lib/format';
-import {
-  isExpoGoAndroid,
-  registerForPush,
-  requestNotificationPermission,
-  sendTestReminder,
-} from '@/lib/notifications';
 import { exportEditionPdf } from '@/lib/pdf';
-import { useReadingList } from '@/state/readingList';
-import { updateSettings, useSettings, type Settings } from '@/state/settings';
+import { useSettings, type Settings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GUTTER } from '@/theme/tokens';
 
-type Props = { visible: boolean; onClose: () => void; onOpenPastEditions: () => void };
+/** A page inside Settings. The first screen is the theme picker and a list of these. */
+export type SettingsPage =
+  | 'feedback'
+  | 'topics'
+  | 'morning'
+  | 'reading'
+  | 'sources'
+  | 'notifications'
+  | 'listening'
+  | 'help'
+  | 'inbox'
+  | 'usage';
 
-export function SettingsSheet({ visible, onClose, onOpenPastEditions }: Props) {
+const PAGE_TITLE: Record<SettingsPage, string> = {
+  feedback: 'Send feedback',
+  topics: 'Topics',
+  morning: 'Morning edition',
+  reading: 'Reading',
+  sources: 'Sources',
+  notifications: 'Notifications',
+  listening: 'Listening',
+  help: 'Help',
+  inbox: 'Feedback inbox',
+  usage: 'Usage',
+};
+
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+  onOpenPastEditions: () => void;
+  /** Open straight onto a page (the what's-new note opens Send feedback). */
+  initialPage?: SettingsPage | null;
+};
+
+export function SettingsSheet({ visible, onClose, onOpenPastEditions, initialPage = null }: Props) {
+  const [page, setPage] = useState<SettingsPage | null>(initialPage);
+  // Each opening starts on the first screen (or the page asked for); closing keeps the current
+  // page on screen while the sheet slides away.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (wasVisible !== visible) {
+    setWasVisible(visible);
+    if (visible) setPage(initialPage);
+  }
+
   return (
-    <Sheet visible={visible} onClose={onClose} title="Settings" tall>
-      <SettingsBody onOpenPastEditions={onOpenPastEditions} />
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={page ? PAGE_TITLE[page] : 'Settings'}
+      onBack={page ? () => setPage(null) : undefined}
+      backLabel="Back to Settings"
+      tall>
+      {/* The first screen stays mounted under a page, so Back returns to the same spot. */}
+      <ScrollView
+        style={page ? styles.hidden : styles.flex}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}>
+        <Home active={!page} onOpen={setPage} onOpenPastEditions={onOpenPastEditions} />
+      </ScrollView>
+      {page && (
+        <Animated.View key={page} entering={FadeIn.duration(180)} style={styles.flex}>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <PageBody page={page} onDone={() => setPage(null)} />
+          </ScrollView>
+        </Animated.View>
+      )}
     </Sheet>
   );
 }
 
-function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }) {
+function PageBody({ page, onDone }: { page: SettingsPage; onDone: () => void }): ReactNode {
+  switch (page) {
+    case 'feedback':
+      return <FeedbackSettings onDone={onDone} />;
+    case 'topics':
+      return <TopicSettings />;
+    case 'morning':
+      return <MorningSettings />;
+    case 'reading':
+      return <ReadingSettings />;
+    case 'sources':
+      return <SourceSettings />;
+    case 'notifications':
+      return <NotificationSettings />;
+    case 'listening':
+      return <ListeningSettings />;
+    case 'help':
+      return <HelpSettings />;
+    case 'inbox':
+      return <FeedbackInbox />;
+    case 'usage':
+      return <UsageView />;
+  }
+}
+
+/** The first screen: themes on top, feedback, then one row per page with what's set there. */
+type HomeProps = {
+  /** On screen (not under a page). */
+  active: boolean;
+  onOpen: (p: SettingsPage) => void;
+  onOpenPastEditions: () => void;
+};
+
+function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
   const { theme } = useTheme();
   const settings = useSettings();
-  const items = useReadingList();
+  const owner = useIsOwner();
+  // Fetched each time the first screen shows, so the inbox count is fresh after reading it.
+  const { stats } = useOwnerStats(owner && active);
   const [exporting, setExporting] = useState(false);
-
-  const toggleMorningPush = async (on: boolean) => {
-    updateSettings({ morningPush: on });
-    if (!on) return;
-    if (!(await requestNotificationPermission())) {
-      toast.show('Notifications are off for Brewsy in system settings');
-      return;
-    }
-    const reg = await registerForPush();
-    if (reg.token) await rememberPushToken(reg.token);
-  };
-
-  // Breaking news needs the push token too.
-  const chooseBreaking = async (id: Settings['breakingPush']) => {
-    updateSettings({ breakingPush: id });
-    if (id === 'off' || !(await requestNotificationPermission())) return;
-    const reg = await registerForPush();
-    if (reg.token) await rememberPushToken(reg.token);
-  };
-
-  const toggleReminder = async (patch: { remindTonight?: boolean; remindWeekend?: boolean }) => {
-    updateSettings(patch);
-    if (Object.values(patch).some(Boolean)) await requestNotificationPermission();
-  };
-
-  const [openSources, setOpenSources] = useState<string | null>(null);
-  // World outlets, plus the ones that only feed the reader's own local section.
-  const sourceGroups = SOURCE_GROUPS.map((g) => ({
-    ...g,
-    outlets: g.outlets.filter((o) => !OUTLET_REGION[o] || OUTLET_REGION[o] === settings.region),
-  })).filter((g) => g.outlets.length > 0);
-  const toggleOutlet = (outlet: string, on: boolean) => {
-    updateSettings({
-      disabledOutlets: on
-        ? settings.disabledOutlets.filter((o) => o !== outlet)
-        : [...settings.disabledOutlets, outlet],
-    });
-  };
+  const icon = (Icon: typeof Bell) => <Icon size={19} color={theme.colors.text} strokeWidth={1.9} />;
 
   const exportPdf = async () => {
     setExporting(true);
@@ -101,301 +169,110 @@ function SettingsBody({ onOpenPastEditions }: { onOpenPastEditions: () => void }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <>
       <Group title="Theme">
         <ThemePicker />
       </Group>
 
-      <TopicSettings />
-
-      <ReadingSettings />
-
-      <Group title="Morning edition">
-        <View style={styles.rowStack}>
-          <View style={styles.rowTop}>
-            <View style={styles.flex}>
-              <Txt variant="label">Wake-up time</Txt>
-              <Txt variant="bodySm" tone="tertiary">
-                Your edition is ready by then.
-              </Txt>
-            </View>
-            <Txt variant="displayS">
-              {formatWakeTime(settings.wakeTime)}
-            </Txt>
-          </View>
-          <WakeTimePicker value={settings.wakeTime} onChange={(wakeTime) => updateSettings({ wakeTime })} />
-        </View>
-        <Divider />
-        <View style={styles.rowStack}>
-          <View>
-            <Txt variant="label">News from</Txt>
-            <Txt variant="bodySm" tone="tertiary">
-              Adds local news to Today. Changes apply from the next local section.
-            </Txt>
-          </View>
-          <View style={styles.pills} accessibilityRole="radiogroup">
-            {REGIONS.map((r) => (
-              <Pill
-                key={r.id}
-                label={r.label}
-                size="md"
-                variant={settings.region === r.id ? 'solid' : 'glass'}
-                color={theme.colors.inverseBg}
-                selected={settings.region === r.id}
-                onPress={() => updateSettings({ region: r.id })}
-              />
-            ))}
-          </View>
-        </View>
-        <Divider />
-        <ToggleRow
-          title="Morning notification"
-          subtitle={
-            isExpoGoAndroid
-              ? 'Needs the Brewsy app build on Android (Expo Go can’t show notifications).'
-              : '“Your Brewsy edition is ready” at your wake-up time.'
-          }
-          value={settings.morningPush}
-          onChange={toggleMorningPush}
+      <Group>
+        <LinkRow
+          title="Send feedback"
+          subtitle="Ideas, problems, things you love. It helps a lot."
+          icon={<MessageCircleHeart size={19} color={theme.colors.accent} strokeWidth={1.9} />}
+          onPress={() => onOpen('feedback')}
         />
       </Group>
 
-      <Group
-        title="Breaking news"
-        footer="Only for genuinely major news (very wide coverage or a wire-service “breaking” flag), at most 2 a day. It also appears under “Since this morning” on Today.">
-        <View style={[styles.pills, styles.padded]}>
-          {(
-            [
-              { id: 'off', label: 'Off' },
-              { id: 'major', label: 'Major news only' },
-            ] as const
-          ).map((o) => (
-            <Pill
-              key={o.id}
-              label={o.label}
-              size="md"
-              variant={settings.breakingPush === o.id ? 'solid' : 'glass'}
-              color={theme.colors.inverseBg}
-              selected={settings.breakingPush === o.id}
-              onPress={() => {
-                chooseBreaking(o.id).catch(() => {});
-              }}
-            />
-          ))}
-        </View>
-      </Group>
-
-      <Group
-        title="Listening"
-        footer={
-          Platform.OS === 'ios'
-            ? 'Siri: in the Shortcuts app, add “Open URLs” with brewsy://listen and name it “Play my Brewsy briefing”.'
-            : Platform.OS === 'android'
-              ? 'Long-press the Brewsy icon for “Listen to briefing”, or drag it to your home screen.'
-              : 'The Listen button on Today plays the edition.'
-        }>
-        <View style={styles.rowStack}>
-          <Txt variant="label">“Listen” starts with</Txt>
-          <View style={styles.pills}>
-            {(
-              [
-                { id: 'quick', label: 'Quick listen · about 3 min' },
-                { id: 'full', label: 'Full briefing · about 10 min' },
-              ] as const
-            ).map((o) => (
-              <Pill
-                key={o.id}
-                label={o.label}
-                size="md"
-                variant={settings.listenMode === o.id ? 'solid' : 'glass'}
-                color={theme.colors.inverseBg}
-                selected={settings.listenMode === o.id}
-                onPress={() => updateSettings({ listenMode: o.id })}
-              />
-            ))}
-          </View>
-        </View>
-      </Group>
-
-      <Group title="Phone voice" footer={VOICE_TIP}>
-        <PhoneVoiceRows />
-      </Group>
-
-      <Group title="Reading reminders" footer="Never more than one reminder a day.">
-        <ToggleRow
-          title="Tonight at 8pm"
-          subtitle="When something is saved for tonight."
-          value={settings.remindTonight}
-          onChange={(v) => toggleReminder({ remindTonight: v })}
+      <Group title="Your edition">
+        <LinkRow title="Topics" subtitle={topicSummary(settings)} icon={icon(LayoutGrid)} onPress={() => onOpen('topics')} />
+        <Divider />
+        <LinkRow
+          title="Morning edition"
+          subtitle={`Ready by ${formatWakeTime(settings.wakeTime)} · ${REGIONS.find((r) => r.id === settings.region)?.label ?? settings.region}`}
+          icon={icon(Sunrise)}
+          onPress={() => onOpen('morning')}
         />
         <Divider />
-        <ToggleRow
-          title="Saturday at 10am"
-          subtitle="When something is saved for the weekend."
-          value={settings.remindWeekend}
-          onChange={(v) => toggleReminder({ remindWeekend: v })}
-        />
-        {Platform.OS !== 'web' && (
-          <>
-            <Divider />
-            <LinkRow
-              title="Send a test reminder"
-              subtitle="Arrives in 5 seconds."
-              onPress={async () => {
-                const ok = await sendTestReminder(items);
-                toast.show(ok ? 'Test reminder coming in 5 seconds' : 'Allow notifications to test reminders');
-              }}
-            />
-          </>
-        )}
+        <LinkRow title="Reading" subtitle={readingSummary(settings)} icon={icon(ALargeSmall)} onPress={() => onOpen('reading')} />
+        <Divider />
+        <LinkRow title="Sources" subtitle={sourceSummary(settings)} icon={icon(Newspaper)} onPress={() => onOpen('sources')} />
       </Group>
 
-      <Group
-        title="Sources"
-        footer="Brewsy reads all of these every morning. Turn one off to drop its links, and any story only it reported. The full list, with each source's trust level, is in supabase/functions/_shared/sources.ts.">
-        {sourceGroups.map((group, gi) => {
-          const on = group.outlets.filter((o) => !settings.disabledOutlets.includes(o)).length;
-          const open = openSources === group.category;
-          return (
-            <View key={group.category}>
-              {gi > 0 && <Divider />}
-              <Pressable
-                onPress={() => setOpenSources(open ? null : group.category)}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: open }}
-                style={styles.row}>
-                <View style={styles.flex}>
-                  <Txt variant="label">{group.label}</Txt>
-                  <Txt variant="bodySm" tone="tertiary">
-                    {on === group.outlets.length ? `All ${on} on` : `${on} of ${group.outlets.length} on`}
-                  </Txt>
-                </View>
-                <View>
-                  {open ? (
-                    <ChevronUp size={18} color={theme.colors.textTertiary} />
-                  ) : (
-                    <ChevronDown size={18} color={theme.colors.textTertiary} />
-                  )}
-                </View>
-              </Pressable>
-              {open &&
-                group.outlets.map((outlet) => (
-                  <View key={outlet}>
-                    <Divider />
-                    <ToggleRow
-                      title={outlet}
-                      value={!settings.disabledOutlets.includes(outlet)}
-                      onChange={(value) => toggleOutlet(outlet, value)}
-                    />
-                  </View>
-                ))}
-            </View>
-          );
-        })}
+      <Group title="Alerts and audio">
+        <LinkRow
+          title="Notifications"
+          subtitle={notificationSummary(settings)}
+          icon={icon(Bell)}
+          onPress={() => onOpen('notifications')}
+        />
+        <Divider />
+        <LinkRow title="Listening" subtitle={listeningSummary(settings)} icon={icon(Headphones)} onPress={() => onOpen('listening')} />
       </Group>
 
       <Group title="Editions">
         <LinkRow
           title={exporting ? 'Making PDF…' : "Export today's edition as PDF"}
-          icon={<FileDown size={18} color={theme.colors.text} strokeWidth={1.9} />}
+          icon={icon(FileDown)}
           onPress={exporting ? undefined : exportPdf}
         />
         <Divider />
+        <LinkRow title="Past editions" icon={icon(History)} onPress={onOpenPastEditions} />
+      </Group>
+
+      <Group>
         <LinkRow
-          title="Past editions"
-          icon={<History size={18} color={theme.colors.text} strokeWidth={1.9} />}
-          onPress={onOpenPastEditions}
+          title="Help"
+          subtitle="The tour again, what’s new, and what Brewsy sends"
+          icon={icon(LifeBuoy)}
+          onPress={() => onOpen('help')}
         />
       </Group>
 
-      <HelpSettings />
+      {owner && (
+        <Group title="Only you can see this" footer="Shown only on your own phone (marked as the owner’s on the server).">
+          <LinkRow
+            title="Feedback inbox"
+            subtitle={stats ? `${stats.feedback_total} ${stats.feedback_total === 1 ? 'note' : 'notes'} so far` : 'Everything readers sent'}
+            badge={stats?.feedback_new ? `${stats.feedback_new} new` : undefined}
+            icon={icon(Inbox)}
+            onPress={() => onOpen('inbox')}
+          />
+          <Divider />
+          <LinkRow
+            title="Usage"
+            subtitle={stats ? `${stats.active_today} active today · ${stats.installs} installs` : 'Who uses Brewsy, and how'}
+            icon={icon(ChartColumn)}
+            onPress={() => onOpen('usage')}
+          />
+        </Group>
+      )}
 
       <Txt variant="caption" tone="tertiary" align="center" style={styles.about}>
         {backendConfigured
           ? 'Connected to your Brewsy backend'
           : 'Showing the sample edition · set up the backend with docs/BACKEND_SETUP.md'}
       </Txt>
-    </ScrollView>
+    </>
   );
 }
 
-const VOICE_TIP =
-  Platform.OS === 'ios'
-    ? 'Brewsy reads editions aloud with your phone’s voice. For a much more natural one: iPhone Settings → Accessibility → Spoken Content → Voices → English, download a “Premium” voice (Ava or Zoe, for example), then pick it here.'
-    : Platform.OS === 'android'
-      ? 'Brewsy reads editions aloud with your phone’s voice. For more voices: Android Settings → search “Text-to-speech” → Speech Services by Google → ⚙️ → Install voice data → English.'
-      : 'Brewsy reads editions aloud with your phone’s voice. These voices come from your browser.';
+function topicSummary(s: Settings): string {
+  const n = s.topics.length;
+  const starred = s.focusTopics.filter((t) => s.topics.includes(t)).length;
+  return `${n} ${n === 1 ? 'topic' : 'topics'}${starred ? ` · ${starred} starred` : ''}`;
+}
 
-/** Picks the phone voice for editions without studio audio. Tapping one plays a short sample. */
-function PhoneVoiceRows() {
-  const { theme } = useTheme();
-  const picked = useSettings().listenVoice;
-  const [voices, setVoices] = useState<DeviceVoice[] | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    deviceVoices()
-      .then((v) => alive && setVoices(v))
-      .catch(() => alive && setVoices([]));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  if (!voices || !voices.length) {
-    return (
-      <Txt variant="bodySm" tone="tertiary" style={styles.voiceNote}>
-        {voices ? 'No English voices found on this device.' : 'Looking for voices…'}
-      </Txt>
-    );
-  }
-
-  const choose = (id: string | null) => {
-    const player = playerStore.get();
-    if (player.playing && player.engine === 'speech') pause();
-    updateSettings({ listenVoice: id });
-    previewVoice(id ?? voices[0].id);
-  };
-  // The six best, plus the one you picked if it isn't among them.
-  const shown = voices.filter((v, i) => i < 6 || v.id === picked);
-  const rows: { id: string | null; label: string; detail: string }[] = [
-    { id: null, label: 'Automatic', detail: `The best one here: ${voices[0].label}` },
-    ...shown,
-  ];
-
-  return rows.map((v, i) => {
-    const selected = picked === v.id;
-    return (
-      <View key={v.id ?? 'auto'}>
-        {i > 0 && <Divider />}
-        <Pressable
-          onPress={() => choose(v.id)}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: selected }}
-          accessibilityHint="Plays a short sample"
-          style={styles.row}>
-          <View style={styles.flex}>
-            <Txt variant="label">{v.label}</Txt>
-            <Txt variant="bodySm" tone="tertiary">
-              {v.detail}
-            </Txt>
-          </View>
-          <View>
-            {selected ? (
-              <Check size={18} color={theme.colors.accent} strokeWidth={2.4} />
-            ) : (
-              <Volume2 size={16} color={theme.colors.textTertiary} strokeWidth={1.9} />
-            )}
-          </View>
-        </Pressable>
-      </View>
-    );
-  });
+function readingSummary(s: Settings): string {
+  const size = TEXT_SIZES.reduce((best, step) =>
+    Math.abs(step.scale - s.textScale) < Math.abs(best.scale - s.textScale) ? step : best,
+  ).label;
+  const hidden = s.mutedWords.length;
+  return `Text size: ${size}${hidden ? ` · ${hidden} hidden ${hidden === 1 ? 'word' : 'words'}` : ''}`;
 }
 
 const styles = StyleSheet.create({
   ...settingsStyles,
+  hidden: { display: 'none' },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 24, gap: 26 },
-  voiceNote: { paddingVertical: 18 },
   about: { marginTop: 4, letterSpacing: 0.6 },
 });

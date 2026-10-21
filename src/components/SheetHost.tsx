@@ -8,7 +8,7 @@ import { ListenChooserBody } from './listen/ListenChooser';
 import { PlayerSheetBody } from './listen/PlayerSheet';
 import { Pill } from './Pill';
 import { PressableScale } from './PressableScale';
-import { SettingsSheet } from './SettingsSheet';
+import { SettingsSheet, type SettingsPage } from './SettingsSheet';
 import { Sheet } from './Sheet';
 import { toast } from './Toast';
 import { Txt } from './Txt';
@@ -37,7 +37,8 @@ type SaveTarget = { story: Story; editionDate: string };
 
 type SheetsApi = {
   openSave: (target: SaveTarget) => void;
-  openSettings: () => void;
+  /** Settings, on its first screen or straight onto one page. */
+  openSettings: (page?: SettingsPage) => void;
   closeSettings: () => void;
   openPastEditions: () => void;
   /** Quick or Full? */
@@ -62,6 +63,7 @@ export function SheetHost({ children }: { children: ReactNode }) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveKey, setSaveKey] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsPage, setSettingsPage] = useState<SettingsPage | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
   const [pastKey, setPastKey] = useState(0);
   const [listenTarget, setListenTarget] = useState<Briefing | null>(null);
@@ -81,7 +83,11 @@ export function SheetHost({ children }: { children: ReactNode }) {
       setSaveKey((k) => k + 1); // fresh form each time
       setSaveOpen(true);
     },
-    openSettings: () => setSettingsOpen(true),
+    openSettings: (page) => {
+      // Buttons pass openSettings straight to onPress, which hands it the press event.
+      setSettingsPage(typeof page === 'string' ? page : null);
+      setSettingsOpen(true);
+    },
     closeSettings: () => setSettingsOpen(false),
     openPastEditions: openPast,
     openListen: (b) => {
@@ -109,6 +115,7 @@ export function SheetHost({ children }: { children: ReactNode }) {
       </Sheet>
       <SettingsSheet
         visible={settingsOpen}
+        initialPage={settingsPage}
         onClose={() => setSettingsOpen(false)}
         onOpenPastEditions={() => {
           setSettingsOpen(false);
