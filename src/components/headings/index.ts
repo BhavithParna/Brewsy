@@ -3,6 +3,7 @@ import { filmHeadings } from './films';
 import { glassHeadings } from './glass';
 import { horrorHeadings } from './horror';
 import type { HeadingRegistry } from './types';
+import { whalesHeadings } from './whales';
 
 export type { HeadingProps } from './types';
 
@@ -10,6 +11,7 @@ export type { HeadingProps } from './types';
 export const CUSTOM_HEADINGS: HeadingRegistry = {
   ...classicHeadings,
   ...glassHeadings,
+  ...whalesHeadings,
   ...filmHeadings,
   ...horrorHeadings,
 };

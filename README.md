@@ -1,8 +1,8 @@
 # Brewsy ☀️
 
 Your news, brewed overnight. One calm edition every morning: the stories that matter in the
-topics you pick (AI, tech, business, world, politics, science, health, climate, cars, gaming,
-sports, entertainment, movies and crypto), explained simply, with as much depth as you want.
+topics you pick (AI, tech, business, world, politics, science, health, climate, oceans, cars,
+gaming, sports, entertainment, movies and crypto), explained simply, with as much depth as you want.
 
 - **Today** — the whole edition in one scroll. Swipe left/right (or the Today/Yesterday
   switch) to change day; the calendar at the end of that switch opens older editions.
@@ -25,7 +25,8 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
   audio briefing. **Movies** covers Hollywood, Bollywood and the other Indian film industries,
   plus world cinema (East Asia, the Philippines, the Middle East, Turkey, Africa, Europe,
   Australia, Canada), animation, documentaries and indie film (box office, releases, trailers,
-  casting, festivals, awards).
+  casting, festivals, awards). **Oceans** (off until you switch it on) covers sea life, the deep
+  sea, ocean science, fisheries and the health of the seas.
   Under an opened story, **Stories like this: More · Less** tunes it further; "Less" can hide a
   person, company or word (Settings → Hidden words).
 - **Search** — the last two weeks of editions, offline over saved ones. A result opens on Today.
@@ -55,15 +56,19 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
 - **First run** — welcome → pick your look → where your news comes from (picked from the phone's
   timezone, then its region setting) → topics (with stars) → wake-up time → notifications,
   then a short tour of Today that points at the real controls (Skip or Android back ends it).
-- **Themes** — nineteen complete looks, each with its own typefaces, shapes, card style, section
+- **Themes** — twenty complete looks, each with its own typefaces, shapes, card style, section
   headings and cover, in three groups (Settings → Theme, or onboarding):
   - **Classic:** **Glass** (frosted panes on a soft wallpaper, after Apple's Liquid Glass; Light,
-    Dark, or Auto = light from 7 am to 7 pm), **Space** (black, monospace details, topics open on
-    numbered photo cards), **Atlantis** (deep-blue gradient, serif, round frosted cards, sunken
-    ruins on the cover, a depth gauge that reads deeper with each topic), **Highlands** (forest
-    tiles, bold italics, a misty glen on the cover, each topic opens at a waymarker), **Alpine**
-    (white, Swiss red, a poster peak with a red gondola, topics open on a Swiss grid). The last
-    four also have a few small lines of their own (the end of the edition, empty states).
+    Dark, or Auto = light from 7 am to 7 pm), **Whales** (a sunlit sea with a small pod of whales
+    drifting slowly behind the page, round Fredoka titles, white cards, a coral accent; the whales
+    hold still when the phone asks for less motion), **Space** (black, monospace details, Earthset
+    on the cover, topics open on numbered photo cards), **Atlantis** (deep-blue gradient, serif,
+    round frosted cards, a kelp forest on the cover, a depth gauge that reads deeper with each
+    topic), **Highlands** (forest tiles, bold italics, Buachaille Etive Mòr on the cover, each topic
+    opens at a waymarker), **Alpine** (white, Swiss red, the Matterhorn on the cover, topics open on
+    a Swiss grid). Their accents stay small: the stories tile is a card with its count in the
+    accent (Alpine keeps its red block, Highlands and Whales use a deep tile of their own). Each
+    also has a few small lines of its own (the end of the edition, empty states).
   - **Films:** **Dune** (sand, thin wide-set capitals, centered), **Matrix** (monospace, sections
     open on a `> prompt_`), **Tron** (cyan light lines, light-cycle trails under each title),
     **Blade Runner** (pyramids in an amber haze, neon pink), **Budapest** (a pink hotel, perfect
@@ -82,9 +87,10 @@ sports, entertainment, movies and crypto), explained simply, with as much depth 
     further open as you read). Each hides a few nods to its film in its cover, section headings
     and small lines (the end of the edition, empty states).
 
-  Defined in `src/theme/themes.ts` (classic) and `src/theme/packs/` (glass, films, horror), with
-  per-theme section headings in `src/components/headings/`; covers in `assets/themes/` (photo
-  credits in Settings → Theme; every cover added since Matrix is original art). Only the current
+  Defined in `src/theme/themes.ts` (classic) and `src/theme/packs/` (glass, whales, films, horror),
+  with per-theme section headings in `src/components/headings/` and the Whales pod in
+  `src/components/ambient/`; covers in `assets/themes/` (Space, Atlantis, Highlands, Alpine and
+  Dune are photographs, credited in Settings → Theme; the rest are original art). Only the current
   theme's typefaces load at startup; the rest load in the background.
 - **Logo** — a coffee bean with an S-shaped cut, drawn in thin line in each theme's ink. The
   launcher icon is the same bean, filled: roast brown with an amber cut on espresso. Sources are

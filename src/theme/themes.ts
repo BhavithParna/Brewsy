@@ -4,6 +4,7 @@ import type { ImageSourcePropType, TextStyle } from 'react-native';
 import { filmFonts, filmThemes } from './packs/films';
 import { glassFonts, glassThemes } from './packs/glass';
 import { horrorFonts, horrorThemes } from './packs/horror';
+import { whalesFonts, whalesThemes } from './packs/whales';
 import { TOPIC_LABEL, type TopicKey } from '@/data/topics';
 
 export { TOPIC_LABEL, type TopicKey };
@@ -20,6 +21,8 @@ export type ThemeName =
   | 'budapest'
   // Glass (Apple-style frosted glass; light and dark variants, see packs/glass.ts)
   | 'glass'
+  // Whales (a sunlit sea with whales drifting behind the page, see packs/whales.ts)
+  | 'whales'
   // Films (packs/films.ts)
   | 'starwars'
   | 'hogwarts'
@@ -158,6 +161,11 @@ export type Theme = {
   };
   /** Small lines of its own (see ThemeLines). */
   lines?: ThemeLines;
+  /**
+   * The "Stories today" tile under the cover. Without this it's filled with the accent; 'card' draws
+   * it like the Listen tile beside it, with the number in the accent; or a fill and ink of its own.
+   */
+  leadTile?: 'card' | { fill: string; ink: string };
   colors: {
     /** Flat base color (status bar strip, navigation, behind the cover while it loads). */
     bg: string;
@@ -269,7 +277,8 @@ const dune: Theme = {
 };
 
 // ─── Space ────────────────────────────────────────────────────────────────────
-// Pure black, mission-control monospace details, one signal-orange accent.
+// Pure black, mission-control monospace details, one signal-orange accent, used sparingly: the
+// stories tile is an outlined panel like the rest, with only its count lit in orange.
 // Each topic opens on a photo card with the topic as a giant word (the month-cards reference).
 const space: Theme = {
   name: 'space',
@@ -305,6 +314,7 @@ const space: Theme = {
   shape: { scale: 0.6, control: 999 },
   surface: 'outline',
   layout: { heroAlign: 'left', sections: 'cover', capsButtons: false },
+  leadTile: 'card',
   lines: {
     signOff: 'Mission control, signing off.',
     brewing: 'Counting down',
@@ -339,7 +349,8 @@ const space: Theme = {
 // ─── Atlantis ─────────────────────────────────────────────────────────────────
 // Deep-water gradient, an old-world serif, very round frosted shapes.
 // The background is smooth, so frosted cards stay easy to read. After the health reference.
-// Each topic opens with a depth gauge that reads a little deeper as the edition goes on.
+// The cover looks up through a kelp forest at the sun; each topic opens with a depth gauge that reads
+// a little deeper as the edition goes on.
 const atlantis: Theme = {
   name: 'atlantis',
   label: 'Atlantis',
@@ -348,9 +359,14 @@ const atlantis: Theme = {
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 30,
-  // Original art: a sunken temple under a rippling, sunlit surface (a trident is cut into its pediment).
   cover: require('../../assets/themes/atlantis.jpg'),
-  credit: null,
+  credit: {
+    title: 'Kelp forest, Channel Islands NMS',
+    author: 'NOAA Photo Library',
+    license: 'Public domain',
+    url: 'https://commons.wikimedia.org/wiki/File:Kelp_forest,_Channel_Islands_NMS.jpg',
+    adapted: true,
+  },
   background: ['#0A3850', '#06263B', '#041828', '#020D17'],
   // Cormorant's default numerals are old-style ("II" for 11), so numbers use lining figures.
   type: {
@@ -367,6 +383,7 @@ const atlantis: Theme = {
   shape: { scale: 1.1, control: 999 },
   surface: 'glass',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  leadTile: 'card',
   lines: {
     signOff: 'Time to surface.',
     emptySaved: 'Nothing salvaged yet',
@@ -399,7 +416,9 @@ const atlantis: Theme = {
 
 // ─── Highlands ────────────────────────────────────────────────────────────────
 // Forest greens, bold italic headings, chunky rounded tiles with big italic numbers, one fern-green
-// accent. Each topic opens at a waymarker ("Stage 2"). After the hiking reference.
+// accent. The cover is Buachaille Etive Mòr at the head of Glen Coe, with the little white cottage at
+// its foot; the stories tile is moss, the fern kept for small marks. Each topic opens at a waymarker
+// ("Stage 2"). After the hiking reference.
 const highlands: Theme = {
   name: 'highlands',
   label: 'Highlands',
@@ -408,9 +427,14 @@ const highlands: Theme = {
   isDark: true,
   blurTint: 'dark',
   blurIntensity: 36,
-  // Original art: a glen at first light, with mist, a loch and a cairn on the near ridge.
   cover: require('../../assets/themes/highlands.jpg'),
-  credit: null,
+  credit: {
+    title: 'Lagangarbh cottage with Buachaille Etive Mòr',
+    author: 'Colin',
+    license: BY_SA('4.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:Lagangarbh_cottage_with_Buachaille_Etive_M%C3%B2r.jpg',
+    adapted: true,
+  },
   background: ['#121A15', '#0D130F'],
   type: {
     displayXL: { fontFamily: 'Barlow_700Bold_Italic', fontSize: 60, lineHeight: 72, letterSpacing: -1.2, paddingRight: 6 },
@@ -429,6 +453,7 @@ const highlands: Theme = {
   shape: { scale: 0.9, control: 999 },
   surface: 'solid',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  leadTile: { fill: '#2C4733', ink: '#EFF3EC' },
   lines: {
     signOff: 'That’s the summit for today.',
     emptySaved: 'Your pack is empty',
@@ -460,8 +485,9 @@ const highlands: Theme = {
 };
 
 // ─── Alpine ───────────────────────────────────────────────────────────────────
-// Swiss poster style: white cards, heavy tight grotesk, signal red, crisp corners. Each topic opens
-// on a grid: a heavy black rule, the section number in red, the topic in bold.
+// Swiss poster style: white cards, heavy tight grotesk, signal red, crisp corners. The cover is the
+// Matterhorn from Gornergrat, a red mountain train waiting in the snow where it fades out. Each topic
+// opens on a grid: a heavy black rule, the section number in red, the topic in bold.
 const alpine: Theme = {
   name: 'alpine',
   label: 'Alpine',
@@ -470,9 +496,14 @@ const alpine: Theme = {
   isDark: false,
   blurTint: 'light',
   blurIntensity: 50,
-  // Original art: a Swiss travel poster of one hooked peak, with a small red gondola on its cable.
   cover: require('../../assets/themes/alpine.jpg'),
-  credit: null,
+  credit: {
+    title: 'GGB Bhe 2/4 at Gornergrat',
+    author: 'Kabelleger / David Gubler',
+    license: BY_SA('3.0'),
+    url: 'https://commons.wikimedia.org/wiki/File:GGB_Bhe_2-4_Gornergrat.jpg',
+    adapted: true,
+  },
   background: ['#EEF0F2'],
   type: {
     displayXL: { fontFamily: 'Inter_700Bold', fontSize: 54, lineHeight: 64, letterSpacing: -2.4 },
@@ -777,6 +808,7 @@ const budapest: Theme = {
 
 const ORDERED: Theme[] = [
   ...glassThemes,
+  ...whalesThemes,
   space,
   atlantis,
   highlands,
@@ -801,10 +833,11 @@ export const THEME_ORDER: ThemeName[] = THEME_GROUPS.flatMap((g) =>
  * Typefaces the theme packs use (about 9 MB). Startup waits only for the current theme's pack
  * (fontsForTheme); app/_layout.tsx loads the rest in the background once the app is up.
  */
-export const packFonts: Record<string, FontSource> = { ...glassFonts, ...filmFonts, ...horrorFonts };
+export const packFonts: Record<string, FontSource> = { ...glassFonts, ...whalesFonts, ...filmFonts, ...horrorFonts };
 
 const PACKS: [Theme[], Record<string, FontSource>][] = [
   [glassThemes, glassFonts],
+  [whalesThemes, whalesFonts],
   [filmThemes, filmFonts],
   [horrorThemes, horrorFonts],
 ];

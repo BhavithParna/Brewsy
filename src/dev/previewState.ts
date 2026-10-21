@@ -47,7 +47,7 @@ export function usePreviewState(): PreviewState {
  *   ?seed=1        fill the Reading List with sample stories
  *   ?tour=0        mark the first-run tour as seen     ?tour=1   show it again
  *                  (?onboarded=1 without a tour flag also skips the tour, so screenshots stay clear)
- *   ?theme=atlantis   switch theme. Classic: glass | space | atlantis | highlands | alpine.
+ *   ?theme=atlantis   switch theme. Classic: glass | whales | space | atlantis | highlands | alpine.
  *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli |
  *                            fightclub.
  *                     Horror: nosferatu | thering | midsommar | scream | insidious.

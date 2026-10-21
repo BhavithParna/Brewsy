@@ -33,17 +33,27 @@ export function EditionTiles({ briefing, storyCount, readMinutes, onRead, listen
   const listenMin = listenMinutes(briefing, listenMode, settings);
   const active = loaded && playing;
   const { accent, accentInk, card, cardBorder, text } = theme.colors;
+  const glass = theme.surface === 'glass' && !theme.liquid;
+  // The stories tile: filled with the accent, a fill of the theme's own, or a card like Listen (see Theme.leadTile).
+  const lead =
+    theme.leadTile === 'card'
+      ? { bg: card, border: cardBorder, ink: text, glass, value: accent, arrow: accent }
+      : theme.leadTile
+        ? { bg: theme.leadTile.fill, border: theme.leadTile.fill, ink: theme.leadTile.ink }
+        : { bg: accent, border: accent, ink: accentInk };
 
   return (
     <View style={styles.row}>
       <Tile
-        bg={accent}
-        border={accent}
-        ink={accentInk}
+        bg={lead.bg}
+        border={lead.border}
+        ink={lead.ink}
+        glass={lead.glass}
+        valueColor={lead.value}
         label={storyCount === 1 ? 'Story\ntoday' : 'Stories\ntoday'}
         value={String(storyCount)}
         unit={`about ${readMinutes} min read`}
-        icon={<ArrowDown size={18} color={accentInk} strokeWidth={1.8} />}
+        icon={<ArrowDown size={18} color={lead.arrow ?? lead.ink} strokeWidth={1.8} />}
         onPress={onRead}
         accessibilityLabel={`${storyCount} stories, about ${readMinutes} minutes to read. Start reading`}
       />
@@ -52,7 +62,7 @@ export function EditionTiles({ briefing, storyCount, readMinutes, onRead, listen
         bg={card}
         border={cardBorder}
         ink={text}
-        glass={theme.surface === 'glass' && !theme.liquid}
+        glass={glass}
         label={active ? 'Playing\nnow' : loaded ? 'Resume\nlistening' : 'Listen\nto it'}
         value={String(listenMin)}
         unit="min briefing"
@@ -77,6 +87,7 @@ function Tile({
   glass,
   label,
   value,
+  valueColor,
   unit,
   icon,
   onPress,
@@ -90,6 +101,8 @@ function Tile({
   glass?: boolean;
   label: string;
   value: string;
+  /** The big number, when it isn't the ink color. */
+  valueColor?: string;
   unit: string;
   icon: ReactNode;
   onPress: () => void;
@@ -129,7 +142,7 @@ function Tile({
           </View>
         </View>
         <View>
-          <Txt variant="stat" color={ink}>
+          <Txt variant="stat" color={valueColor ?? ink}>
             {value}
           </Txt>
           {/* Dimmed only a little: on a bright accent tile, small text needs nearly full contrast. */}

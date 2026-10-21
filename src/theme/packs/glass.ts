@@ -49,6 +49,8 @@ const shared = {
   shape: { scale: 1.15, control: 999 },
   surface: 'glass',
   layout: { heroAlign: 'left', sections: 'title', capsButtons: false },
+  // A frosted pane like the Listen tile, the count in the accent blue (as a system widget would).
+  leadTile: 'card',
 } as const satisfies Partial<Theme>;
 
 const LIGHT_ART = require('../../../assets/themes/glass-light.jpg');

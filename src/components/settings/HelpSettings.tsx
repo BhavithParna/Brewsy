@@ -7,7 +7,7 @@ import { updateSettings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const WHATS_NEW =
-  'New in Brewsy: film and horror themes, Glass in light and dark, a Movies topic, stars for the topics you want more of, search, and a topic bar that stays with you as you read.';
+  'New in Brewsy: an Oceans topic for sea life and the deep sea (switch it on under Topics), a Whales theme, film and horror themes, Glass in light and dark, a Movies topic, stars for the topics you want more of, and search.';
 
 /** Help: the tour of Today again, and a line on what's new. */
 export function HelpSettings() {
