@@ -3,8 +3,8 @@ import { ArrowUpRight, ChevronUp, Search } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Coverage } from './Coverage';
 import { GoDeeper } from './GoDeeper';
-import { SourceList, useVisibleSources } from './SourceLinks';
 import { StoryFeedback } from './StoryFeedback';
 import { Txt } from './Txt';
 import { Tap } from '@/components/Tap';
@@ -30,7 +30,6 @@ export function LearnMore({
 }) {
   const { theme } = useTheme();
   const radius = useRadius();
-  const sources = useVisibleSources(story.allSources);
 
   // Opening a story counts as reading it (for the read mark and the end-of-edition tally).
   useEffect(() => {
@@ -95,11 +94,7 @@ export function LearnMore({
 
       <EarlierInBrewsy story={story} editionDate={editionDate} />
 
-      {sources.length > 0 && (
-        <Block title={`All sources (${sources.length})`}>
-          <SourceList sources={sources} />
-        </Block>
-      )}
+      <Coverage sources={story.allSources} />
 
       <GoDeeper story={story} editionDate={editionDate} />
 

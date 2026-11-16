@@ -44,42 +44,8 @@ export function SourceLinks({ sources: all }: { sources: SourceRef[] }) {
   );
 }
 
-/** Full source list for "Learn more": outlet + article title. */
-export function SourceList({ sources: all }: { sources: SourceRef[] }) {
-  const { theme } = useTheme();
-  const sources = useVisibleSources(all);
-  return (
-    <View style={styles.list}>
-      {sources.map((s, i) => (
-        <Tap
-          key={`${s.url}-${i}`}
-          onPress={() => openLink(s.url)}
-          accessibilityRole="link"
-          accessibilityLabel={`${s.name}: ${s.title ?? 'read the original'}`}
-          style={[styles.listRow, i > 0 && { borderTopWidth: 1, borderTopColor: theme.colors.hairline }]}>
-          <View style={styles.flex}>
-            <Txt variant="kicker" tone="tertiary">
-              {s.name}
-            </Txt>
-            <Txt variant="body" style={styles.title}>
-              {s.title ?? 'Read the original'}
-            </Txt>
-          </View>
-          <View>
-            <ExternalLink size={16} color={theme.colors.textTertiary} />
-          </View>
-        </Tap>
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12, rowGap: 6 },
   link: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   underline: { textDecorationLine: 'underline' },
-  list: {},
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: 56 },
-  flex: { flex: 1, gap: 3 },
-  title: { lineHeight: 21 },
 });

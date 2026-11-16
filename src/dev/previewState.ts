@@ -54,6 +54,7 @@ export function usePreviewState(): PreviewState {
  *   ?theme=atlantis   switch theme. Classic: glass | whales | space | atlantis | highlands | alpine.
  *                     Films: dune | matrix | tron | bladerunner | budapest | starwars | hogwarts | lalaland | ghibli |
  *                            fightclub.
+ *                     Custom: whales | pixelsky | console | nightfall | mirage.
  *                     Horror: nosferatu | thering | midsommar | scream | insidious.
  *   ?eggs=1        film themes: put every rare section-heading touch (some days only) on every topic at once
  *                  (read in components/headings/films.tsx)

@@ -4,6 +4,7 @@ import type { ImageSourcePropType, TextStyle } from 'react-native';
 import { filmFonts, filmThemes } from './packs/films';
 import { glassFonts, glassThemes } from './packs/glass';
 import { horrorFonts, horrorThemes } from './packs/horror';
+import { studioFonts, studioThemes } from './packs/studio';
 import { whalesFonts, whalesThemes } from './packs/whales';
 import { TOPIC_LABEL, type TopicKey } from '@/data/topics';
 
@@ -23,6 +24,11 @@ export type ThemeName =
   | 'glass'
   // Whales (a sunlit sea with whales drifting behind the page, see packs/whales.ts)
   | 'whales'
+  // More Custom looks, each after a reference picture (packs/studio.ts)
+  | 'pixelsky'
+  | 'console'
+  | 'nightfall'
+  | 'mirage'
   // Films (packs/films.ts)
   | 'starwars'
   | 'hogwarts'
@@ -839,6 +845,7 @@ const budapest: Theme = {
 const ORDERED: Theme[] = [
   ...glassThemes,
   ...whalesThemes,
+  ...studioThemes,
   space,
   atlantis,
   highlands,
@@ -863,11 +870,12 @@ export const THEME_ORDER: ThemeName[] = THEME_GROUPS.flatMap((g) =>
  * Typefaces the theme packs use (about 9 MB). Startup waits only for the current theme's pack
  * (fontsForTheme); app/_layout.tsx loads the rest in the background once the app is up.
  */
-export const packFonts: Record<string, FontSource> = { ...glassFonts, ...whalesFonts, ...filmFonts, ...horrorFonts };
+export const packFonts: Record<string, FontSource> = { ...glassFonts, ...whalesFonts, ...studioFonts, ...filmFonts, ...horrorFonts };
 
 const PACKS: [Theme[], Record<string, FontSource>][] = [
   [glassThemes, glassFonts],
   [whalesThemes, whalesFonts],
+  [studioThemes, studioFonts],
   [filmThemes, filmFonts],
   [horrorThemes, horrorFonts],
 ];
