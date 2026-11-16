@@ -173,7 +173,7 @@ export default function SearchScreen() {
               accessibilityLabel="Clear search"
               style={styles.clear}>
               <View style={[styles.clearDot, { backgroundColor: theme.colors.textTertiary }]}>
-                <X size={12} strokeWidth={2.6} color={theme.colors.sheet} />
+                <X size={12} strokeWidth={2.4} color={theme.colors.sheet} />
               </View>
             </Tap>
           )}
@@ -296,7 +296,7 @@ function StartPanel({
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${q} from recent searches`}
                   style={styles.remove}>
-                  <X size={15} color={theme.colors.textTertiary} strokeWidth={1.8} />
+                  <X size={16} color={theme.colors.textTertiary} strokeWidth={1.8} />
                 </Tap>
               </View>
             ))}
@@ -407,7 +407,7 @@ function ResultRow({
           )}
         </View>
         <View style={styles.chevron}>
-          <Chevron size={17} color={theme.colors.textTertiary} strokeWidth={1.8} />
+          <Chevron size={18} color={theme.colors.textTertiary} strokeWidth={1.8} />
         </View>
       </Pressable>
 
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   results: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingTop: 6 },
   pad: { paddingHorizontal: GUTTER },
   status: { minHeight: 16, marginTop: 10, marginLeft: 6 },
-  group: { marginTop: 22, gap: 14 },
+  group: { marginTop: 24, gap: 14 },
   card: { paddingHorizontal: 18 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, minHeight: 56 },
   rowText: { flex: 1, gap: 5 },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   details: { gap: 14, paddingBottom: 18 },
   none: { gap: 10, paddingTop: 48, paddingHorizontal: 16 },
-  start: { gap: 28, paddingTop: 22 },
+  start: { gap: 28, paddingTop: 24 },
   block: { gap: 12 },
   blockHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
   recentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

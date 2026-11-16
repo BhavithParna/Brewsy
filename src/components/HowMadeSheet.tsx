@@ -107,7 +107,7 @@ function Step({ n: num, title, children }: { n: number; title: string; children:
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 16, gap: 22 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 16, gap: 24 },
   pad: { paddingHorizontal: 6 },
   card: { paddingHorizontal: 18, paddingVertical: 10 },
   stat: { flexDirection: 'row', alignItems: 'baseline', gap: 14, paddingVertical: 8 },

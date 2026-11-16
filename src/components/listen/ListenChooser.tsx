@@ -54,7 +54,7 @@ export function ListenChooserBody({ briefing, onDone }: { briefing: Briefing; on
               radius={radii.lg}
               style={[styles.option, preferred && { borderColor: theme.colors.textTertiary }]}>
               <View style={[styles.icon, { borderColor: theme.colors.glassBorder }]}>
-                <Icon size={19} color={theme.colors.text} strokeWidth={1.7} />
+                <Icon size={20} color={theme.colors.text} strokeWidth={1.8} />
               </View>
               <View style={styles.text}>
                 <View style={styles.titleRow}>

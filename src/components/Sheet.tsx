@@ -162,7 +162,7 @@ export function Sheet({ visible, onClose, title, tall = false, onBack, backLabel
                 {title && (
                   // Dragging down and tapping outside also close it; this is the one you can see.
                   <Tap onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.close}>
-                    <X size={22} color={theme.colors.textSecondary} strokeWidth={2} />
+                    <X size={20} color={theme.colors.textSecondary} strokeWidth={2} />
                   </Tap>
                 )}
               </View>

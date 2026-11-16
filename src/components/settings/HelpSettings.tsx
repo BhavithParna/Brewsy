@@ -37,7 +37,7 @@ export function HelpSettings() {
         <LinkRow
           title="Take the tour again"
           subtitle="A one-minute look around Today."
-          icon={<Compass size={18} color={theme.colors.text} strokeWidth={1.9} />}
+          icon={<Compass size={18} color={theme.colors.text} strokeWidth={1.8} />}
           onPress={replayTour}
         />
       </Group>

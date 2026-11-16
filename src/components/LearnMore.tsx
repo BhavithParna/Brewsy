@@ -147,7 +147,7 @@ function Player({ player }: { player: KeyPlayer }) {
       style={({ pressed }) => [styles.player, pressed && styles.pressed]}>
       {body}
       <View style={styles.playerIcon}>
-        <Search size={15} strokeWidth={1.8} color={theme.colors.textTertiary} />
+        <Search size={16} strokeWidth={1.8} color={theme.colors.textTertiary} />
       </View>
     </Pressable>
   );
@@ -219,7 +219,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  wrap: { gap: 30, paddingTop: 26, borderTopWidth: 1 },
+  wrap: { gap: 28, paddingTop: 24, borderTopWidth: 1 },
   simple: { padding: 18, gap: 10 },
   block: { gap: 12 },
   player: { flexDirection: 'row', gap: 12 },

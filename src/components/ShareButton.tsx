@@ -35,7 +35,7 @@ export function ShareButton({ story, editionDate }: { story: Story; editionDate:
       accessibilityLabel="Share this story">
       <View style={styles.button}>
         <View>
-          <Icon size={19} strokeWidth={2} color={theme.colors.textSecondary} />
+          <Icon size={20} strokeWidth={2} color={theme.colors.textSecondary} />
         </View>
       </View>
     </PressableScale>

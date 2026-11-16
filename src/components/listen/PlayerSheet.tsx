@@ -192,7 +192,7 @@ export function PlayerSheetBody({ onClose }: { onClose: () => void }) {
                 style={[styles.row, i > 0 && { borderTopWidth: 1, borderTopColor: theme.colors.hairline }]}>
                 <View style={styles.rowIcon}>
                   {current ? (
-                    <NowPlayingBars color={theme.colors.accent} playing={playing} size={13} />
+                    <NowPlayingBars color={theme.colors.accent} playing={playing} size={14} />
                   ) : (
                     <Txt variant="caption" tone="tertiary" style={styles.tabular}>
                       {String(i + 1).padStart(2, '0')}
@@ -247,7 +247,7 @@ function VoiceNote({ session }: { session: Session }) {
     return (
       <View style={styles.noteRow}>
         <View>
-          <CircleCheck size={14} color={theme.colors.up} strokeWidth={2.2} />
+          <CircleCheck size={14} color={theme.colors.up} strokeWidth={2} />
         </View>
         <Txt variant="caption" tone="tertiary">
           Saved on this phone · plays offline
@@ -261,7 +261,7 @@ function VoiceNote({ session }: { session: Session }) {
         label={status === 'downloading' ? 'Downloading…' : 'Download for offline'}
         variant="outline"
         size="md"
-        icon={<Download size={15} color={theme.colors.textSecondary} strokeWidth={2} />}
+        icon={<Download size={16} color={theme.colors.textSecondary} strokeWidth={2} />}
         onPress={
           remote && status === 'none'
             ? () =>
@@ -277,14 +277,14 @@ function VoiceNote({ session }: { session: Session }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 6, paddingBottom: 12, gap: 26 },
-  empty: { paddingHorizontal: GUTTER, paddingVertical: 30 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 6, paddingBottom: 12, gap: 24 },
+  empty: { paddingHorizontal: GUTTER, paddingVertical: 32 },
   now: { gap: 12, alignItems: 'stretch' },
   track: { height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 8 },
   fill: { height: 4 },
   times: { flexDirection: 'row', justifyContent: 'space-between' },
   tabular: { fontVariant: ['tabular-nums'] },
-  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 34 },
+  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 32 },
   control: { width: TAP + 12, height: TAP + 12, alignItems: 'center', justifyContent: 'center' },
   playButton: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   group: { gap: 10 },

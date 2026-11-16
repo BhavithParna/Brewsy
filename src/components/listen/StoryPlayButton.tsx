@@ -29,7 +29,7 @@ export function StoryPlayButton({ playKey, label, onPlay }: { playKey: string; l
           {isCurrent ? (
             <NowPlayingBars color={theme.colors.accent} playing={playing} size={14} />
           ) : (
-            <Play size={17} color={theme.colors.textSecondary} fill={theme.colors.textSecondary} strokeWidth={0} />
+            <Play size={18} color={theme.colors.textSecondary} fill={theme.colors.textSecondary} strokeWidth={0} />
           )}
         </View>
       </View>

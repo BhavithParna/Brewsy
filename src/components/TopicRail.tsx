@@ -127,7 +127,7 @@ export function TopicRail({
       accessibilityHint="Lists every section of this edition"
       style={styles.all}>
       <View>
-        <TableOfContents size={20} color={theme.colors.text} strokeWidth={1.7} />
+        <TableOfContents size={20} color={theme.colors.text} strokeWidth={1.8} />
       </View>
     </PressableScale>
   );
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   chip: {
     height: CHIP_HEIGHT,
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

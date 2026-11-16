@@ -96,7 +96,7 @@ export function StoryView({
             )}
             {nowPlaying ? (
               <View style={styles.nowPlaying}>
-                <NowPlayingBars color={theme.colors.accent} playing={playing} size={11} />
+                <NowPlayingBars color={theme.colors.accent} playing={playing} size={12} />
                 <Txt variant="caption" color={theme.colors.accent}>
                   {playing ? 'Now playing' : 'Paused'}
                 </Txt>

@@ -110,7 +110,7 @@ function FeedbackButton({
           borderRadius: theme.shape.control,
         },
       ]}>
-      <Icon size={15} strokeWidth={2} color={theme.colors.text} />
+      <Icon size={16} strokeWidth={2} color={theme.colors.text} />
       <Txt variant="label" style={theme.layout.capsButtons && capsLabel}>
         {label}
       </Txt>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
   },
-  sheet: { paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, gap: 22 },
+  sheet: { paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, gap: 24 },
   group: { gap: 12 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   field: {

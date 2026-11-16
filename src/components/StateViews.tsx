@@ -56,7 +56,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
           variant="solid"
           color={theme.colors.inverseBg}
           size="md"
-          icon={<RotateCw size={15} color={theme.colors.inverseText} strokeWidth={2.2} />}
+          icon={<RotateCw size={16} color={theme.colors.inverseText} strokeWidth={2} />}
           onPress={onRetry}
           accessibilityLabel="Try loading the edition again"
           style={styles.action}
@@ -68,7 +68,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: GUTTER, paddingTop: 12 },
-  card: { alignItems: 'center', paddingHorizontal: 28, paddingVertical: 36, gap: 14 },
+  card: { alignItems: 'center', paddingHorizontal: 28, paddingVertical: 32, gap: 14 },
   icon: {
     width: 56,
     height: 56,

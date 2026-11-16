@@ -127,7 +127,7 @@ function PhoneVoiceRows() {
             {selected ? (
               <Check size={18} color={theme.colors.accent} strokeWidth={2.4} />
             ) : (
-              <Volume2 size={16} color={theme.colors.textTertiary} strokeWidth={1.9} />
+              <Volume2 size={16} color={theme.colors.textTertiary} strokeWidth={1.8} />
             )}
           </View>
         </Tap>

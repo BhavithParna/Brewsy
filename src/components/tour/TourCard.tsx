@@ -131,7 +131,7 @@ export function TourCard({ title, body, index, count, onBack, onNext, onSkip, on
 }
 
 const styles = StyleSheet.create({
-  card: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14, gap: 6 },
+  card: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 14, gap: 6 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TAP },
   dots: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dot: { height: 6 },

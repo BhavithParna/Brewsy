@@ -198,7 +198,7 @@ function ThemeTile({
         )}
         {selected && (
           <View style={[styles.check, { backgroundColor: t.colors.inverseBg }]}>
-            <Check size={13} color={t.colors.inverseText} strokeWidth={3} />
+            <Check size={14} color={t.colors.inverseText} strokeWidth={3} />
           </View>
         )}
         {/* Two-word names (Blade Runner) wrap at the space rather than shrinking to nothing. */}

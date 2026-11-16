@@ -40,7 +40,7 @@ export default function DrivingScreen() {
           accessibilityLabel="Leave driving mode"
           style={[styles.exit, { borderColor: theme.colors.glassBorder }]}>
           <View>
-            <X size={26} color={theme.colors.text} strokeWidth={2.2} />
+            <X size={26} color={theme.colors.text} strokeWidth={2} />
           </View>
           <Txt variant="label">Exit</Txt>
         </PressableScale>
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   counter: { fontVariant: ['tabular-nums'] },
-  middle: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 22, paddingHorizontal: 6 },
+  middle: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24, paddingHorizontal: 6 },
   title: { fontFamily: fonts.semibold, fontSize: 36, lineHeight: 44, textAlign: 'center', letterSpacing: -0.8 },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 18 },
   big: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

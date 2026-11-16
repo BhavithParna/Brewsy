@@ -36,7 +36,7 @@ export function SourceLinks({ sources: all }: { sources: SourceRef[] }) {
             {s.name}
           </Txt>
           <View>
-            <ExternalLink size={11} color={theme.colors.textTertiary} />
+            <ExternalLink size={12} color={theme.colors.textTertiary} />
           </View>
         </Tap>
       ))}

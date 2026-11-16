@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   welcomeBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 28, gap: 12 },
-  welcomeBody: { marginTop: 4, marginBottom: 22, maxWidth: 380 },
+  welcomeBody: { marginTop: 4, marginBottom: 24, maxWidth: 380 },
   buttonText: { fontSize: 16 },
   frameTop: {
     flexDirection: 'row',
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   appearance: { padding: 16, gap: 12 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   topicList: { gap: 12 },
-  choice: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, paddingVertical: 15, paddingHorizontal: 18 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, paddingVertical: 14, paddingHorizontal: 18 },
   radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 12, height: 12, borderRadius: 6 },
   pressed: { opacity: 0.6 },

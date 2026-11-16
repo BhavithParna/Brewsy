@@ -168,8 +168,8 @@ function HiddenWords() {
           color={theme.colors.inverseBg}
           icon={
             <Plus
-              size={15}
-              strokeWidth={2.2}
+              size={16}
+              strokeWidth={2}
               color={draft.trim() ? theme.colors.inverseText : theme.colors.textTertiary}
             />
           }
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     gap: 8,
     height: 36,
     paddingLeft: 14,
-    paddingRight: 11,
+    paddingRight: 12,
     borderWidth: 1,
   },
   chipText: { maxWidth: 220 },

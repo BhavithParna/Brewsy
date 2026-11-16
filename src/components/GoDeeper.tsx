@@ -75,7 +75,7 @@ export function GoDeeper({ story, editionDate }: { story: Story; editionDate: st
             accessibilityHint="Writes a longer explainer from this story's sources">
             <View
               style={[styles.ctaButton, { borderColor: theme.colors.glassBorder, borderRadius: theme.shape.control }]}>
-              <Layers size={17} color={theme.colors.text} strokeWidth={1.7} />
+              <Layers size={18} color={theme.colors.text} strokeWidth={1.8} />
               <Txt variant="label" style={theme.layout.capsButtons && capsLabel}>
                 Go deeper
               </Txt>
@@ -102,7 +102,7 @@ function DeepDiveView({ deepDive }: { deepDive: DeepDive }) {
   return (
     <View style={styles.dive}>
       <View style={styles.diveHeader}>
-        <Layers size={15} color={theme.colors.textSecondary} strokeWidth={1.7} />
+        <Layers size={16} color={theme.colors.textSecondary} strokeWidth={1.8} />
         <Txt variant="kicker" tone="secondary">
           Deeper context
         </Txt>
@@ -273,7 +273,7 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  wrap: { gap: 22 },
+  wrap: { gap: 24 },
   loading: { gap: 12, paddingVertical: 4 },
   cta: { gap: 10, alignItems: 'stretch' },
   ctaButton: {

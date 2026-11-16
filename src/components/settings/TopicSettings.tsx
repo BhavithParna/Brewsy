@@ -121,7 +121,7 @@ export function TopicChoice({
               accessibilityHint={starred ? 'Starred: more stories, shown first' : 'Star for more stories, shown first'}
               style={({ pressed }) => [styles.star, pressed && styles.pressed]}>
               <Star
-                size={21}
+                size={20}
                 strokeWidth={starred ? 1.6 : 1.5}
                 color={starred ? theme.colors.accent : theme.colors.textTertiary}
                 fill={starred ? theme.colors.accent : 'transparent'}
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   follow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: TAP },
   followRow: { paddingVertical: 12 },
-  followCard: { paddingVertical: 15, paddingLeft: 18 },
+  followCard: { paddingVertical: 14, paddingLeft: 18 },
   pressed: { opacity: 0.6 },
   check: { width: 24, height: 24, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: 2 },

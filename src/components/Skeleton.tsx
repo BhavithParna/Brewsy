@@ -78,5 +78,5 @@ export function EditionSkeleton() {
 const styles = StyleSheet.create({
   wrap: { gap: 14 },
   pad: { paddingHorizontal: GUTTER },
-  story: { gap: 14, padding: 20 },
+  story: { gap: 16, padding: 18 },
 });

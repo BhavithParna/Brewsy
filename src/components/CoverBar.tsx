@@ -77,7 +77,7 @@ function CoverButton({ icon: Icon, label, onPress }: { icon: LucideIcon; label: 
   return (
     <GlassIconButton
       variant="overlay"
-      icon={<Icon size={18} color={theme.colors.onCover} strokeWidth={1.7} />}
+      icon={<Icon size={18} color={theme.colors.onCover} strokeWidth={1.8} />}
       onPress={onPress}
       accessibilityLabel={label}
     />

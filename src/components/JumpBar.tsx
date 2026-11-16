@@ -110,7 +110,7 @@ export function BarIcon({ icon: Icon, label, onPress, ref, onLayout }: IconProps
         accessibilityLabel={label}
         style={styles.icon}>
         <View>
-          <Icon size={20} color={theme.colors.text} strokeWidth={1.7} />
+          <Icon size={20} color={theme.colors.text} strokeWidth={1.8} />
         </View>
       </PressableScale>
     </View>
@@ -253,7 +253,7 @@ function SectionsList({
       })}
       <PressableScale onPress={onOlder} scaleTo={0.98} accessibilityRole="button" style={styles.older}>
         <View>
-          <CalendarDays size={16} color={theme.colors.textSecondary} strokeWidth={1.7} />
+          <CalendarDays size={16} color={theme.colors.textSecondary} strokeWidth={1.8} />
         </View>
         <Txt variant="label" tone="secondary">
           Older editions

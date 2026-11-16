@@ -184,6 +184,6 @@ const styles = StyleSheet.create({
   name: { position: 'relative', minHeight: TAP + 8, fontSize: 16 },
   sendRow: { alignItems: 'center' },
   dim: { opacity: 0.45 },
-  thanks: { paddingVertical: 26, gap: 10 },
+  thanks: { paddingVertical: 24, gap: 10 },
   thanksActions: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 8 },
 });

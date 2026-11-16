@@ -268,7 +268,7 @@ export function EndOfEdition({
         label={exporting ? 'Making PDF…' : 'Export as PDF'}
         size="md"
         variant="glass"
-        icon={<FileDown size={15} color={theme.colors.text} strokeWidth={2} />}
+        icon={<FileDown size={16} color={theme.colors.text} strokeWidth={2} />}
         onPress={exporting ? undefined : onExport}
         accessibilityLabel="Export this edition as a PDF"
         style={styles.exportPill}
@@ -382,9 +382,9 @@ const styles = StyleSheet.create({
   time: { width: 72 },
   end: { alignItems: 'center', gap: 14, paddingHorizontal: GUTTER + 12, paddingTop: 12 },
   tally: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 8, paddingVertical: 14 },
-  tallyCell: { minWidth: 128, gap: 2, paddingHorizontal: 22 },
+  tallyCell: { minWidth: 128, gap: 2, paddingHorizontal: 24 },
   tallyRule: { width: 1, alignSelf: 'stretch' },
   exportPill: { marginTop: 6 },
-  links: { flexDirection: 'row', gap: 22, alignItems: 'center' },
+  links: { flexDirection: 'row', gap: 24, alignItems: 'center' },
   link: { minHeight: TAP, justifyContent: 'center' },
 });

@@ -38,7 +38,7 @@ export function SummaryCard({ takeaways }: { takeaways: string[] }) {
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 20, paddingBottom: 6 },
+  card: { padding: 18, paddingBottom: 6 },
   header: { gap: 6, marginBottom: 8 },
   item: { flexDirection: 'row', gap: 14, paddingVertical: 14 },
   num: { width: 32 },

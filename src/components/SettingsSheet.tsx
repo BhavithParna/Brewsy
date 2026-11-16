@@ -199,7 +199,7 @@ function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
   // Fetched each time the first screen shows, so the inbox count is fresh after reading it.
   const { stats } = useOwnerStats(owner && active);
   const [exporting, setExporting] = useState(false);
-  const icon = (Icon: typeof Bell) => <Icon size={19} color={theme.colors.text} strokeWidth={1.9} />;
+  const icon = (Icon: typeof Bell) => <Icon size={20} color={theme.colors.text} strokeWidth={1.8} />;
 
   const exportPdf = async () => {
     setExporting(true);
@@ -225,7 +225,7 @@ function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
         <LinkRow
           title="Send feedback"
           subtitle="Ideas, problems, things you love. It helps a lot."
-          icon={<MessageCircleHeart size={19} color={theme.colors.accent} strokeWidth={1.9} />}
+          icon={<MessageCircleHeart size={20} color={theme.colors.accent} strokeWidth={1.8} />}
           onPress={() => onOpen('feedback')}
         />
       </Group>
@@ -323,6 +323,6 @@ function readingSummary(s: Settings): string {
 const styles = StyleSheet.create({
   ...settingsStyles,
   hidden: { display: 'none' },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 24, gap: 26 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 24, gap: 24 },
   about: { marginTop: 4, letterSpacing: 0.6 },
 });
