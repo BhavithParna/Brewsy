@@ -1,9 +1,10 @@
 import { ChevronRight } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
 import { GlassCard } from '../GlassCard';
 import { Txt } from '../Txt';
+import { Tap } from '@/components/Tap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TAP, radii } from '@/theme/tokens';
 
@@ -88,7 +89,7 @@ export function LinkRow({
 }) {
   const { theme } = useTheme();
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={[title, badge, subtitle].filter(Boolean).join('. ')}
@@ -112,7 +113,7 @@ export function LinkRow({
       <View>
         <ChevronRight size={18} color={theme.colors.textTertiary} />
       </View>
-    </Pressable>
+    </Tap>
   );
 }
 

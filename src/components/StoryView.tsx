@@ -1,6 +1,6 @@
 import { Check, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, type Ref } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { BookmarkButton } from './BookmarkButton';
@@ -13,6 +13,8 @@ import { ShareButton } from './ShareButton';
 import { SourceLinks } from './SourceLinks';
 import { StoryImage } from './StoryImage';
 import { Txt } from './Txt';
+import { WhyItMatters } from './WhyItMatters';
+import { Tap } from '@/components/Tap';
 import { usePlayer, usePlayingKey } from '@/audio/store';
 import type { Story } from '@/data/types';
 import { storyKey } from '@/state/readingList';
@@ -142,7 +144,7 @@ export function StoryView({
 
         <StoryBody story={story} />
 
-        <Pressable
+        <Tap
           ref={moreRef}
           onPress={onToggle}
           accessibilityRole="button"
@@ -159,7 +161,7 @@ export function StoryView({
               <ChevronDown size={16} color={theme.colors.text} />
             )}
           </View>
-        </Pressable>
+        </Tap>
 
         {expanded && (
           <Animated.View entering={FadeIn.duration(280).delay(80)} exiting={FadeOut.duration(140)}>
@@ -173,22 +175,16 @@ export function StoryView({
 
 /** Layer 1 text: What happened, Why it matters, and the source links. */
 export function StoryBody({ story }: { story: Story }) {
-  const { theme } = useTheme();
   return (
     <>
       <View style={styles.section}>
-        <Txt variant="kicker" tone="tertiary">
+        <Txt variant="kicker" tone="secondary">
           What happened
         </Txt>
         <Txt variant="reading">{story.whatHappened}</Txt>
       </View>
 
-      <View style={[styles.section, styles.why, { borderLeftColor: withAlpha(theme.colors.accent, 0.55) }]}>
-        <Txt variant="kicker" tone="tertiary">
-          Why it matters
-        </Txt>
-        <Txt variant="reading">{story.whyItMatters}</Txt>
-      </View>
+      <WhyItMatters>{story.whyItMatters}</WhyItMatters>
 
       <SourceLinks sources={story.sources} />
     </>
@@ -196,16 +192,16 @@ export function StoryBody({ story }: { story: Story }) {
 }
 
 const styles = StyleSheet.create({
-  story: { gap: 16, padding: 20 },
+  story: { gap: 16, padding: 18 },
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
-  metaRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // The buttons are bare icons in 40pt boxes: pulled right so the last icon lines up with the text edge.
+  metaRight: { flexDirection: 'row', alignItems: 'center', gap: 2, marginRight: -10 },
   nowPlaying: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   readMark: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   badges: { flexDirection: 'row', gap: 8, marginTop: -4 },
   image: { height: 188, overflow: 'hidden', marginHorizontal: -6 },
   section: { gap: 8 },
-  why: { borderLeftWidth: 2, paddingLeft: 14 },
   toggle: {
     alignSelf: 'flex-start',
     flexDirection: 'row',

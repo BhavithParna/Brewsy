@@ -1,10 +1,11 @@
 import { Check, Volume2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Pill } from '../Pill';
 import { Txt } from '../Txt';
 import { Divider, Group, settingsStyles } from './SettingsParts';
+import { Tap } from '@/components/Tap';
 import { pause } from '@/audio/engine';
 import { playerStore } from '@/audio/store';
 import { deviceVoices, previewVoice, type DeviceVoice } from '@/audio/voice';
@@ -110,7 +111,7 @@ function PhoneVoiceRows() {
     return (
       <View key={v.id ?? 'auto'}>
         {i > 0 && <Divider />}
-        <Pressable
+        <Tap
           onPress={() => choose(v.id)}
           accessibilityRole="radio"
           accessibilityState={{ checked: selected }}
@@ -129,7 +130,7 @@ function PhoneVoiceRows() {
               <Volume2 size={16} color={theme.colors.textTertiary} strokeWidth={1.9} />
             )}
           </View>
-        </Pressable>
+        </Tap>
       </View>
     );
   });

@@ -7,6 +7,7 @@ import { GoDeeper } from './GoDeeper';
 import { SourceList, useVisibleSources } from './SourceLinks';
 import { StoryFeedback } from './StoryFeedback';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { editionsAtHand } from '@/data/editions';
 import type { KeyPlayer, Story } from '@/data/types';
 import { formatShortDate, paragraphs } from '@/lib/format';
@@ -104,7 +105,7 @@ export function LearnMore({
 
       <StoryFeedback story={story} />
 
-      <Pressable
+      <Tap
         onPress={onCollapse}
         accessibilityRole="button"
         accessibilityLabel="Show less"
@@ -115,7 +116,7 @@ export function LearnMore({
         <View>
           <ChevronUp size={16} color={theme.colors.textSecondary} />
         </View>
-      </Pressable>
+      </Tap>
     </View>
   );
 }

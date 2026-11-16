@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { GlassCard } from './GlassCard';
 import { HowMadeBody } from './HowMadeSheet';
@@ -12,6 +12,7 @@ import { SettingsSheet, type SettingsPage } from './SettingsSheet';
 import { Sheet } from './Sheet';
 import { toast } from './Toast';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { availableEditionDates, todayKey, yesterdayKey } from '@/data/editions';
 import type { Briefing, Story } from '@/data/types';
 import { formatShortDate } from '@/lib/format';
@@ -217,7 +218,7 @@ function SaveSheetBody({ target, onDone }: { target: SaveTarget; onDone: () => v
 
       {existing && (
         <View style={styles.secondaryRow}>
-          <Pressable
+          <Tap
             onPress={() => {
               setDone(key, !existing.done);
               toast.show(existing.done ? 'Moved back to your list' : 'Marked as read');
@@ -228,12 +229,12 @@ function SaveSheetBody({ target, onDone }: { target: SaveTarget; onDone: () => v
             <Txt variant="label" tone="secondary">
               {existing.done ? 'Mark as unread' : 'Mark as read'}
             </Txt>
-          </Pressable>
-          <Pressable onPress={remove} accessibilityRole="button" style={styles.removeRow}>
+          </Tap>
+          <Tap onPress={remove} accessibilityRole="button" style={styles.removeRow}>
             <Txt variant="label" color={theme.colors.down}>
               Remove
             </Txt>
-          </Pressable>
+          </Tap>
         </View>
       )}
     </View>

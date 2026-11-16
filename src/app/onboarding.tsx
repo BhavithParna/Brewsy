@@ -17,6 +17,7 @@ import {
 import Animated, { FadeIn, FadeInRight, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Tap } from '@/components/Tap';
 import { BrewsyLogo } from '@/components/BrewsyLogo';
 import { Cover } from '@/components/Cover';
 import { GlassCard } from '@/components/GlassCard';
@@ -526,7 +527,7 @@ function NotifyStep() {
   ) : (
     <>
       <PrimaryButton label={busy ? 'One moment…' : 'Turn on notifications'} onPress={busy ? () => {} : turnOn} />
-      <Pressable
+      <Tap
         onPress={() => {
           updateSettings({ morningPush: false });
           finish();
@@ -536,7 +537,7 @@ function NotifyStep() {
         <Txt variant="label" tone="secondary" style={theme.layout.capsButtons && capsLabel}>
           Not now
         </Txt>
-      </Pressable>
+      </Tap>
     </>
   );
 

@@ -1,7 +1,8 @@
 import { ExternalLink } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import type { SourceRef } from '@/data/types';
 import { visibleSources } from '@/lib/curation';
 import { openLink } from '@/lib/links';
@@ -24,7 +25,7 @@ export function SourceLinks({ sources: all }: { sources: SourceRef[] }) {
         Sources
       </Txt>
       {sources.map((s, i) => (
-        <Pressable
+        <Tap
           key={`${s.url}-${i}`}
           onPress={() => openLink(s.url)}
           hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
@@ -37,7 +38,7 @@ export function SourceLinks({ sources: all }: { sources: SourceRef[] }) {
           <View>
             <ExternalLink size={11} color={theme.colors.textTertiary} />
           </View>
-        </Pressable>
+        </Tap>
       ))}
     </View>
   );
@@ -50,7 +51,7 @@ export function SourceList({ sources: all }: { sources: SourceRef[] }) {
   return (
     <View style={styles.list}>
       {sources.map((s, i) => (
-        <Pressable
+        <Tap
           key={`${s.url}-${i}`}
           onPress={() => openLink(s.url)}
           accessibilityRole="link"
@@ -67,7 +68,7 @@ export function SourceList({ sources: all }: { sources: SourceRef[] }) {
           <View>
             <ExternalLink size={16} color={theme.colors.textTertiary} />
           </View>
-        </Pressable>
+        </Tap>
       ))}
     </View>
   );

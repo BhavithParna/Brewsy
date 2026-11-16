@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { AccessibilityInfo, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { GlassCard } from '../GlassCard';
 import { Pill } from '../Pill';
 import { Txt } from '../Txt';
+import { Tap } from '@/components/Tap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TAP, capsLabel, radii, shadows } from '@/theme/tokens';
 
@@ -80,7 +81,7 @@ export function TourCard({ title, body, index, count, onBack, onNext, onSkip, on
           ))}
         </View>
         )}
-        <Pressable
+        <Tap
           onPress={onSkip}
           hitSlop={8}
           accessibilityRole="button"
@@ -89,7 +90,7 @@ export function TourCard({ title, body, index, count, onBack, onNext, onSkip, on
           <Txt variant="label" tone="secondary" style={caps}>
             {labels.skip ?? 'Skip'}
           </Txt>
-        </Pressable>
+        </Tap>
       </View>
 
       <View
@@ -108,11 +109,11 @@ export function TourCard({ title, body, index, count, onBack, onNext, onSkip, on
 
       <View style={styles.actions}>
         {onBack ? (
-          <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="Previous tip" style={styles.back}>
+          <Tap onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="Previous tip" style={styles.back}>
             <Txt variant="label" tone="secondary" style={caps}>
               Back
             </Txt>
-          </Pressable>
+          </Tap>
         ) : (
           <View />
         )}

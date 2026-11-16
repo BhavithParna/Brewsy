@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { BookmarkButton } from './BookmarkButton';
@@ -10,10 +10,12 @@ import { Pill } from './Pill';
 import { SourceLinks } from './SourceLinks';
 import { storyLayout } from './StoryView';
 import { Txt } from './Txt';
+import { WhyItMatters } from './WhyItMatters';
+import { Tap } from '@/components/Tap';
 import type { AlsoItem, Story } from '@/data/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TOPIC_LABEL } from '@/theme/themes';
-import { GUTTER, TAP, radii, withAlpha } from '@/theme/tokens';
+import { GUTTER, TAP, radii } from '@/theme/tokens';
 
 /** An "Also happening" line as a Story, so it can be saved, explained and asked about. */
 export function alsoToStory(a: AlsoItem): Story {
@@ -115,7 +117,7 @@ function AlsoRow({
       onLayout={onLayout}
       style={[styles.row, !first && { borderTopWidth: 1, borderTopColor: theme.colors.hairline }]}>
       <View style={styles.lineRow}>
-        <Pressable
+        <Tap
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityState={{ expanded: open }}
@@ -142,7 +144,7 @@ function AlsoRow({
               <ChevronDown size={16} color={theme.colors.textTertiary} />
             )}
           </View>
-        </Pressable>
+        </Tap>
         <BookmarkButton story={story} editionDate={editionDate} />
       </View>
 
@@ -150,12 +152,7 @@ function AlsoRow({
         <Animated.View entering={FadeIn.duration(240)} exiting={FadeOut.duration(120)} style={styles.details}>
           <Txt variant="reading">{item.whatHappened}</Txt>
           {item.whyItMatters !== '' && (
-            <View style={[styles.why, { borderLeftColor: withAlpha(theme.colors.accent, 0.55) }]}>
-              <Txt variant="kicker" tone="tertiary">
-                Why it matters
-              </Txt>
-              <Txt variant="reading">{item.whyItMatters}</Txt>
-            </View>
+            <WhyItMatters>{item.whyItMatters}</WhyItMatters>
           )}
           <SourceLinks sources={story.sources} />
           <GoDeeper story={story} editionDate={editionDate} />
@@ -184,5 +181,4 @@ const styles = StyleSheet.create({
   badge: { flexDirection: 'row', marginTop: 8 },
   chevron: { marginTop: 3 },
   details: { gap: 16, paddingTop: 12 },
-  why: { gap: 8, borderLeftWidth: 2, paddingLeft: 14 },
 });

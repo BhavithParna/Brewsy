@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Tap } from '@/components/Tap';
 import { TopicHeading } from '@/components/EditionSections';
 import { GlassCard } from '@/components/GlassCard';
 import { GlassIconButton } from '@/components/GlassIconButton';
@@ -12,6 +13,7 @@ import { Pill } from '@/components/Pill';
 import { SourceLinks } from '@/components/SourceLinks';
 import { ThemeBackground } from '@/components/ThemeBackground';
 import { Txt } from '@/components/Txt';
+import { WhyItMatters } from '@/components/WhyItMatters';
 import { loadRecentEditions, todayKey, yesterdayKey } from '@/data/editions';
 import { TOPIC_LABEL } from '@/data/topics';
 import type { Briefing } from '@/data/types';
@@ -160,7 +162,7 @@ export default function SearchScreen() {
             ]}
           />
           {query.length > 0 && (
-            <Pressable
+            <Tap
               onPress={() => {
                 setQuery('');
                 setSettled('');
@@ -173,7 +175,7 @@ export default function SearchScreen() {
               <View style={[styles.clearDot, { backgroundColor: theme.colors.textTertiary }]}>
                 <X size={12} strokeWidth={2.6} color={theme.colors.sheet} />
               </View>
-            </Pressable>
+            </Tap>
           )}
         </GlassCard>
       </View>
@@ -263,7 +265,7 @@ function StartPanel({
             <Txt variant="kicker" tone="tertiary" accessibilityRole="header">
               Recent
             </Txt>
-            <Pressable
+            <Tap
               onPress={clearRecentSearches}
               hitSlop={{ top: 14, bottom: 14, left: 12, right: 12 }}
               accessibilityRole="button"
@@ -271,14 +273,14 @@ function StartPanel({
               <Txt variant="caption" tone="secondary" style={theme.layout.capsButtons && capsLabel}>
                 Clear
               </Txt>
-            </Pressable>
+            </Tap>
           </View>
           <GlassCard radius={radii.lg} style={styles.card}>
             {recent.map((q, i) => (
               <View
                 key={q}
                 style={[styles.recentRow, i > 0 && { borderTopWidth: 1, borderTopColor: theme.colors.hairline }]}>
-                <Pressable
+                <Tap
                   onPress={() => onSearch(q)}
                   accessibilityRole="button"
                   accessibilityLabel={`Search for ${q}`}
@@ -287,15 +289,15 @@ function StartPanel({
                   <Txt variant="body" numberOfLines={1} style={styles.flexShrink}>
                     {q}
                   </Txt>
-                </Pressable>
-                <Pressable
+                </Tap>
+                <Tap
                   onPress={() => forgetSearch(q)}
                   hitSlop={6}
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${q} from recent searches`}
                   style={styles.remove}>
                   <X size={15} color={theme.colors.textTertiary} strokeWidth={1.8} />
-                </Pressable>
+                </Tap>
               </View>
             ))}
           </GlassCard>
@@ -415,12 +417,7 @@ function ResultRow({
             <Marked text={whatHappened} words={words} />
           </Txt>
           {whyItMatters !== '' && (
-            <View style={[styles.why, { borderLeftColor: withAlpha(theme.colors.accent, 0.55) }]}>
-              <Txt variant="kicker" tone="tertiary">
-                Why it matters
-              </Txt>
-              <Txt variant="reading">{whyItMatters}</Txt>
-            </View>
+            <WhyItMatters>{whyItMatters}</WhyItMatters>
           )}
           <SourceLinks sources={sources} />
           <Txt variant="caption" tone="tertiary">
@@ -463,7 +460,6 @@ const styles = StyleSheet.create({
   chevron: { alignSelf: 'center' },
   pressed: { opacity: 0.6 },
   details: { gap: 14, paddingBottom: 18 },
-  why: { gap: 8, borderLeftWidth: 2, paddingLeft: 14 },
   none: { gap: 10, paddingTop: 48, paddingHorizontal: 16 },
   start: { gap: 28, paddingTop: 22 },
   block: { gap: 12 },

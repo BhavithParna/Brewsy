@@ -13,7 +13,7 @@ import {
   Sunrise,
 } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Keyboard, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { REGIONS } from '../../supabase/functions/_shared/sources';
@@ -31,6 +31,7 @@ import { Sheet } from './Sheet';
 import { toast } from './Toast';
 import { ThemePicker } from './ThemePicker';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { backendConfigured } from '@/data/api';
 import { fetchAndCacheEdition, readCachedEdition, todayKey } from '@/data/editions';
 import { formatWakeTime } from '@/lib/format';
@@ -294,13 +295,13 @@ function Home({ active, onOpen, onOpenPastEditions }: HomeProps) {
       )}
 
       {/* Long-press: pair this phone as the owner's (approved in the Supabase dashboard). */}
-      <Pressable onLongPress={backendConfigured ? () => onOpen('pair') : undefined} delayLongPress={700}>
+      <Tap onLongPress={backendConfigured ? () => onOpen('pair') : undefined} delayLongPress={700}>
         <Txt variant="caption" tone="tertiary" align="center" style={styles.about}>
           {backendConfigured
             ? 'Connected to your Brewsy backend'
             : 'Showing the sample edition · set up the backend with docs/BACKEND_SETUP.md'}
         </Txt>
-      </Pressable>
+      </Tap>
     </>
   );
 }

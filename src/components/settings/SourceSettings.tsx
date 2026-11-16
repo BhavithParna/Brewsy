@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { OUTLET_REGION, SOURCE_GROUPS } from '../../../supabase/functions/_shared/sources';
 import { Txt } from '../Txt';
 import { Divider, Group, ToggleRow, settingsStyles as styles } from './SettingsParts';
+import { Tap } from '@/components/Tap';
 import { updateSettings, useSettings, type Settings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -39,7 +40,7 @@ export function SourceSettings() {
         return (
           <View key={group.category}>
             {gi > 0 && <Divider />}
-            <Pressable
+            <Tap
               onPress={() => setOpen(expanded ? null : group.category)}
               accessibilityRole="button"
               accessibilityState={{ expanded }}
@@ -57,7 +58,7 @@ export function SourceSettings() {
                   <ChevronDown size={18} color={theme.colors.textTertiary} />
                 )}
               </View>
-            </Pressable>
+            </Tap>
             {expanded &&
               group.outlets.map((outlet) => (
                 <View key={outlet}>

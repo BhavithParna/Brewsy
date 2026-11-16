@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { CarFront, CircleCheck, Download, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { GlassCard } from '../GlassCard';
 import { Pill } from '../Pill';
@@ -9,6 +9,7 @@ import { PressableScale } from '../PressableScale';
 import { toast } from '../Toast';
 import { Txt } from '../Txt';
 import { NowPlayingBars } from './NowPlayingBars';
+import { Tap } from '@/components/Tap';
 import { downloadAudio, useDownloadStatus } from '@/audio/downloads';
 import { close, jumpTo, next, previous, setRate, toggle } from '@/audio/engine';
 import { listenToEdition } from '@/audio/listen';
@@ -182,7 +183,7 @@ export function PlayerSheetBody({ onClose }: { onClose: () => void }) {
           {session.chapters.map((c, i) => {
             const current = i === index && !finished;
             return (
-              <Pressable
+              <Tap
                 key={`${i}-${c.title}`}
                 onPress={() => jumpTo(i)}
                 accessibilityRole="button"
@@ -208,7 +209,7 @@ export function PlayerSheetBody({ onClose }: { onClose: () => void }) {
                 <Txt variant="caption" tone="tertiary" style={styles.tabular}>
                   {clock(c.duration)}
                 </Txt>
-              </Pressable>
+              </Tap>
             );
           })}
         </GlassCard>

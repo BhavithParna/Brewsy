@@ -1,13 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { Pill } from '../Pill';
 import { PressableScale } from '../PressableScale';
 import { toast } from '../Toast';
 import { Txt } from '../Txt';
 import { Divider, Group, settingsStyles } from './SettingsParts';
+import { Tap } from '@/components/Tap';
 import { noFocusRing } from '@/lib/webStyles';
 import { updateSettings, useSettings } from '@/state/settings';
 import { hideWords, unhideWords } from '@/state/storyPrefs';
@@ -74,18 +75,18 @@ function TextSizeControl() {
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(e) => set(step + (e.nativeEvent.actionName === 'increment' ? 1 : -1))}
         style={styles.scaleRow}>
-        <Pressable onPress={() => set(step - 1)} hitSlop={6} style={styles.glyph} importantForAccessibility="no">
+        <Tap onPress={() => set(step - 1)} hitSlop={6} style={styles.glyph} importantForAccessibility="no">
           <Txt variant="displayS" style={styles.glyphSmall}>
             A
           </Txt>
-        </Pressable>
+        </Tap>
         <View style={styles.track}>
           <View style={[styles.rail, { backgroundColor: theme.colors.glassBorder }]} />
           {TEXT_SIZES.map((s, i) => {
             const on = i === step;
             const size = on ? 18 : 8;
             return (
-              <Pressable key={s.label} onPress={() => set(i)} style={styles.stop} importantForAccessibility="no">
+              <Tap key={s.label} onPress={() => set(i)} style={styles.stop} importantForAccessibility="no">
                 <View
                   style={{
                     width: size,
@@ -96,15 +97,15 @@ function TextSizeControl() {
                     borderColor: theme.colors.textTertiary,
                   }}
                 />
-              </Pressable>
+              </Tap>
             );
           })}
         </View>
-        <Pressable onPress={() => set(step + 1)} hitSlop={6} style={styles.glyph} importantForAccessibility="no">
+        <Tap onPress={() => set(step + 1)} hitSlop={6} style={styles.glyph} importantForAccessibility="no">
           <Txt variant="displayS" style={styles.glyphLarge}>
             A
           </Txt>
-        </Pressable>
+        </Tap>
       </View>
 
       <View style={[styles.preview, { borderLeftColor: theme.colors.hairline }]}>

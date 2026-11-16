@@ -2,12 +2,13 @@ import * as Haptics from 'expo-haptics';
 import { useTabTrigger } from 'expo-router/ui';
 import { Bookmark, Newspaper, type LucideIcon } from 'lucide-react-native';
 import type { RefObject } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassCard } from './GlassCard';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { usePlayer } from '@/audio/store';
 import { showTabBar, tabBarHidden } from '@/hooks/useScrollChrome';
 import { activeCount, useReadingList } from '@/state/readingList';
@@ -69,7 +70,7 @@ function TabItem({ name, label, Icon }: { name: string; label: string; Icon: Luc
   const duration = reduceMotion ? 0 : 260;
 
   return (
-    <Pressable
+    <Tap
       onPress={(e) => {
         if (!focused && Platform.OS !== 'web') Haptics.selectionAsync();
         showTabBar();
@@ -105,7 +106,7 @@ function TabItem({ name, label, Icon }: { name: string; label: string; Icon: Luc
           {label}
         </Txt>
       </View>
-    </Pressable>
+    </Tap>
   );
 }
 

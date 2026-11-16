@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, X } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Keyboard,
@@ -21,6 +21,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GUTTER, TAP, radii, springs } from '@/theme/tokens';
 
@@ -149,14 +150,20 @@ export function Sheet({ visible, onClose, title, tall = false, onBack, backLabel
                   </View>
                 )}
                 {onBack && (
-                  <Pressable
+                  <Tap
                     onPress={onBack}
                     hitSlop={8}
                     accessibilityRole="button"
                     accessibilityLabel={backLabel}
                     style={styles.back}>
                     <ChevronLeft size={24} color={theme.colors.text} strokeWidth={2} />
-                  </Pressable>
+                  </Tap>
+                )}
+                {title && (
+                  // Dragging down and tapping outside also close it; this is the one you can see.
+                  <Tap onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.close}>
+                    <X size={22} color={theme.colors.textSecondary} strokeWidth={2} />
+                  </Tap>
                 )}
               </View>
             </GestureDetector>
@@ -185,6 +192,16 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 5, borderRadius: 3, opacity: 0.6 },
   // Equal room on both sides for the back button, so a long page title never runs under it.
   titleRow: { marginTop: 14, alignSelf: 'stretch', alignItems: 'center', paddingHorizontal: TAP },
+  // Level with the first line of the title, so a two-line title doesn't drag it down.
+  close: {
+    position: 'absolute',
+    right: GUTTER - 10,
+    top: 20,
+    width: TAP,
+    height: TAP,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   back: {
     position: 'absolute',
     left: GUTTER - 10,

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassCard } from './GlassCard';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { usePlayer } from '@/audio/store';
 import { useTheme } from '@/theme/ThemeProvider';
 import { TAP, radii, shadows } from '@/theme/tokens';
@@ -59,7 +60,7 @@ export function ToastHost() {
           <GlassCard radius={radii.pill} intensity={60} style={[styles.toast, { backgroundColor: theme.colors.sheet }]}>
             <Txt variant="label">{current.message}</Txt>
             {current.action && (
-              <Pressable
+              <Tap
                 onPress={() => {
                   current.action?.onPress();
                   setCurrent(null);
@@ -70,7 +71,7 @@ export function ToastHost() {
                 <Txt variant="label" color={theme.colors.accent}>
                   {current.action.label}
                 </Txt>
-              </Pressable>
+              </Tap>
             )}
           </GlassCard>
         </Animated.View>

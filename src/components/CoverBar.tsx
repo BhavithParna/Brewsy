@@ -1,10 +1,11 @@
 import { Search, Settings as SettingsIcon, type LucideIcon } from 'lucide-react-native';
 import type { Ref } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrewsyLogo } from './BrewsyLogo';
 import { GlassIconButton } from './GlassIconButton';
+import { Tap } from '@/components/Tap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GUTTER, TAP } from '@/theme/tokens';
 
@@ -29,7 +30,7 @@ export function CoverBar({ onSearch, onSettings, onBrandLongPress, settingsRef, 
   const center = theme.layout.heroAlign === 'center';
 
   const brand = (
-    <Pressable
+    <Tap
       onLongPress={onBrandLongPress}
       delayLongPress={600}
       disabled={!onBrandLongPress}
@@ -37,7 +38,7 @@ export function CoverBar({ onSearch, onSettings, onBrandLongPress, settingsRef, 
       accessibilityRole="header"
       accessibilityLabel="Brewsy">
       <BrewsyLogo color={theme.colors.onCover} accessible={false} />
-    </Pressable>
+    </Tap>
   );
   const search = (
     <View ref={searchRef}>

@@ -2,13 +2,14 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FileDown } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { BrewsyMark } from './BrewsyMark';
 import { GlassCard } from './GlassCard';
 import { CUSTOM_HEADINGS, type HeadingProps } from './headings';
 import { Pill } from './Pill';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import type { CalendarEvent, MarketQuote } from '@/data/types';
 import { formatMarketChange, formatMarketValue, marketA11yLabel } from '@/lib/format';
 import { noteReadingDay, streakDays, useReads } from '@/state/reads';
@@ -273,15 +274,15 @@ export function EndOfEdition({
         style={styles.exportPill}
       />
       <View style={styles.links}>
-        <Pressable onPress={onPrevious} accessibilityRole="link" style={styles.link}>
+        <Tap onPress={onPrevious} accessibilityRole="link" style={styles.link}>
           <Txt variant="label">{caughtUp ? 'Read yesterday’s →' : 'Read the day before →'}</Txt>
-        </Pressable>
+        </Tap>
         {onBackToToday && (
-          <Pressable onPress={onBackToToday} accessibilityRole="link" style={styles.link}>
+          <Tap onPress={onBackToToday} accessibilityRole="link" style={styles.link}>
             <Txt variant="label" tone="secondary">
               Back to today
             </Txt>
-          </Pressable>
+          </Tap>
         )}
       </View>
     </View>

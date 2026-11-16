@@ -1,6 +1,6 @@
 import { Pause, Play, SkipForward } from 'lucide-react-native';
 import type { RefObject } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import { useSheets } from '../SheetHost';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 import { Txt } from '../Txt';
 import { NowPlayingBars } from './NowPlayingBars';
+import { Tap } from '@/components/Tap';
 import { next, toggle } from '@/audio/engine';
 import { usePlayer } from '@/audio/store';
 import { tabBarHidden } from '@/hooks/useScrollChrome';
@@ -48,7 +49,7 @@ export function MiniPlayer({ blurTarget }: { blurTarget: RefObject<View | null> 
       style={[styles.host, { bottom: barBottom + TAB_BAR_HEIGHT + GAP }, slide]}>
       <View style={styles.shadow}>
         <GlassCard radius={radii.lg} intensity={60} variant="chrome" blurTarget={blurTarget} style={styles.card}>
-          <Pressable
+          <Tap
             onPress={openPlayer}
             style={styles.main}
             accessibilityRole="button"
@@ -64,8 +65,8 @@ export function MiniPlayer({ blurTarget }: { blurTarget: RefObject<View | null> 
                 {error ? 'Couldn’t play. Tap for details' : buffering ? 'Loading…' : `${session.title} · ${index + 1} of ${session.chapters.length}`}
               </Txt>
             </View>
-          </Pressable>
-          <Pressable
+          </Tap>
+          <Tap
             onPress={toggle}
             hitSlop={6}
             style={styles.button}
@@ -78,12 +79,12 @@ export function MiniPlayer({ blurTarget }: { blurTarget: RefObject<View | null> 
                 <Play size={20} color={theme.colors.text} fill={theme.colors.text} strokeWidth={0} />
               )}
             </View>
-          </Pressable>
-          <Pressable onPress={next} hitSlop={6} style={styles.button} accessibilityRole="button" accessibilityLabel="Next story">
+          </Tap>
+          <Tap onPress={next} hitSlop={6} style={styles.button} accessibilityRole="button" accessibilityLabel="Next story">
             <View>
               <SkipForward size={20} color={theme.colors.text} fill={theme.colors.text} strokeWidth={2.4} />
             </View>
-          </Pressable>
+          </Tap>
           <View style={[styles.track, { backgroundColor: theme.colors.hairline }]} pointerEvents="none">
             <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: theme.colors.accent }]} />
           </View>

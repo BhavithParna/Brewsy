@@ -1,11 +1,12 @@
 import { ArrowUp, Layers } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PressableScale } from './PressableScale';
 import { SkeletonBlock } from './Skeleton';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { askAboutStory, backendConfigured, fetchDeepDive } from '@/data/api';
 import type { AskAnswer, DeepDive, Story } from '@/data/types';
 import { deviceId } from '@/lib/device';
@@ -245,7 +246,7 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
             { color: theme.colors.text, fontFamily: theme.type.body?.fontFamily ?? fonts.regular },
           ]}
         />
-        <Pressable
+        <Tap
           onPress={submit}
           disabled={busy || !question.trim()}
           accessibilityRole="button"
@@ -264,7 +265,7 @@ function AskBox({ story, editionDate }: { story: Story; editionDate: string }) {
           ) : (
             <ArrowUp size={18} strokeWidth={2.4} color={question.trim() ? theme.colors.inverseText : theme.colors.textTertiary} />
           )}
-        </Pressable>
+        </Tap>
       </View>
     </View>
   );

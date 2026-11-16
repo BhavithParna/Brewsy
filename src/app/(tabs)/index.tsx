@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   Platform,
-  Pressable,
   RefreshControl,
   StyleSheet,
   View,
@@ -20,6 +19,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { Tap } from '@/components/Tap';
 import { listenToEdition, prefetchEditionAudio } from '@/audio/listen';
 import { AlsoHappening } from '@/components/AlsoHappening';
 import { CoverBar } from '@/components/CoverBar';
@@ -682,7 +682,7 @@ function Edition({
 
       {hidden > 0 && (
         <Animated.View layout={storyLayout}>
-          <Pressable
+          <Tap
             onPress={() => openSettings()}
             accessibilityRole="button"
             accessibilityLabel={`${storiesLabel(hidden)} left out because of your hidden words. Edit hidden words`}
@@ -693,7 +693,7 @@ function Edition({
                 Edit
               </Txt>
             </Txt>
-          </Pressable>
+          </Tap>
         </Animated.View>
       )}
 
@@ -724,7 +724,7 @@ function Edition({
           editionDate={briefing.date}
           storyIds={storyIds}
         />
-        <Pressable
+        <Tap
           onPress={() => openHowMade(briefing)}
           accessibilityRole="link"
           accessibilityLabel="How this briefing was made"
@@ -735,7 +735,7 @@ function Edition({
           <Txt variant="caption" align="center" style={styles.underline}>
             How this briefing was made →
           </Txt>
-        </Pressable>
+        </Tap>
       </Animated.View>
     </View>
   );

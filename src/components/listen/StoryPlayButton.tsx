@@ -1,13 +1,12 @@
 import { Play } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { GlassCard } from '../GlassCard';
 import { PressableScale } from '../PressableScale';
 import { NowPlayingBars } from './NowPlayingBars';
 import { pause } from '@/audio/engine';
 import { usePlayer, usePlayingKey } from '@/audio/store';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TAP, radii } from '@/theme/tokens';
+import { TAP } from '@/theme/tokens';
 
 const SIZE = 40;
 
@@ -25,15 +24,15 @@ export function StoryPlayButton({ playKey, label, onPlay }: { playKey: string; l
       hitSlop={(TAP - SIZE) / 2}
       accessibilityRole="button"
       accessibilityLabel={active ? `Pause ${label}` : `Listen to ${label}`}>
-      <GlassCard radius={radii.pill} variant="plain" style={styles.button}>
+      <View style={styles.button}>
         <View>
           {isCurrent ? (
             <NowPlayingBars color={theme.colors.accent} playing={playing} size={14} />
           ) : (
-            <Play size={15} color={theme.colors.textSecondary} fill={theme.colors.textSecondary} strokeWidth={0} />
+            <Play size={17} color={theme.colors.textSecondary} fill={theme.colors.textSecondary} strokeWidth={0} />
           )}
         </View>
-      </GlassCard>
+      </View>
     </PressableScale>
   );
 }

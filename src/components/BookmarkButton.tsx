@@ -2,7 +2,6 @@ import * as Haptics from 'expo-haptics';
 import { Bookmark } from 'lucide-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import { GlassCard } from './GlassCard';
 import { PressableScale } from './PressableScale';
 import { useSheets } from './SheetHost';
 import { toast } from './Toast';
@@ -10,7 +9,7 @@ import type { Story } from '@/data/types';
 import { cachedDeepDive } from '@/state/deepDives';
 import { BUCKETS, saveStory, storyKey, useReadingList } from '@/state/readingList';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TAP, radii } from '@/theme/tokens';
+import { TAP } from '@/theme/tokens';
 
 const SIZE = 40;
 
@@ -45,16 +44,16 @@ export function BookmarkButton({ story, editionDate }: { story: Story; editionDa
       accessibilityRole="button"
       accessibilityLabel={saved ? 'Saved to Reading List. Change when to read it' : 'Save to Reading List'}
       accessibilityHint={saved ? undefined : 'Long press to save it for no rush'}>
-      <GlassCard radius={radii.pill} variant="plain" style={styles.button}>
+      <View style={styles.button}>
         <View>
           <Bookmark
-            size={18}
+            size={20}
             strokeWidth={2}
             color={saved ? theme.colors.accent : theme.colors.textSecondary}
             fill={saved ? theme.colors.accent : 'transparent'}
           />
         </View>
-      </GlassCard>
+      </View>
     </PressableScale>
   );
 }

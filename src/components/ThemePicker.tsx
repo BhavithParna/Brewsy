@@ -2,12 +2,13 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Pill } from './Pill';
 import { PressableScale } from './PressableScale';
 import { Divider } from './settings/SettingsParts';
 import { Txt } from './Txt';
+import { Tap } from '@/components/Tap';
 import { openLink } from '@/lib/links';
 import { updateSettings, useSettings, type Settings } from '@/state/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -78,7 +79,7 @@ export function ThemePicker() {
         {theme.tagline}
       </Txt>
       {credit ? (
-        <Pressable onPress={() => openLink(credit.url)} accessibilityRole="link" hitSlop={6}>
+        <Tap onPress={() => openLink(credit.url)} accessibilityRole="link" hitSlop={6}>
           <Txt variant="caption" tone="tertiary">
             {'film' in credit ? (
               `Still from ${credit.film} · © ${credit.owner}`
@@ -89,7 +90,7 @@ export function ThemePicker() {
               </>
             )}
           </Txt>
-        </Pressable>
+        </Tap>
       ) : (
         <Txt variant="caption" tone="tertiary">
           Cover: original artwork made for Brewsy

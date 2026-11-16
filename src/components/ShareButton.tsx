@@ -1,7 +1,6 @@
 import { Share, Share2 } from 'lucide-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import { GlassCard } from './GlassCard';
 import { PressableScale } from './PressableScale';
 import { toast } from './Toast';
 import type { Story } from '@/data/types';
@@ -9,7 +8,7 @@ import { shareStory } from '@/lib/share';
 import { markRead } from '@/state/reads';
 import { noteStoryOpened } from '@/state/usage';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TAP, radii } from '@/theme/tokens';
+import { TAP } from '@/theme/tokens';
 
 const SIZE = 40;
 
@@ -34,11 +33,11 @@ export function ShareButton({ story, editionDate }: { story: Story; editionDate:
       hitSlop={(TAP - SIZE) / 2}
       accessibilityRole="button"
       accessibilityLabel="Share this story">
-      <GlassCard radius={radii.pill} variant="plain" style={styles.button}>
+      <View style={styles.button}>
         <View>
-          <Icon size={17} strokeWidth={2} color={theme.colors.textSecondary} />
+          <Icon size={19} strokeWidth={2} color={theme.colors.textSecondary} />
         </View>
-      </GlassCard>
+      </View>
     </PressableScale>
   );
 }

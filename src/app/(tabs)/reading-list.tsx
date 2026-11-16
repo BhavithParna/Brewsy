@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useRef, useState, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable, { SwipeDirection, type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
   FadeIn,
@@ -31,6 +31,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Tap } from '@/components/Tap';
 import { listenToReadingList } from '@/audio/listen';
 import { Cover } from '@/components/Cover';
 import { CoverBar } from '@/components/CoverBar';
@@ -191,7 +192,7 @@ export default function ReadingListScreen() {
 
               {done.length > 0 && (
                 <Animated.View key="done-heading" layout={rowLayout} style={styles.groupHeading}>
-                  <Pressable
+                  <Tap
                     onPress={() => setShowDone((v) => !v)}
                     accessibilityRole="button"
                     accessibilityState={{ expanded: showDone }}
@@ -214,7 +215,7 @@ export default function ReadingListScreen() {
                         <ChevronDown size={16} color={theme.colors.textSecondary} />
                       )}
                     </View>
-                  </Pressable>
+                  </Tap>
                 </Animated.View>
               )}
               {showDone && done.map(renderItem)}
@@ -364,7 +365,7 @@ function SavedRow({ item, expanded, onToggle, onPlay }: RowProps) {
         <SwipeAction side="right" progress={progress} color={theme.colors.down} Icon={Trash2} label="Remove" />
       )}>
       <GlassCard radius={radii.xl} style={styles.row}>
-        <Pressable
+        <Tap
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
@@ -406,13 +407,13 @@ function SavedRow({ item, expanded, onToggle, onPlay }: RowProps) {
               </Txt>
             </View>
           )}
-        </Pressable>
+        </Tap>
 
         {/* Outside the row's tap area (a button can't sit inside another button). */}
         <View style={styles.play}>
           <StoryPlayButton playKey={item.key} label={story.headline} onPlay={onPlay} />
         </View>
-        <Pressable
+        <Tap
           onPress={() => openSave({ story, editionDate: item.editionDate })}
           hitSlop={8}
           accessibilityRole="button"
@@ -421,7 +422,7 @@ function SavedRow({ item, expanded, onToggle, onPlay }: RowProps) {
           <View>
             <MoreHorizontal size={20} color={theme.colors.textSecondary} />
           </View>
-        </Pressable>
+        </Tap>
 
         {expanded && (
           <Animated.View
